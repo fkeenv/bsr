@@ -7,8 +7,7 @@ group and paper bills.
 ## Language
 
 **Property**:
-A single house or lot within the subdivision. Dues are levied on it, and it is what a Statement of
-Account belongs to.
+A single house or lot within the subdivision. It is what a Statement of Account belongs to.
 _Avoid_: Unit, household, home, address
 
 **Membership**:
@@ -57,8 +56,7 @@ The amount levied on a Property for one Billing Period, itemised by Fee Type.
 _Avoid_: Bill, invoice, assessment, dues (when the record is meant)
 
 **Fee Type**:
-A named category of dues the association levies — Guard, Garbage collection, and others an Officer
-adds.
+A named category of dues the association levies — Guard, Garbage collection, and so on.
 _Avoid_: Fee, category, line item, security (when Guard is meant)
 
 **Billing Period**:
@@ -66,6 +64,5 @@ The calendar month a Charge covers.
 _Avoid_: Cycle, term, billing cycle
 
 **Suspend**:
-An Officer's pause of one Fee Type on one Property, so that Fee Type is omitted from the Charge for
-some Billing Periods. The Property stays on the roster.
-_Avoid_: Waiver, exemption, occupancy, turnover
+A pause of one Fee Type on one Property for some Billing Periods.
+_Avoid_: Waiver, exemption

@@ -1,9 +1,9 @@
 # The Property is the spine of the model, not the Member
 
 Blessed Sacrament Residences has 300+ properties but only ~150 resident families, and dues for
-garbage collection and security are levied on a house or lot regardless of who lives in it. We
-therefore hang Charges and Statements of Account off the **Property**, and treat a **Membership** as
-a person's tie to a Property in a role (owner or resident), separate again from the **User Account**
+Guard and Garbage collection are levied on a Property regardless of who lives in it. We therefore
+hang Charges and Statements of Account off the **Property**, and treat a **Membership** as a
+person's tie to a Property in a role (owner or resident), separate again from the **User Account**
 that logs in.
 
 ## Considered Options
@@ -24,5 +24,5 @@ transfer, which is the behaviour the association actually wants but which will s
 assumes a person owes their own debts. A member's dashboard must also handle holding more than one
 property from the start, rather than assuming a single one.
 
-Which of those Properties actually receive a Charge is ADR-0002: every house on the roster, not lots,
-and not gated on occupancy or registration.
+Which of those Properties actually receive a Charge is ADR-0002: every house on the roster, not lots
+or pre-handover inventory, and not gated on occupancy or registration.
