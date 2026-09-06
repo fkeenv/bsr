@@ -57,9 +57,15 @@ The amount levied on a Property for one Billing Period, itemised by Fee Type.
 _Avoid_: Bill, invoice, assessment, dues (when the record is meant)
 
 **Fee Type**:
-A named category of dues the association levies — garbage collection, security, and so on.
-_Avoid_: Fee, category, line item
+A named category of dues the association levies — Guard, Garbage collection, and others an Officer
+adds.
+_Avoid_: Fee, category, line item, security (when Guard is meant)
 
 **Billing Period**:
 The calendar month a Charge covers.
 _Avoid_: Cycle, term, billing cycle
+
+**Suspend**:
+An Officer's pause of one Fee Type on one Property, so that Fee Type is omitted from the Charge for
+some Billing Periods. The Property stays on the roster.
+_Avoid_: Waiver, exemption, occupancy, turnover

@@ -23,3 +23,6 @@ Arrears follow the property across a change of owner unless we explicitly close 
 transfer, which is the behaviour the association actually wants but which will surprise anyone who
 assumes a person owes their own debts. A member's dashboard must also handle holding more than one
 property from the start, rather than assuming a single one.
+
+Which of those Properties actually receive a Charge is ADR-0002: every house on the roster, not lots,
+and not gated on occupancy or registration.
