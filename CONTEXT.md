@@ -11,23 +11,35 @@ A single house or lot within the subdivision. It is what a Statement of Account 
 _Avoid_: Unit, household, home, address
 
 **Membership**:
-A person's tie to a Property in a stated role — owner or resident. It is what a Membership
-Application creates once approved.
-_Avoid_: Member record, subscription
+A person's tie to a Property in a role — owner or resident — that an Officer records and may
+change. It is what a Membership Application creates once approved, it can be ended, a person
+holds at most one live on a given Property, and it is not a platform role.
+_Avoid_: Member, member record, subscription
 
 **Membership Application**:
-A person's request to be recognised as holding a Membership, carrying the personal details an
-Officer needs to verify it.
+A person's request to be recognised as holding a Membership of one Property. It carries an
+optional note; the role is not on the application.
 
 **User Account**:
 A login belonging to one person. It exists independently of any Membership — a person can hold an
-account without yet holding a Membership.
+account without yet holding a Membership. It holds that person's email and mobile number.
 _Avoid_: Member, user (when the Membership is what's meant)
 
+**Super Admin**:
+A seeded User Account with every product permission. It does not require a Membership. Super Admin
+accounts are created by seed or ops, not in the application.
+_Avoid_: Superuser, Administrator (when the seeded account is meant)
+
+**Administrator**:
+A person with a current Administrator assignment. They appoint Officers and Administrators. This
+assignment does not include Officer powers. It requires an approved owner Membership.
+_Avoid_: Super Admin, Superuser, admin (when Officer is meant)
+
 **Officer**:
-A member of the association's board acting on its behalf — posting Announcements, levying dues,
-approving Membership Applications, and recording Payments. The Treasurer is the Officer who
-collects.
+A person with a current Officer assignment, acting on the association's behalf — posting
+Announcements, levying dues, approving Membership Applications, and recording Payments. An
+assignment requires an approved owner Membership. Treasurer, President, and Secretary are optional
+titles on the assignment, not separate roles.
 _Avoid_: Admin, staff
 
 **Announcement**:
@@ -40,14 +52,9 @@ _Avoid_: Ledger, SOA
 
 **Payment**:
 A record that money was received against a Charge. Money moves outside the platform — cash, bank
-transfer, GCash, or Maya — so a Payment is a record of that fact, not the movement itself. A Member
-declares it; an Officer confirms it.
+transfer, GCash, or Maya — so a Payment is a record of that fact, not the movement itself. A person
+with a Membership declares it; an Officer confirms it.
 _Avoid_: Transaction, remittance
-
-**Administrator**:
-The role that appoints Officers. It exists so that the association surviving an election does not
-depend on any one person's account.
-_Avoid_: Superuser, owner
 
 ## Dues
 
