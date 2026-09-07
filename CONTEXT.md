@@ -43,7 +43,8 @@ titles on the assignment, not separate roles.
 _Avoid_: Admin, staff
 
 **Announcement**:
-A notice published by an Officer on behalf of the association to the members it concerns.
+A notice an Officer authors on behalf of the association. It is a draft until published; published
+Announcements form a single feed every live Membership can read.
 _Avoid_: Post, news, bulletin
 
 **Statement of Account**:
