@@ -28,7 +28,8 @@ Move-in is not a levy event. Owner-built houses do not happen at BSR.
 
 The schedule is ₱200 Guard and ₱200 Garbage collection for every charged house. Officers add, change,
 and retire Fee Types; a type that has been charged is retired, not deleted. A new Fee Type applies
-to every roster house until an Officer Suspends it.
+to every roster house until an Officer Suspends it, from the next generated Billing Period
+(ADR-0005), not by rewriting Charges already levied.
 
 A Suspend is one Property, one Fee Type, a start Billing Period, and an optional end Billing Period
 (no end = standing). Months only. If any Suspend covers that Property, Fee Type, and Billing Period,

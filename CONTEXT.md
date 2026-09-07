@@ -60,11 +60,13 @@ _Avoid_: Transaction, remittance
 ## Dues
 
 **Charge**:
-The amount levied on a Property for one Billing Period, itemised by Fee Type.
+The amount levied on a Property for one Billing Period, itemised by Fee Type. There is one per
+Property per Billing Period; the amounts start as the schedule in force when it is levied.
 _Avoid_: Bill, invoice, assessment, dues (when the record is meant)
 
 **Fee Type**:
 A named category of dues the association levies — Guard, Garbage collection, and so on.
+Changing its amount does not rewrite Charges already levied.
 _Avoid_: Fee, category, line item, security (when Guard is meant)
 
 **Billing Period**:
