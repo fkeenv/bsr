@@ -7,7 +7,10 @@ group and paper bills.
 ## Language
 
 **Property**:
-A single house or lot within the subdivision. It is what a Statement of Account belongs to.
+A single handed-over house on the association roster, identified by block and lot. It is what a
+Statement of Account belongs to. It may carry an optional street address, an optional recorded-owner
+name (not a Membership), and an Opening Balance, and it may be made inactive so it leaves the levy
+set without losing history.
 _Avoid_: Unit, household, home, address
 
 **Membership**:
@@ -76,3 +79,9 @@ _Avoid_: Cycle, term, billing cycle
 **Suspend**:
 A pause of one Fee Type on one Property for some Billing Periods.
 _Avoid_: Waiver, exemption
+
+**Opening Balance**:
+Prior arrears on a Property as of the start of the first Billing Period Charges are generated for.
+It is a single non-negative amount on the Property, not a Charge, and defaults to zero when nothing
+was owed before go-live.
+_Avoid_: Carried forward, prior balance, starting balance, credit
