@@ -16,7 +16,8 @@ _Avoid_: Unit, household, home, address
 **Membership**:
 A person's tie to a Property in a role — owner or resident — that an Officer records and may
 change. It is what a Membership Application creates once approved, it can be ended, a person
-holds at most one live on a given Property, and it is not a platform role.
+holds at most one live on a given Property and may hold live ones on several Properties, and it
+is not a platform role.
 _Avoid_: Member, member record, subscription
 
 **Membership Application**:
@@ -57,7 +58,7 @@ _Avoid_: Ledger, SOA
 **Payment**:
 A record that money was received against a Charge. Money moves outside the platform — cash, bank
 transfer, GCash, or Maya — so a Payment is a record of that fact, not the movement itself. A person
-with a Membership declares it; an Officer confirms it.
+with a live Membership on that Property declares it; an Officer confirms it.
 _Avoid_: Transaction, remittance
 
 ## Dues
