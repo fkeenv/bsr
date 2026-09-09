@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Administrator\DashboardController as AdministratorDashboardController;
+use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\Officer\ChargeController;
 use App\Http\Controllers\Officer\ChargeGenerationController;
@@ -10,11 +11,18 @@ use App\Http\Controllers\Officer\LevySettingsController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
 use App\Http\Middleware\EnsureMembershipOnboardingIsComplete;
 use App\Http\Middleware\EnsureRoleSurfaceAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
+
+Route::get('terms-of-service', [LegalDocumentController::class, 'termsOfService'])
+    ->name('terms-of-service.show');
+Route::get('privacy-policy', [LegalDocumentController::class, 'privacyPolicy'])
+    ->name('privacy-policy.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('membership-application', [MembershipApplicationController::class, 'create'])
@@ -64,6 +72,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':administrator'])->prefix('administrator')->name('administrator.')->group(function () {
         Route::get('/', AdministratorDashboardController::class)->name('dashboard');
+    });
+
+    Route::middleware([EnsureRoleSurfaceAccess::class.':super-admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
+
+        Route::get('terms-of-service', [SuperAdminLegalDocumentController::class, 'editTermsOfService'])
+            ->name('terms-of-service.edit');
+        Route::put('terms-of-service', [SuperAdminLegalDocumentController::class, 'updateTermsOfService'])
+            ->name('terms-of-service.update');
+
+        Route::get('privacy-policy', [SuperAdminLegalDocumentController::class, 'editPrivacyPolicy'])
+            ->name('privacy-policy.edit');
+        Route::put('privacy-policy', [SuperAdminLegalDocumentController::class, 'updatePrivacyPolicy'])
+            ->name('privacy-policy.update');
     });
 });
 

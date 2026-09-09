@@ -20,6 +20,7 @@ class EnsureRoleSurfaceAccess
         }
 
         $allowed = match ($surface) {
+            'super-admin' => $user->isSuperAdmin(),
             'officer' => $user->canAccessOfficerSurfaces(),
             'administrator' => $user->canAccessAdministratorSurfaces(),
             default => false,

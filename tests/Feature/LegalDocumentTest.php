@@ -1,0 +1,164 @@
+<?php
+
+use App\Enums\LegalDocumentType;
+use App\Models\LegalDocumentVersion;
+use App\Models\User;
+
+test('guest can read the current Terms of Service with an identifiable version', function () {
+    $version = LegalDocumentVersion::factory()->create([
+        'type' => LegalDocumentType::TermsOfService,
+        'body' => 'These are the current terms.',
+    ]);
+
+    $this->get(route('terms-of-service.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('legal/TermsOfService')
+            ->where('document.id', $version->id)
+            ->where('document.body', 'These are the current terms.')
+        );
+});
+
+test('guest can read the current Privacy Policy with an identifiable version', function () {
+    $version = LegalDocumentVersion::factory()->create([
+        'type' => LegalDocumentType::PrivacyPolicy,
+        'body' => 'This is the current privacy policy.',
+    ]);
+
+    $this->get(route('privacy-policy.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('legal/PrivacyPolicy')
+            ->where('document.id', $version->id)
+            ->where('document.body', 'This is the current privacy policy.')
+        );
+});
+
+test('public pages show the latest published version for each document type', function () {
+    LegalDocumentVersion::factory()->create([
+        'type' => LegalDocumentType::TermsOfService,
+        'body' => 'Old terms',
+        'published_at' => now()->subDay(),
+    ]);
+
+    $current = LegalDocumentVersion::factory()->create([
+        'type' => LegalDocumentType::TermsOfService,
+        'body' => 'New terms',
+        'published_at' => now(),
+    ]);
+
+    $this->get(route('terms-of-service.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('legal/TermsOfService')
+            ->where('document.id', $current->id)
+            ->where('document.body', 'New terms')
+        );
+});
+
+test('Super Admin can publish a new Terms of Service version', function () {
+    $user = User::factory()->superAdmin()->create();
+
+    LegalDocumentVersion::factory()->create([
+        'type' => LegalDocumentType::TermsOfService,
+        'body' => 'Old terms',
+        'published_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($user)
+        ->put(route('super-admin.terms-of-service.update'), [
+            'body' => 'Updated association terms.',
+        ])
+        ->assertRedirect(route('super-admin.terms-of-service.edit'));
+
+    $current = LegalDocumentVersion::query()
+        ->where('type', LegalDocumentType::TermsOfService)
+        ->latest('published_at')
+        ->first();
+
+    expect($current)->not->toBeNull()
+        ->and($current->body)->toBe('Updated association terms.');
+
+    $this->get(route('terms-of-service.show'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('document.id', $current->id)
+            ->where('document.body', 'Updated association terms.')
+        );
+});
+
+test('Super Admin can publish a new Privacy Policy version', function () {
+    $user = User::factory()->superAdmin()->create();
+
+    $this->actingAs($user)
+        ->put(route('super-admin.privacy-policy.update'), [
+            'body' => 'Updated privacy notice.',
+        ])
+        ->assertRedirect(route('super-admin.privacy-policy.edit'));
+
+    $this->assertDatabaseHas('legal_document_versions', [
+        'type' => LegalDocumentType::PrivacyPolicy->value,
+        'body' => 'Updated privacy notice.',
+    ]);
+});
+
+test('Super Admin can open the Terms of Service editor with the current body', function () {
+    $user = User::factory()->superAdmin()->create();
+    $version = LegalDocumentVersion::factory()->create([
+        'type' => LegalDocumentType::TermsOfService,
+        'body' => 'Editable terms body',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('super-admin.terms-of-service.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('super-admin/legal/EditTermsOfService')
+            ->where('document.id', $version->id)
+            ->where('document.body', 'Editable terms body')
+        );
+});
+
+test('Officer cannot publish Terms of Service', function () {
+    $user = User::factory()->officer()->create();
+
+    $this->actingAs($user)
+        ->put(route('super-admin.terms-of-service.update'), [
+            'body' => 'Unauthorized terms.',
+        ])
+        ->assertForbidden();
+});
+
+test('Officer cannot open the Terms of Service editor', function () {
+    $user = User::factory()->officer()->create();
+
+    $this->actingAs($user)
+        ->get(route('super-admin.terms-of-service.edit'))
+        ->assertForbidden();
+});
+
+test('Administrator cannot publish Privacy Policy', function () {
+    $user = User::factory()->administrator()->create();
+
+    $this->actingAs($user)
+        ->put(route('super-admin.privacy-policy.update'), [
+            'body' => 'Unauthorized privacy.',
+        ])
+        ->assertForbidden();
+});
+
+test('Administrator cannot open the Privacy Policy editor', function () {
+    $user = User::factory()->administrator()->create();
+
+    $this->actingAs($user)
+        ->get(route('super-admin.privacy-policy.edit'))
+        ->assertForbidden();
+});
+
+test('plain User Account cannot open the Terms of Service editor', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('super-admin.terms-of-service.edit'))
+        ->assertRedirect(route('membership-application.create'));
+});

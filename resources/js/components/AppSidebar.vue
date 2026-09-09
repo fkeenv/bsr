@@ -38,6 +38,9 @@ import { index as feeTypesIndex } from '@/routes/officer/fee-types';
 import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
+import { dashboard as superAdminDashboard } from '@/routes/super-admin';
+import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
+import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -80,8 +83,18 @@ const superAdminNavItems = computed((): NavItem[] => {
     return [
         {
             title: 'Super Admin',
-            href: dashboard(),
+            href: superAdminDashboard(),
             icon: KeyRound,
+        },
+        {
+            title: 'Terms of Service',
+            href: editTermsOfService(),
+            icon: BookOpen,
+        },
+        {
+            title: 'Privacy Policy',
+            href: editPrivacyPolicy(),
+            icon: BookOpen,
         },
     ];
 });
