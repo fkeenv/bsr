@@ -55,6 +55,12 @@ _Avoid_: Post, news, bulletin
 A Property's Charge for one Billing Period together with the Payments recorded against it.
 _Avoid_: Ledger, SOA
 
+**Printed Bill**:
+The A4 PDF an Officer generates on demand for a Property and a Billing Period —
+that period's Fee Type lines, balance forward, and the Property's Outstanding
+Balance as amount due — so the association can still reach families on paper.
+_Avoid_: Bill (when Charge is meant), invoice, PDF statement, remittance slip
+
 **Payment**:
 A record that money was received toward what a Property owes. Money moves outside the platform —
 cash, bank transfer, GCash, or Maya — so a Payment is a record of that fact, not the movement
