@@ -36,6 +36,8 @@ import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
 import { index as feeTypesIndex } from '@/routes/officer/fee-types';
 import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
+import { index as membershipApplicationsIndex } from '@/routes/officer/membership-applications';
+import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
@@ -53,26 +55,28 @@ const homeHref = computed(() =>
 );
 
 const platformNavItems = computed((): NavItem[] => {
+    const items: NavItem[] = [];
+
     if (
         capabilities.value?.isMembershipHolder ||
         capabilities.value?.isSuperAdmin
     ) {
-        return [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-                icon: LayoutGrid,
-            },
-        ];
+        items.push({
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        });
     }
 
-    return [
-        {
+    if (!capabilities.value?.isSuperAdmin) {
+        items.push({
             title: 'Membership Application',
             href: membershipApplicationCreate(),
             icon: ClipboardList,
-        },
-    ];
+        });
+    }
+
+    return items;
 });
 
 const superAdminNavItems = computed((): NavItem[] => {
@@ -109,6 +113,16 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Officer',
             href: officerDashboard(),
             icon: Shield,
+        },
+        {
+            title: 'Membership Applications',
+            href: membershipApplicationsIndex(),
+            icon: ClipboardList,
+        },
+        {
+            title: 'Memberships',
+            href: membershipsIndex(),
+            icon: Users,
         },
         {
             title: 'Properties',

@@ -120,7 +120,7 @@ test('Officer can manually generate Charges for a Billing Period', function () {
         ->assertRedirect()
         ->assertSessionHas('success');
 
-    expect(Charge::query()->count())->toBe(1);
+    expect(Charge::query()->count())->toBe(Property::query()->active()->count());
 });
 
 test('artisan charges:generate creates Charges for the given Billing Period', function () {

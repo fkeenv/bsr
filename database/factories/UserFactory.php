@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\PlatformRole;
+use App\Models\Membership;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -70,6 +71,7 @@ class UserFactory extends Factory
                 PlatformRole::Member,
                 PlatformRole::User,
             ]);
+            $this->ensureLiveOwnerMembership($user);
         });
     }
 
@@ -82,6 +84,7 @@ class UserFactory extends Factory
                 PlatformRole::Member,
                 PlatformRole::User,
             ]);
+            $this->ensureLiveOwnerMembership($user);
         });
     }
 
@@ -93,7 +96,19 @@ class UserFactory extends Factory
                 PlatformRole::Member,
                 PlatformRole::User,
             ]);
+            $this->ensureLiveOwnerMembership($user);
         });
+    }
+
+    private function ensureLiveOwnerMembership(User $user): void
+    {
+        if ($user->memberships()->live()->exists()) {
+            return;
+        }
+
+        Membership::factory()->owner()->create([
+            'user_id' => $user->id,
+        ]);
     }
 
     private function ensureRolesExist(): void

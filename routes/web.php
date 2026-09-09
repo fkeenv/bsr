@@ -1,13 +1,17 @@
 <?php
 
 use App\Http\Controllers\Administrator\DashboardController as AdministratorDashboardController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\MembershipApplicationController;
+use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\Officer\ChargeController;
 use App\Http\Controllers\Officer\ChargeGenerationController;
-use App\Http\Controllers\Officer\DashboardController;
+use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
 use App\Http\Controllers\Officer\FeeTypeController;
 use App\Http\Controllers\Officer\LevySettingsController;
+use App\Http\Controllers\Officer\MembershipApplicationController as OfficerMembershipApplicationController;
+use App\Http\Controllers\Officer\MembershipController as OfficerMembershipController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
@@ -27,13 +31,34 @@ Route::get('privacy-policy', [LegalDocumentController::class, 'privacyPolicy'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('membership-application', [MembershipApplicationController::class, 'create'])
         ->name('membership-application.create');
+    Route::post('membership-application', [MembershipApplicationController::class, 'store'])
+        ->name('membership-application.store');
 
     Route::middleware(EnsureMembershipOnboardingIsComplete::class)->group(function () {
-        Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+        Route::post('memberships/{membership}/end', [MembershipController::class, 'end'])
+            ->name('memberships.end');
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
-        Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/', OfficerDashboardController::class)->name('dashboard');
+
+        Route::get('membership-applications', [OfficerMembershipApplicationController::class, 'index'])
+            ->name('membership-applications.index');
+        Route::get('membership-applications/{membershipApplication}', [OfficerMembershipApplicationController::class, 'show'])
+            ->name('membership-applications.show');
+        Route::post('membership-applications/{membershipApplication}/approve', [OfficerMembershipApplicationController::class, 'approve'])
+            ->name('membership-applications.approve');
+        Route::post('membership-applications/{membershipApplication}/reject', [OfficerMembershipApplicationController::class, 'reject'])
+            ->name('membership-applications.reject');
+
+        Route::get('memberships', [OfficerMembershipController::class, 'index'])
+            ->name('memberships.index');
+        Route::put('memberships/{membership}/role', [OfficerMembershipController::class, 'updateRole'])
+            ->name('memberships.update-role');
+        Route::post('memberships/{membership}/end', [OfficerMembershipController::class, 'end'])
+            ->name('memberships.end');
 
         Route::get('properties/import', [PropertyImportController::class, 'create'])
             ->name('properties.import.create');
