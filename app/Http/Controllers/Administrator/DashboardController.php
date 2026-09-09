@@ -8,9 +8,6 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    /**
-     * Show the Administrator shell stub.
-     */
     public function __invoke(): Response
     {
         return Inertia::render('administrator/Dashboard');

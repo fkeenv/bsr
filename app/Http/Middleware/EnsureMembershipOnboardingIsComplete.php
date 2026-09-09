@@ -9,8 +9,6 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureMembershipOnboardingIsComplete
 {
     /**
-     * Redirect User Accounts that still need Membership Application onboarding.
-     *
      * @param  Closure(Request): Response  $next
      */
     public function handle(Request $request, Closure $next): Response

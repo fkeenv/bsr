@@ -62,7 +62,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether this User Account may reach Officer-style surfaces.
      * Officer assignments (#21) will OR into this later.
      */
     public function canAccessOfficerSurfaces(): bool
@@ -71,7 +70,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether this User Account may reach Administrator-style surfaces.
      * Administrator assignments (#21) will OR into this later.
      */
     public function canAccessAdministratorSurfaces(): bool
@@ -80,7 +78,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether this User Account holds a live Membership.
      * Memberships (#20) will implement this later.
      */
     public function isMembershipHolder(): bool
@@ -88,9 +85,6 @@ class User extends Authenticatable
         return false;
     }
 
-    /**
-     * Plain User Accounts without a live Membership go to Membership Application onboarding.
-     */
     public function mustCompleteMembershipOnboarding(): bool
     {
         return ! $this->isSuperAdmin() && ! $this->isMembershipHolder();

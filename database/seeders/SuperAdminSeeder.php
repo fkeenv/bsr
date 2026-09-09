@@ -7,9 +7,6 @@ use Illuminate\Database\Seeder;
 
 class SuperAdminSeeder extends Seeder
 {
-    /**
-     * Upsert the seeded Super Admin User Account.
-     */
     public function run(): void
     {
         $email = config('bsr.super_admin.email');

@@ -38,9 +38,6 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the User Account is the seeded Super Admin.
-     */
     public function superAdmin(): static
     {
         return $this->state(fn (array $attributes) => [
