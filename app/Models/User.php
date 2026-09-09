@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -84,14 +85,35 @@ class User extends Authenticatable
         return $this->hasPlatformLevelAtMost(PlatformRole::Administrator->level());
     }
 
+    /**
+     * @return HasMany<Membership, $this>
+     */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class);
+    }
+
+    /**
+     * @return HasMany<MembershipApplication, $this>
+     */
+    public function membershipApplications(): HasMany
+    {
+        return $this->hasMany(MembershipApplication::class);
+    }
+
+    public function hasLiveMembership(): bool
+    {
+        return $this->memberships()->live()->exists();
+    }
+
     public function isMembershipHolder(): bool
     {
-        return $this->hasRole(PlatformRole::Member);
+        return $this->hasLiveMembership();
     }
 
     public function mustCompleteMembershipOnboarding(): bool
     {
-        return ! $this->isSuperAdmin() && ! $this->isMembershipHolder();
+        return ! $this->isSuperAdmin() && ! $this->hasLiveMembership();
     }
 
     public function assignPlatformRole(PlatformRole $role): void
