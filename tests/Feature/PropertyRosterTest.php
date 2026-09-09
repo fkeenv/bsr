@@ -3,8 +3,8 @@
 use App\Models\Property;
 use App\Models\User;
 
-test('Super Admin can create a Property with Block Lot and optional fields', function () {
-    $user = User::factory()->superAdmin()->create();
+test('Officer can create a Property with Block Lot and optional fields', function () {
+    $user = User::factory()->officer()->create();
 
     $this->actingAs($user)
         ->post(route('officer.properties.store'), [
@@ -25,8 +25,8 @@ test('Super Admin can create a Property with Block Lot and optional fields', fun
     ]);
 });
 
-test('Super Admin can edit address and recorded owner but not Block Lot', function () {
-    $user = User::factory()->superAdmin()->create();
+test('Officer can edit address and recorded owner but not Block Lot', function () {
+    $user = User::factory()->officer()->create();
     $property = Property::factory()->create([
         'block' => '1',
         'lot' => '1',
@@ -53,7 +53,7 @@ test('Super Admin can edit address and recorded owner but not Block Lot', functi
 });
 
 test('duplicate Block Lot is rejected', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     Property::factory()->create(['block' => '2', 'lot' => '4']);
 
     $this->actingAs($user)
@@ -67,7 +67,7 @@ test('duplicate Block Lot is rejected', function () {
 });
 
 test('roster lists Properties and filters by Block', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     Property::factory()->create(['block' => '1', 'lot' => '1']);
     Property::factory()->create(['block' => '1', 'lot' => '2']);
     Property::factory()->create(['block' => '2', 'lot' => '1']);
@@ -85,7 +85,7 @@ test('roster lists Properties and filters by Block', function () {
 });
 
 test('roster searches across owner name Block and Lot', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     Property::factory()->create([
         'block' => '1',
         'lot' => '1',
@@ -109,7 +109,7 @@ test('roster searches across owner name Block and Lot', function () {
 });
 
 test('roster filters by status', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     Property::factory()->create(['block' => '1', 'lot' => '1', 'is_active' => true]);
     Property::factory()->inactive()->create(['block' => '2', 'lot' => '2']);
 
@@ -125,7 +125,7 @@ test('roster filters by status', function () {
 });
 
 test('soft inactive removes a Property from the active levy set without deleting it', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     $property = Property::factory()->create(['block' => '3', 'lot' => '3']);
 
     $this->actingAs($user)
@@ -140,7 +140,7 @@ test('soft inactive removes a Property from the active levy set without deleting
 });
 
 test('inactive Property can be reactivated', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     $property = Property::factory()->inactive()->create();
 
     $this->actingAs($user)
@@ -151,7 +151,7 @@ test('inactive Property can be reactivated', function () {
 });
 
 test('uncharged Property can be deleted', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     $property = Property::factory()->create();
 
     $this->actingAs($user)
@@ -162,7 +162,7 @@ test('uncharged Property can be deleted', function () {
 });
 
 test('charged Property cannot be deleted and must stay as inactive history', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     $property = Property::factory()->charged()->create();
 
     $this->actingAs($user)

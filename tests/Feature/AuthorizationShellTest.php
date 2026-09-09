@@ -10,6 +10,14 @@ test('Super Admin can reach the Officer stub surface', function () {
         ->assertOk();
 });
 
+test('Officer can reach the Officer stub surface', function () {
+    $user = User::factory()->officer()->create();
+
+    $this->actingAs($user)
+        ->get(route('officer.dashboard'))
+        ->assertOk();
+});
+
 test('Super Admin can reach the Administrator stub surface', function () {
     $user = User::factory()->superAdmin()->create();
 

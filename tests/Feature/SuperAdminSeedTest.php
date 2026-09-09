@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\PlatformRole;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\SuperAdminSeeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -12,6 +14,7 @@ test('seeding creates an authenticatable Super Admin', function () {
         'bsr.super_admin.mobile_number' => '+639171234567',
     ]);
 
+    $this->seed(RoleSeeder::class);
     $this->seed(SuperAdminSeeder::class);
 
     $user = User::query()->where('email', 'superadmin@example.com')->first();
@@ -19,7 +22,9 @@ test('seeding creates an authenticatable Super Admin', function () {
     expect($user)->not->toBeNull()
         ->and($user->name)->toBe('Super Admin')
         ->and($user->mobile_number)->toBe('+639171234567')
-        ->and($user->is_super_admin)->toBeTrue()
+        ->and($user->isSuperAdmin())->toBeTrue()
+        ->and($user->hasRole(PlatformRole::SuperAdmin))->toBeTrue()
+        ->and($user->hasRole(PlatformRole::User))->toBeTrue()
         ->and(Hash::check('secret-password', $user->password))->toBeTrue();
 
     expect(auth()->attempt([
@@ -36,6 +41,7 @@ test('seeding upserts the Super Admin by email', function () {
         'bsr.super_admin.mobile_number' => '+639171234567',
     ]);
 
+    $this->seed(RoleSeeder::class);
     $this->seed(SuperAdminSeeder::class);
 
     config([
@@ -52,6 +58,6 @@ test('seeding upserts the Super Admin by email', function () {
 
     expect($user->name)->toBe('Updated Super Admin')
         ->and($user->mobile_number)->toBe('+639179999999')
-        ->and($user->is_super_admin)->toBeTrue()
+        ->and($user->isSuperAdmin())->toBeTrue()
         ->and(Hash::check('new-secret-password', $user->password))->toBeTrue();
 });

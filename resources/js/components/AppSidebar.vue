@@ -2,10 +2,14 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
+    CalendarClock,
     ClipboardList,
     FolderGit2,
     KeyRound,
     LayoutGrid,
+    Pause,
+    Receipt,
+    Settings2,
     Shield,
     ShieldCheck,
     Users,
@@ -28,7 +32,12 @@ import { dashboard } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { create as membershipApplicationCreate } from '@/routes/membership-application';
 import { dashboard as officerDashboard } from '@/routes/officer';
+import { index as chargesIndex } from '@/routes/officer/charges';
+import { create as generateCharges } from '@/routes/officer/charges/generate';
+import { index as feeTypesIndex } from '@/routes/officer/fee-types';
+import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
 import { index as propertiesIndex } from '@/routes/officer/properties';
+import { index as suspendsIndex } from '@/routes/officer/suspends';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -92,6 +101,31 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Properties',
             href: propertiesIndex(),
             icon: ClipboardList,
+        },
+        {
+            title: 'Fee Types',
+            href: feeTypesIndex(),
+            icon: Receipt,
+        },
+        {
+            title: 'Suspends',
+            href: suspendsIndex(),
+            icon: Pause,
+        },
+        {
+            title: 'Charges',
+            href: chargesIndex(),
+            icon: ClipboardList,
+        },
+        {
+            title: 'Generate Charges',
+            href: generateCharges(),
+            icon: CalendarClock,
+        },
+        {
+            title: 'Levy day',
+            href: levySettingsEdit(),
+            icon: Settings2,
         },
     ];
 });
