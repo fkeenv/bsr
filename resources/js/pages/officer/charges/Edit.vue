@@ -122,10 +122,7 @@ defineOptions({
             description="Edit Fee Type lines until a confirmed Payment freezes this Charge."
         />
 
-        <p
-            v-if="charge.is_frozen"
-            class="text-muted-foreground text-sm"
-        >
+        <p v-if="charge.is_frozen" class="text-muted-foreground text-sm">
             This Charge is frozen after a confirmed Payment.
         </p>
 

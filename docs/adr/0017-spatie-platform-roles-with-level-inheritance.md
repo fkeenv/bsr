@@ -6,13 +6,13 @@ Membership and is never hand-assigned. Officer and Administrator are immediate S
 assign/revoke (no dated assignments). Super Admin is the `super-admin` role — the
 `users.is_super_admin` column is removed.
 
-| Level | Role | Notes |
-|------:|------|--------|
-| 0 | `super-admin` | Seed/ops; no Membership required; seed as `super-admin` + `user` |
-| 1 | `administrator` | Includes Officer powers; may appoint Officers; requires owner Membership |
-| 2 | `officer` | Association day-to-day work; requires owner Membership |
-| 3 | `member` | Synced from live Membership |
-| 4 | `user` | Assigned on registration |
+| Level | Role            | Notes                                                                    |
+| ----: | --------------- | ------------------------------------------------------------------------ |
+|     0 | `super-admin`   | Seed/ops; no Membership required; seed as `super-admin` + `user`         |
+|     1 | `administrator` | Includes Officer powers; may appoint Officers; requires owner Membership |
+|     2 | `officer`       | Association day-to-day work; requires owner Membership                   |
+|     3 | `member`        | Synced from live Membership                                              |
+|     4 | `user`          | Assigned on registration                                                 |
 
 ## Considered Options
 
