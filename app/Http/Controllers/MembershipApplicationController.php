@@ -24,7 +24,7 @@ class MembershipApplicationController extends Controller
 
         $application = MembershipApplication::query()
             ->where('user_id', $user->id)
-            ->editable()
+            ->open()
             ->latest('id')
             ->with(['householdMembers', 'emergencyContacts', 'vehicles', 'property'])
             ->first();
@@ -77,7 +77,7 @@ class MembershipApplicationController extends Controller
 
         $application = $submitMembershipApplication->handle($user, $validated);
 
-        FlashToast::success('Membership Application submitted.');
+        FlashToast::success('Your application has been submitted and is awaiting Officer review.');
 
         if ($user->hasLiveMembership()) {
             return redirect()->route('dashboard');

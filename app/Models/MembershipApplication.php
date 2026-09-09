@@ -134,7 +134,24 @@ class MembershipApplication extends Model
 
     public function isEditable(): bool
     {
-        return $this->status->isEditable();
+        return $this->status->canApplicantEdit();
+    }
+
+    public function isAwaitingReview(): bool
+    {
+        return $this->status->isAwaitingReview();
+    }
+
+    /**
+     * @param  Builder<MembershipApplication>  $query
+     */
+    #[Scope]
+    protected function open(Builder $query): void
+    {
+        $query->whereIn('status', [
+            MembershipApplicationStatus::Pending->value,
+            MembershipApplicationStatus::Rejected->value,
+        ]);
     }
 
     /**
@@ -147,5 +164,29 @@ class MembershipApplication extends Model
             MembershipApplicationStatus::Pending->value,
             MembershipApplicationStatus::Rejected->value,
         ]);
+    }
+
+    /**
+     * @param  Builder<MembershipApplication>  $query
+     */
+    #[Scope]
+    protected function search(Builder $query, ?string $term): void
+    {
+        if (! filled($term)) {
+            return;
+        }
+
+        $query->where(function (Builder $nested) use ($term): void {
+            $nested
+                ->whereHas('user', function (Builder $user) use ($term): void {
+                    $user->where('name', 'like', '%'.$term.'%')
+                        ->orWhere('email', 'like', '%'.$term.'%');
+                })
+                ->orWhereHas('property', function (Builder $property) use ($term): void {
+                    $property->where('block', 'like', '%'.$term.'%')
+                        ->orWhere('lot', 'like', '%'.$term.'%')
+                        ->orWhere('street_address', 'like', '%'.$term.'%');
+                });
+        });
     }
 }

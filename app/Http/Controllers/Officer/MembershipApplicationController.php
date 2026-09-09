@@ -5,26 +5,26 @@ namespace App\Http\Controllers\Officer;
 use App\Actions\MembershipApplications\ApproveMembershipApplication;
 use App\Actions\MembershipApplications\RejectMembershipApplication;
 use App\Data\MembershipApplicationData;
-use App\Enums\MembershipApplicationStatus;
 use App\Enums\MembershipRole;
 use App\Http\Requests\Officer\ApproveMembershipApplicationRequest;
 use App\Http\Requests\Officer\RejectMembershipApplicationRequest;
 use App\Models\MembershipApplication;
 use App\Support\FlashToast;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class MembershipApplicationController
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->string('search')->toString() ?: null;
+
         $applications = MembershipApplication::query()
             ->with(['user', 'property', 'householdMembers', 'emergencyContacts', 'vehicles'])
-            ->whereIn('status', [
-                MembershipApplicationStatus::Pending->value,
-                MembershipApplicationStatus::Rejected->value,
-            ])
+            ->open()
+            ->search($search)
             ->latest('id')
             ->get()
             ->map(fn (MembershipApplication $application): MembershipApplicationData => MembershipApplicationData::fromModel($application))
@@ -33,6 +33,14 @@ class MembershipApplicationController
 
         return Inertia::render('officer/membership-applications/Index', [
             'applications' => $applications,
+            'table' => [
+                'searchables' => ['name', 'email', 'property'],
+                'filters' => [],
+                'filterOptions' => (object) [],
+                'values' => [
+                    'search' => $search,
+                ],
+            ],
         ]);
     }
 

@@ -120,7 +120,6 @@ test('Officer can manually generate Charges for a Billing Period', function () {
         ->assertRedirect()
         ->assertSessionHas('success');
 
-    // Officer factory creates a live Membership (and thus a roster Property).
     expect(Charge::query()->count())->toBe(Property::query()->active()->count());
 });
 

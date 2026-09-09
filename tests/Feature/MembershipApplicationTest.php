@@ -117,6 +117,76 @@ test('rejected Membership Application stays editable and resubmittable', functio
         ->and($application->reviewed_at)->toBeNull();
 });
 
+test('pending Membership Application is shown locked and can be updated after editing', function () {
+    publishLegalDocuments();
+    $user = User::factory()->create();
+    $property = Property::factory()->create(['block' => '3', 'lot' => '4']);
+
+    $application = MembershipApplication::factory()->pending()->withCurrentLegalDocuments()->create([
+        'user_id' => $user->id,
+        'property_id' => $property->id,
+        'note' => 'Waiting note',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('membership-application.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('membership-application/Create')
+            ->where('application.id', $application->id)
+            ->where('application.status', 'pending')
+            ->where('application.note', 'Waiting note')
+            ->where('application.property_label', 'Block 3 · Lot 4')
+        );
+
+    $this->actingAs($user)
+        ->post(route('membership-application.store'), [
+            'property_id' => $property->id,
+            'note' => 'Updated while waiting for review',
+            'accept_terms' => '1',
+            'accept_privacy' => '1',
+        ])
+        ->assertRedirect(route('membership-application.create'));
+
+    $application->refresh();
+
+    expect($application->note)->toBe('Updated while waiting for review')
+        ->and($application->status)->toBe(MembershipApplicationStatus::Pending);
+});
+
+test('Officer Membership Application index searches by applicant and Property', function () {
+    publishLegalDocuments();
+    $officer = User::factory()->officer()->create();
+    $match = User::factory()->create([
+        'name' => 'Ana Reyes',
+        'email' => 'ana@example.com',
+    ]);
+    $other = User::factory()->create([
+        'name' => 'Ben Cruz',
+        'email' => 'ben@example.com',
+    ]);
+
+    MembershipApplication::factory()->pending()->withCurrentLegalDocuments()->create([
+        'user_id' => $match->id,
+        'property_id' => Property::factory()->create(['block' => '1', 'lot' => '1'])->id,
+    ]);
+    MembershipApplication::factory()->pending()->withCurrentLegalDocuments()->create([
+        'user_id' => $other->id,
+        'property_id' => Property::factory()->create(['block' => '9', 'lot' => '9'])->id,
+    ]);
+
+    $this->actingAs($officer)
+        ->get(route('officer.membership-applications.index', ['search' => 'Ana']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/membership-applications/Index')
+            ->has('applications', 1)
+            ->where('applications.0.applicant_name', 'Ana Reyes')
+            ->where('table.values.search', 'Ana')
+            ->where('table.searchables', ['name', 'email', 'property'])
+        );
+});
+
 test('Officer can approve a Membership Application with owner or resident role', function () {
     publishLegalDocuments();
     $applicant = User::factory()->create();
@@ -164,7 +234,7 @@ test('Officer can reject a Membership Application without creating a Membership'
     $application->refresh();
 
     expect($application->status)->toBe(MembershipApplicationStatus::Rejected)
-        ->and(Membership::query()->count())->toBe(1); // officer factory membership only
+        ->and(Membership::query()->count())->toBe(1);
 });
 
 test('duplicate live Membership for the same person and Property is blocked', function () {

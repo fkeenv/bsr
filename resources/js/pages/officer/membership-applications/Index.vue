@@ -1,23 +1,26 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
+import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
-import { Button } from '@/components/ui/button';
-import { dashboard as officerDashboard } from '@/routes/officer';
 import {
-    index as membershipApplicationsIndex,
-    show as membershipApplicationShow,
-} from '@/routes/officer/membership-applications';
-
-type Application = {
-    id: number;
-    status: string;
-    property_label: string | null;
-    applicant_name: string | null;
-    applicant_email: string | null;
-};
+    membershipApplicationColumns,
+    type MembershipApplicationRow,
+} from '@/pages/officer/membership-applications/columns';
+import { dashboard as officerDashboard } from '@/routes/officer';
+import { index as membershipApplicationsIndex } from '@/routes/officer/membership-applications';
+import type {
+    DataTableFilterOption,
+    DataTableValues,
+} from '@/types/data-table';
 
 type Props = {
-    applications: Application[];
+    applications: MembershipApplicationRow[];
+    table: {
+        searchables: string[];
+        filters: string[];
+        filterOptions: Record<string, DataTableFilterOption[]>;
+        values: DataTableValues;
+    };
 };
 
 defineProps<Props>();
@@ -47,34 +50,20 @@ defineOptions({
             description="Review pending and rejected applications. Approve with an owner or resident role."
         />
 
-        <div
-            v-if="applications.length === 0"
-            class="text-muted-foreground text-sm"
-        >
-            No Membership Applications need review.
-        </div>
-
-        <ul v-else class="divide-border divide-y border-y">
-            <li
-                v-for="application in applications"
-                :key="application.id"
-                class="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div>
-                    <p class="font-medium">
-                        {{ application.applicant_name }}
-                    </p>
-                    <p class="text-muted-foreground text-sm">
-                        {{ application.property_label }} ·
-                        {{ application.status }}
-                    </p>
-                </div>
-                <Button variant="outline" as-child>
-                    <Link :href="membershipApplicationShow(application.id)">
-                        Review
-                    </Link>
-                </Button>
-            </li>
-        </ul>
+        <DataTable
+            :columns="membershipApplicationColumns"
+            :data="applications"
+            :action="membershipApplicationsIndex.url()"
+            :searchables="table.searchables"
+            :filters="table.filters"
+            :filter-options="table.filterOptions"
+            :values="table.values"
+            :searchable-labels="{
+                name: 'applicant',
+                email: 'email',
+                property: 'Property',
+            }"
+            empty-text="No Membership Applications need review."
+        />
     </div>
 </template>
