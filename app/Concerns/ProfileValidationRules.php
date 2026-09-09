@@ -18,6 +18,7 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'mobile_number' => $this->mobileNumberRules(),
         ];
     }
 
@@ -29,6 +30,14 @@ trait ProfileValidationRules
     protected function nameRules(): array
     {
         return ['required', 'string', 'max:255'];
+    }
+
+    /**
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function mobileNumberRules(): array
+    {
+        return ['nullable', 'string', 'max:30'];
     }
 
     /**

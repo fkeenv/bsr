@@ -16,6 +16,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $mobile_number
+ * @property bool $is_super_admin
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -25,7 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'mobile_number', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -33,9 +35,16 @@ class User extends Authenticatable
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_super_admin' => false,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     protected function casts(): array
     {
@@ -43,6 +52,41 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'is_super_admin' => 'boolean',
         ];
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_super_admin;
+    }
+
+    /**
+     * Officer assignments (#21) will OR into this later.
+     */
+    public function canAccessOfficerSurfaces(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    /**
+     * Administrator assignments (#21) will OR into this later.
+     */
+    public function canAccessAdministratorSurfaces(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    /**
+     * Memberships (#20) will implement this later.
+     */
+    public function isMembershipHolder(): bool
+    {
+        return false;
+    }
+
+    public function mustCompleteMembershipOnboarding(): bool
+    {
+        return ! $this->isSuperAdmin() && ! $this->isMembershipHolder();
     }
 }
