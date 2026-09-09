@@ -104,3 +104,8 @@ What a Property still owes after Prepaid: remaining Opening Balance plus remaini
 Charges. Pending Payment declarations do not reduce it. It is a derived total on the Property, not
 a running ledger of movements.
 _Avoid_: Arrears, balance due, amount due (when the Property total is meant)
+
+**Unpaid roster**:
+The Officer list of Properties with Outstanding Balance greater than zero — filtered and sorted
+for collection follow-up, with drill-in to that Property’s Statement of Account.
+_Avoid_: Arrears report, collection report, delinquent list, aging report
