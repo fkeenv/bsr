@@ -56,9 +56,10 @@ A Property's Charge for one Billing Period together with the Payments recorded a
 _Avoid_: Ledger, SOA
 
 **Payment**:
-A record that money was received against a Charge. Money moves outside the platform — cash, bank
-transfer, GCash, or Maya — so a Payment is a record of that fact, not the movement itself. A person
-with a live Membership on that Property declares it; an Officer confirms it.
+A record that money was received toward what a Property owes. Money moves outside the platform —
+cash, bank transfer, GCash, or Maya — so a Payment is a record of that fact, not the movement
+itself. A Member with a live Membership may declare it for Officer confirmation, or an Officer may
+record it already confirmed; a confirmed Payment may be voided with a reason.
 _Avoid_: Transaction, remittance
 
 ## Dues
@@ -86,3 +87,8 @@ Prior arrears on a Property as of the start of the first Billing Period Charges 
 It is a single non-negative amount on the Property, not a Charge, and defaults to zero when nothing
 was owed before go-live.
 _Avoid_: Carried forward, prior balance, starting balance, credit
+
+**Prepaid**:
+The leftover confirmed Payment amount on a Property after Opening Balance and Charges have been
+cleared. It applies automatically to new debt in the same order as Payment allocation.
+_Avoid_: Credit, credit wallet, overpayment, advance

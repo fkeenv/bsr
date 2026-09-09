@@ -34,8 +34,8 @@ An Officer sets the day of the month. The cron generates the calendar month it f
 day does not exist in the month, it runs on the last day. Timezone is Asia/Manila.
 
 With no confirmed Payment, an Officer may change a line amount and add or omit a Fee Type line.
-The Charge is not deleted. A confirmed Payment freezes it; unwinding the Payment is a later
-decision.
+The Charge is not deleted. A confirmed Payment freezes it; voiding the Payment (ADR-0009) reverses
+allocation and restores editability.
 
 A sale mid-period still does not split the Charge (ADR-0001). No Membership still gets a Charge
 (ADR-0002).

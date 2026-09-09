@@ -10,7 +10,8 @@ set.
 An Opening Balance is prior arrears (≥ ₱0, default 0) as of the start of the first Billing Period
 Charges are generated for. It lives on the Property, not as a Charge or Fee Type line, and levy runs
 do not rewrite it. It freezes once any confirmed Payment exists on that Property. Go-live credits /
-prepaid cash are out of this field. How Payments clear it is a separate allocation decision.
+prepaid cash are out of this field. Confirmed Payments clear it before any Charge (ADR-0009);
+leftover confirmed amounts become Prepaid on the Property, which is not this field.
 
 A Property with no Charge may be deleted. Once any Charge exists, it is only marked inactive (off
 future generation, history kept) and may be reactivated. Inactive is not a Suspend.

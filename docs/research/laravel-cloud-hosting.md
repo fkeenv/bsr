@@ -10,13 +10,13 @@
 
 ## 1. Answers (short)
 
-| Question | Answer from official docs |
-| --- | --- |
-| Scheduler? | **Yes.** Enable “Scheduler” on App or Worker cluster; Cloud runs `schedule:run` every minute. |
-| Persistent local filesystem? | **No.** Local FS is **ephemeral**. Use **Laravel Object Storage** (S3-compatible, Cloudflare R2). |
-| Dompdf on Cloud? | Docs state Dompdf **does not work** (in Cashier context) and recommend **spatie/laravel-pdf** with **Cloudflare** driver (or direct Cloudflare Browser Rendering API). |
-| Pricing (public)? | **Starter $5/mo + usage**, **Growth $20/mo + usage**, **Business $200/mo + usage**, **Enterprise** custom. Each paid plan includes **$5** monthly usage credits. Starter first month free. |
-| Queues? | **Yes** — Managed queues (recommended), Worker clusters (Growth+), or App-cluster background processes. |
+| Question                     | Answer from official docs                                                                                                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Scheduler?                   | **Yes.** Enable “Scheduler” on App or Worker cluster; Cloud runs `schedule:run` every minute.                                                                                              |
+| Persistent local filesystem? | **No.** Local FS is **ephemeral**. Use **Laravel Object Storage** (S3-compatible, Cloudflare R2).                                                                                          |
+| Dompdf on Cloud?             | Docs state Dompdf **does not work** (in Cashier context) and recommend **spatie/laravel-pdf** with **Cloudflare** driver (or direct Cloudflare Browser Rendering API).                     |
+| Pricing (public)?            | **Starter $5/mo + usage**, **Growth $20/mo + usage**, **Business $200/mo + usage**, **Enterprise** custom. Each paid plan includes **$5** monthly usage credits. Starter first month free. |
+| Queues?                      | **Yes** — Managed queues (recommended), Worker clusters (Growth+), or App-cluster background processes.                                                                                    |
 
 ---
 
@@ -60,7 +60,7 @@ Sources:
 - S3-compatible buckets via **Cloudflare R2**, attachable in the dashboard.
 - Use Laravel `Storage` facade; require `league/flysystem-aws-s3-v3`.
 - Cloud injects `FILESYSTEM_DISK` and AWS-compatible env vars when attached.
-- **Bucket-level visibility only** (private *or* public entire bucket — no mixed ACL). Private buckets: `Storage::temporaryUrl()`. Do not set Flysystem `visibility: 'public'` per object — R2 rejects with `NotImplemented`.
+- **Bucket-level visibility only** (private _or_ public entire bucket — no mixed ACL). Private buckets: `Storage::temporaryUrl()`. Do not set Flysystem `visibility: 'public'` per object — R2 rejects with `NotImplemented`.
 - Docs explicitly recommend Object Storage for **private user documents** (fits payment screenshots / announcement attachments).
 
 Sources:
@@ -70,12 +70,12 @@ Sources:
 
 **Object Storage pricing (US rates as published):**
 
-| Metric | Price |
-| --- | --- |
-| Storage | **$0.02 / GB-month** |
-| Class A ops | **$0.005 / thousand** |
-| Class B ops | **$0.0005 / thousand** |
-| Data transfer from buckets | **Free** |
+| Metric                     | Price                  |
+| -------------------------- | ---------------------- |
+| Storage                    | **$0.02 / GB-month**   |
+| Class A ops                | **$0.005 / thousand**  |
+| Class B ops                | **$0.0005 / thousand** |
+| Data transfer from buckets | **Free**               |
 
 ---
 
@@ -88,7 +88,7 @@ Official knowledge base: **Generating PDFs**
 - Alternative: call Cloudflare’s `/browser-rendering/pdf` endpoint via `Http` facade.
 - **Dompdf:** verbatim: “Cashier's default invoice PDF renderer uses Dompdf, which **does not work** in Laravel Cloud.” Cashier workaround: Spatie Laravel PDF + `CASHIER_INVOICE_RENDERER=Laravel\Cashier\Invoices\LaravelPdfInvoiceRenderer`.
 
-**What docs do *not* say:** a detailed technical root cause for Dompdf failure (e.g. fonts, temp dirs, extensions). PHP extension list *does* include `dom`, `mbstring`, `gd`, `imagick` among many others — so the Dompdf statement is a platform constraint as published, not explained further.
+**What docs do _not_ say:** a detailed technical root cause for Dompdf failure (e.g. fonts, temp dirs, extensions). PHP extension list _does_ include `dom`, `mbstring`, `gd`, `imagick` among many others — so the Dompdf statement is a platform constraint as published, not explained further.
 
 **Implication for this app:** On Laravel Cloud, treat Dompdf as **unsupported per official KB**; plan on **spatie/laravel-pdf Cloudflare driver** (or direct Cloudflare API). Pure-PHP Dompdf may still be fine off-Cloud (see pdf-generation.md).
 
@@ -100,19 +100,19 @@ Source: https://cloud.laravel.com/docs/knowledge-base/generating-pdfs
 
 **Supported** in three shapes:
 
-| Approach | Notes |
-| --- | --- |
-| **Managed queues** (recommended) | Dedicated workers, scale on queue pressure **including to zero**, failed-job dashboard/retry. Sets `QUEUE_CONNECTION=cloud`. |
-| **Worker clusters** | Self-managed `queue:work` / other drivers; **Growth+** (Starter has no worker clusters per pricing). |
-| **App cluster background processes** | OK for low volume; competes with HTTP; jobs can be interrupted if Scale to Zero sleeps mid-job. |
+| Approach                             | Notes                                                                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Managed queues** (recommended)     | Dedicated workers, scale on queue pressure **including to zero**, failed-job dashboard/retry. Sets `QUEUE_CONNECTION=cloud`. |
+| **Worker clusters**                  | Self-managed `queue:work` / other drivers; **Growth+** (Starter has no worker clusters per pricing).                         |
+| **App cluster background processes** | OK for low volume; competes with HTTP; jobs can be interrupted if Scale to Zero sleeps mid-job.                              |
 
 Managed queue plan limits (docs):
 
-| Plan | Queues / env | Max workers / queue | Memory tiers |
-| --- | --- | --- | --- |
-| Starter | 1 | 3 | 256 MiB–1 GiB |
-| Growth | 10 | 25 | up to 8 GiB |
-| Business | Unlimited | 50 (soft) | up to 8 GiB |
+| Plan     | Queues / env | Max workers / queue | Memory tiers  |
+| -------- | ------------ | ------------------- | ------------- |
+| Starter  | 1            | 3                   | 256 MiB–1 GiB |
+| Growth   | 10           | 25                  | up to 8 GiB   |
+| Business | Unlimited    | 50 (soft)           | up to 8 GiB   |
 
 Default shutdown timeout customer max **90s** (raise via support for longer jobs). Visibility timeout configurable up to **12 hours**. Design for **at-least-once** delivery.
 
@@ -130,12 +130,12 @@ Sources:
 
 From https://laravel.com/cloud/pricing and https://cloud.laravel.com/docs/pricing:
 
-| Plan | Base | Notable for MVP |
-| --- | --- | --- |
-| **Starter** | **$5/mo + usage** (first month free) | Flex compute, Scale to Zero, **1 managed queue/env**, scheduler on App cluster, **no** Worker clusters / Pro compute / autoscaling beyond 1×. 10 custom domains, 1-day logs. |
-| **Growth** | **$20/mo + usage** | Pro compute, autoscaling to 10×, Worker clusters, preview envs, **10 managed queues**, basic WAF, 50 domains, 7-day logs. |
-| **Business** | **$200/mo + usage** | Unlimited/scheduled autoscaling, unlimited managed queues, advanced WAF, 250 domains, 30-day logs. |
-| **Enterprise** | Custom | Private Cloud, dedicated compute, etc. |
+| Plan           | Base                                 | Notable for MVP                                                                                                                                                              |
+| -------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Starter**    | **$5/mo + usage** (first month free) | Flex compute, Scale to Zero, **1 managed queue/env**, scheduler on App cluster, **no** Worker clusters / Pro compute / autoscaling beyond 1×. 10 custom domains, 1-day logs. |
+| **Growth**     | **$20/mo + usage**                   | Pro compute, autoscaling to 10×, Worker clusters, preview envs, **10 managed queues**, basic WAF, 50 domains, 7-day logs.                                                    |
+| **Business**   | **$200/mo + usage**                  | Unlimited/scheduled autoscaling, unlimited managed queues, advanced WAF, 250 domains, 30-day logs.                                                                           |
+| **Enterprise** | Custom                               | Private Cloud, dedicated compute, etc.                                                                                                                                       |
 
 - All paid plans: **$5** monthly usage credits.
 - Not serverless: dedicated AWS EC2 (Graviton); Flex billed per second awake, monthly caps listed on pricing docs.
@@ -149,20 +149,20 @@ Exact total MVP bill = base + awake compute + DB + object storage + queue ops �
 
 ## 7. Other hard constraints relevant to HOA MVP
 
-| Constraint | Detail | Source |
-| --- | --- | --- |
-| PHP versions | **8.2–8.5** (8.5 default for new envs). Laravel apps: Laravel **9+**. | Welcome / Environments |
-| Build/deploy timeouts | Build and deploy commands **≤ 15 minutes**. | Environments |
-| One-off Commands | Non-interactive, **≤ 30 minutes**. | Environments |
-| No persistent `storage:link` | Use Object Storage. | Environments |
-| Sessions/cache | Prefer **redis/database** (KV Store / DB), not local file. | Environments |
-| Maintenance mode | Default `file` driver won’t persist across replicas/deploys; use `cache` driver. | Compute |
-| Cloudflare PDF dependency | PDF path needs Cloudflare Account ID + Browser Rendering token (third-party account/cost outside Cloud base fee — **Cloud docs don’t publish Cloudflare Browser Rendering prices**). | Generating PDFs |
-| Starter vs Growth | Worker clusters and Pro compute need **Growth+**; Starter is enough for Flex + 1 managed queue + scheduler on App. | Pricing |
-| Preview environments | Growth feature (pricing page). | Pricing |
-| HTTP basic auth | **Growth+**. | Environments |
-| Domains | Starter 10 / Growth 50 / Business 250 custom domains per org. | Pricing |
-| Regions | Multiple AWS regions listed on marketing/pricing (e.g. US East, EU, APAC, Canada, Middle East on compute pricing tables). | Pricing / Compute |
+| Constraint                   | Detail                                                                                                                                                                               | Source                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| PHP versions                 | **8.2–8.5** (8.5 default for new envs). Laravel apps: Laravel **9+**.                                                                                                                | Welcome / Environments |
+| Build/deploy timeouts        | Build and deploy commands **≤ 15 minutes**.                                                                                                                                          | Environments           |
+| One-off Commands             | Non-interactive, **≤ 30 minutes**.                                                                                                                                                   | Environments           |
+| No persistent `storage:link` | Use Object Storage.                                                                                                                                                                  | Environments           |
+| Sessions/cache               | Prefer **redis/database** (KV Store / DB), not local file.                                                                                                                           | Environments           |
+| Maintenance mode             | Default `file` driver won’t persist across replicas/deploys; use `cache` driver.                                                                                                     | Compute                |
+| Cloudflare PDF dependency    | PDF path needs Cloudflare Account ID + Browser Rendering token (third-party account/cost outside Cloud base fee — **Cloud docs don’t publish Cloudflare Browser Rendering prices**). | Generating PDFs        |
+| Starter vs Growth            | Worker clusters and Pro compute need **Growth+**; Starter is enough for Flex + 1 managed queue + scheduler on App.                                                                   | Pricing                |
+| Preview environments         | Growth feature (pricing page).                                                                                                                                                       | Pricing                |
+| HTTP basic auth              | **Growth+**.                                                                                                                                                                         | Environments           |
+| Domains                      | Starter 10 / Growth 50 / Business 250 custom domains per org.                                                                                                                        | Pricing                |
+| Regions                      | Multiple AWS regions listed on marketing/pricing (e.g. US East, EU, APAC, Canada, Middle East on compute pricing tables).                                                            | Pricing / Compute      |
 
 **Unknown / not stated in Cloud docs reviewed:**
 
@@ -175,23 +175,23 @@ Exact total MVP bill = base + awake compute + DB + object storage + queue ops �
 
 ## 8. MVP architecture implications (factual mapping only)
 
-| Need | Cloud-compatible approach per docs |
-| --- | --- |
-| Monthly Charge generation | Scheduler **on** + preferably dispatch to **managed queue** |
-| Announcement / payment file uploads | **Private** Object Storage disk; temporary URLs for download |
-| PDF bills | **spatie/laravel-pdf** + **cloudflare** driver (not Dompdf on Cloud) |
-| Background work | Managed queue on Starter (1 queue) is enough to start |
+| Need                                | Cloud-compatible approach per docs                                   |
+| ----------------------------------- | -------------------------------------------------------------------- |
+| Monthly Charge generation           | Scheduler **on** + preferably dispatch to **managed queue**          |
+| Announcement / payment file uploads | **Private** Object Storage disk; temporary URLs for download         |
+| PDF bills                           | **spatie/laravel-pdf** + **cloudflare** driver (not Dompdf on Cloud) |
+| Background work                     | Managed queue on Starter (1 queue) is enough to start                |
 
 ---
 
 ## Sources index
 
-1. https://cloud.laravel.com/docs — Welcome / prerequisites  
-2. https://cloud.laravel.com/docs/scheduled-tasks  
-3. https://cloud.laravel.com/docs/environments  
-4. https://cloud.laravel.com/docs/resources/object-storage  
-5. https://cloud.laravel.com/docs/knowledge-base/generating-pdfs  
-6. https://cloud.laravel.com/docs/queues  
-7. https://cloud.laravel.com/docs/compute  
-8. https://cloud.laravel.com/docs/pricing  
-9. https://laravel.com/cloud/pricing  
+1. https://cloud.laravel.com/docs — Welcome / prerequisites
+2. https://cloud.laravel.com/docs/scheduled-tasks
+3. https://cloud.laravel.com/docs/environments
+4. https://cloud.laravel.com/docs/resources/object-storage
+5. https://cloud.laravel.com/docs/knowledge-base/generating-pdfs
+6. https://cloud.laravel.com/docs/queues
+7. https://cloud.laravel.com/docs/compute
+8. https://cloud.laravel.com/docs/pricing
+9. https://laravel.com/cloud/pricing
