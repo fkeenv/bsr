@@ -92,3 +92,9 @@ _Avoid_: Carried forward, prior balance, starting balance, credit
 The leftover confirmed Payment amount on a Property after Opening Balance and Charges have been
 cleared. It applies automatically to new debt in the same order as Payment allocation.
 _Avoid_: Credit, credit wallet, overpayment, advance
+
+**Outstanding Balance**:
+What a Property still owes after Prepaid: remaining Opening Balance plus remaining amounts on its
+Charges. Pending Payment declarations do not reduce it. It is a derived total on the Property, not
+a running ledger of movements.
+_Avoid_: Arrears, balance due, amount due (when the Property total is meant)
