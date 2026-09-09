@@ -4,6 +4,7 @@ namespace App\Actions\LegalDocuments;
 
 use App\Enums\LegalDocumentType;
 use App\Models\LegalDocumentVersion;
+use App\Support\SanitizeHtml;
 use InvalidArgumentException;
 
 class PublishLegalDocument
@@ -15,13 +16,13 @@ class PublishLegalDocument
     {
         $body = $data['body'] ?? null;
 
-        if (! is_string($body) || trim($body) === '') {
+        if (! is_string($body) || SanitizeHtml::isBlank($body)) {
             throw new InvalidArgumentException($type->label().' body is required.');
         }
 
         return LegalDocumentVersion::query()->create([
             'type' => $type,
-            'body' => trim($body),
+            'body' => SanitizeHtml::legalDocument($body),
             'published_at' => now(),
         ]);
     }

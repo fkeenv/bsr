@@ -61,15 +61,19 @@ test('Super Admin can publish a new Terms of Service version', function () {
 
     LegalDocumentVersion::factory()->create([
         'type' => LegalDocumentType::TermsOfService,
-        'body' => 'Old terms',
+        'body' => '<p>Old terms</p>',
         'published_at' => now()->subDay(),
     ]);
 
     $this->actingAs($user)
         ->put(route('super-admin.terms-of-service.update'), [
-            'body' => 'Updated association terms.',
+            'body' => '<p>Updated <strong>association</strong> terms.</p>',
         ])
-        ->assertRedirect(route('super-admin.terms-of-service.edit'));
+        ->assertRedirect(route('super-admin.terms-of-service.edit'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Terms of Service published.',
+        ]);
 
     $current = LegalDocumentVersion::query()
         ->where('type', LegalDocumentType::TermsOfService)
@@ -77,13 +81,13 @@ test('Super Admin can publish a new Terms of Service version', function () {
         ->first();
 
     expect($current)->not->toBeNull()
-        ->and($current->body)->toBe('Updated association terms.');
+        ->and($current->body)->toBe('<p>Updated <strong>association</strong> terms.</p>');
 
     $this->get(route('terms-of-service.show'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('document.id', $current->id)
-            ->where('document.body', 'Updated association terms.')
+            ->where('document.body', '<p>Updated <strong>association</strong> terms.</p>')
         );
 });
 
@@ -92,14 +96,49 @@ test('Super Admin can publish a new Privacy Policy version', function () {
 
     $this->actingAs($user)
         ->put(route('super-admin.privacy-policy.update'), [
-            'body' => 'Updated privacy notice.',
+            'body' => '<p>Updated privacy notice.</p>',
         ])
-        ->assertRedirect(route('super-admin.privacy-policy.edit'));
+        ->assertRedirect(route('super-admin.privacy-policy.edit'))
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Privacy Policy published.',
+        ]);
 
     $this->assertDatabaseHas('legal_document_versions', [
         'type' => LegalDocumentType::PrivacyPolicy->value,
-        'body' => 'Updated privacy notice.',
+        'body' => '<p>Updated privacy notice.</p>',
     ]);
+});
+
+test('published legal document HTML is sanitized', function () {
+    $user = User::factory()->superAdmin()->create();
+
+    $this->actingAs($user)
+        ->put(route('super-admin.terms-of-service.update'), [
+            'body' => '<p>Safe</p><script>alert(1)</script><p onclick="x()">Click</p>',
+        ])
+        ->assertRedirect(route('super-admin.terms-of-service.edit'));
+
+    $current = LegalDocumentVersion::query()
+        ->where('type', LegalDocumentType::TermsOfService)
+        ->latest('published_at')
+        ->firstOrFail();
+
+    expect($current->body)->toBe('<p>Safe</p>alert(1)<p>Click</p>')
+        ->and($current->body)->not->toContain('<script>')
+        ->and($current->body)->not->toContain('onclick');
+});
+
+test('empty TipTap body is rejected', function () {
+    $user = User::factory()->superAdmin()->create();
+
+    $this->actingAs($user)
+        ->from(route('super-admin.terms-of-service.edit'))
+        ->put(route('super-admin.terms-of-service.update'), [
+            'body' => '<p></p>',
+        ])
+        ->assertRedirect(route('super-admin.terms-of-service.edit'))
+        ->assertSessionHasErrors('body');
 });
 
 test('Super Admin can open the Terms of Service editor with the current body', function () {

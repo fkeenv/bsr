@@ -3,7 +3,9 @@ export type ResolvedAppearance = 'light' | 'dark';
 
 export type AppVariant = 'header' | 'sidebar';
 
+export type FlashToastType = 'success' | 'info' | 'warning' | 'error';
+
 export type FlashToast = {
-    type: 'success' | 'info' | 'warning' | 'error';
+    type: FlashToastType | (string & {});
     message: string;
 };

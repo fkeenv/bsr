@@ -170,3 +170,60 @@
         @apply bg-background text-foreground;
     }
 }
+
+@layer components {
+    .prose-legal {
+        :where(p) {
+            @apply mb-4 last:mb-0;
+        }
+
+        :where(h2) {
+            @apply mt-8 mb-3 text-xl font-semibold tracking-tight first:mt-0;
+        }
+
+        :where(h3) {
+            @apply mt-6 mb-2 text-lg font-semibold tracking-tight first:mt-0;
+        }
+
+        :where(ul) {
+            @apply mb-4 list-disc space-y-1 pl-5 last:mb-0;
+        }
+
+        :where(ol) {
+            @apply mb-4 list-decimal space-y-1 pl-5 last:mb-0;
+        }
+
+        :where(blockquote) {
+            @apply text-muted-foreground mb-4 border-l-2 pl-4 italic last:mb-0;
+        }
+
+        :where(pre) {
+            @apply bg-muted mb-4 overflow-x-auto rounded-md p-3 font-mono text-xs last:mb-0;
+        }
+
+        :where(code) {
+            @apply bg-muted rounded px-1 py-0.5 font-mono text-xs;
+        }
+
+        :where(pre code) {
+            @apply bg-transparent p-0;
+        }
+
+        :where(hr) {
+            @apply border-border my-6;
+        }
+
+        :where(strong) {
+            @apply font-semibold;
+        }
+    }
+
+    .ProseMirror {
+        min-height: 12rem;
+    }
+
+    .ProseMirror p.is-editor-empty:first-child::before {
+        @apply text-muted-foreground pointer-events-none float-left h-0;
+        content: attr(data-placeholder);
+    }
+}

@@ -7,6 +7,7 @@ use App\Data\LegalDocumentVersionData;
 use App\Enums\LegalDocumentType;
 use App\Http\Requests\SuperAdmin\PublishLegalDocumentRequest;
 use App\Models\LegalDocumentVersion;
+use App\Support\FlashToast;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -72,8 +73,8 @@ class LegalDocumentController
     ): RedirectResponse {
         $publishLegalDocument->handle($type, $request->validated());
 
-        return redirect()
-            ->route($redirectRoute)
-            ->with('success', $type->label().' published.');
+        FlashToast::success($type->label().' published.');
+
+        return redirect()->route($redirectRoute);
     }
 }

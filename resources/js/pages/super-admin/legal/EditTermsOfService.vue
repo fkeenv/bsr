@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import LegalDocumentController from '@/actions/App/Http/Controllers/SuperAdmin/LegalDocumentController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
@@ -12,6 +14,8 @@ import type { LegalDocumentVersion } from '@/types/legal-document';
 const props = defineProps<{
     document: LegalDocumentVersion | null;
 }>();
+
+const body = ref(props.document?.body ?? '');
 
 defineOptions({
     layout: {
@@ -45,13 +49,8 @@ defineOptions({
         >
             <div class="grid gap-2">
                 <Label for="body">Body</Label>
-                <textarea
-                    id="body"
-                    name="body"
-                    rows="16"
-                    required
-                    class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                    >{{ props.document?.body ?? '' }}</textarea>
+                <input type="hidden" name="body" :value="body" />
+                <RichTextEditor id="body" v-model="body" />
                 <InputError :message="errors.body" />
             </div>
 

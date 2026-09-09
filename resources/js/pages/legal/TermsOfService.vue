@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import RichTextContent from '@/components/RichTextContent.vue';
 import { home, login } from '@/routes';
 import { show as privacyPolicy } from '@/routes/privacy-policy';
 import type { LegalDocumentVersion } from '@/types/legal-document';
@@ -31,9 +32,7 @@ defineProps<{
             <h1 class="mb-6 text-2xl font-semibold tracking-tight">
                 Terms of Service
             </h1>
-            <div class="text-sm leading-relaxed whitespace-pre-wrap">
-                {{ document.body }}
-            </div>
+            <RichTextContent :html="document.body" />
         </main>
     </div>
 </template>
