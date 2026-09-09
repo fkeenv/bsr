@@ -33,10 +33,11 @@ class ChargeData extends Data
             month: $charge->month,
             period_label: sprintf('%04d-%02d', $charge->year, $charge->month),
             is_frozen: $charge->isFrozen(),
-            lines: $charge->lines
-                ->map(fn ($line): ChargeLineData => ChargeLineData::fromModel($line))
-                ->values()
-                ->all(),
+            lines: array_values(
+                $charge->lines
+                    ->map(fn ($line): ChargeLineData => ChargeLineData::fromModel($line))
+                    ->all(),
+            ),
         );
     }
 }

@@ -27,7 +27,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read bool $is_super_admin
  */
 #[Fillable(['name', 'email', 'mobile_number', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -35,13 +34,6 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
-
-    /**
-     * @var list<string>
-     */
-    protected $appends = [
-        'is_super_admin',
-    ];
 
     /**
      * Get the attributes that should be cast.
@@ -55,11 +47,6 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
-    }
-
-    public function getIsSuperAdminAttribute(): bool
-    {
-        return $this->isSuperAdmin();
     }
 
     public function isSuperAdmin(): bool

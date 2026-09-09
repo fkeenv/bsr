@@ -92,7 +92,7 @@ class SuspendController
      */
     private function propertyOptions(): array
     {
-        return Property::query()
+        return array_values(Property::query()
             ->orderBy('block')
             ->orderBy('lot')
             ->get()
@@ -100,8 +100,7 @@ class SuspendController
                 'id' => $property->id,
                 'label' => "Block {$property->block} · Lot {$property->lot}",
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -109,12 +108,11 @@ class SuspendController
      */
     private function feeTypeOptions(): array
     {
-        return FeeType::query()
+        return array_values(FeeType::query()
             ->active()
             ->orderBy('name')
             ->get()
             ->map(fn (FeeType $feeType): FeeTypeData => FeeTypeData::fromModel($feeType))
-            ->values()
-            ->all();
+            ->all());
     }
 }
