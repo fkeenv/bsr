@@ -2,9 +2,14 @@
 
 use App\Http\Controllers\Administrator\DashboardController as AdministratorDashboardController;
 use App\Http\Controllers\MembershipApplicationController;
+use App\Http\Controllers\Officer\ChargeController;
+use App\Http\Controllers\Officer\ChargeGenerationController;
 use App\Http\Controllers\Officer\DashboardController;
+use App\Http\Controllers\Officer\FeeTypeController;
+use App\Http\Controllers\Officer\LevySettingsController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
+use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Middleware\EnsureMembershipOnboardingIsComplete;
 use App\Http\Middleware\EnsureRoleSurfaceAccess;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +41,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('properties', PropertyController::class)
             ->except(['show']);
+
+        Route::resource('fee-types', FeeTypeController::class)
+            ->except(['show', 'destroy']);
+
+        Route::resource('suspends', SuspendController::class)
+            ->except(['show', 'destroy']);
+
+        Route::get('charges/generate', [ChargeGenerationController::class, 'create'])
+            ->name('charges.generate.create');
+        Route::post('charges/generate', [ChargeGenerationController::class, 'store'])
+            ->name('charges.generate');
+
+        Route::resource('charges', ChargeController::class)
+            ->only(['index', 'edit', 'update']);
+
+        Route::get('levy-settings', [LevySettingsController::class, 'edit'])
+            ->name('levy-settings.edit');
+        Route::put('levy-settings', [LevySettingsController::class, 'update'])
+            ->name('levy-settings.update');
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':administrator'])->prefix('administrator')->name('administrator.')->group(function () {

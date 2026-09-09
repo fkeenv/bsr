@@ -56,7 +56,7 @@ test('frozen Opening Balance cannot be changed', function () {
 })->throws(InvalidArgumentException::class);
 
 test('HTTP update does not change a frozen Opening Balance', function () {
-    $user = User::factory()->superAdmin()->create();
+    $user = User::factory()->officer()->create();
     $property = Property::factory()
         ->withOpeningBalance('200.00')
         ->frozenOpeningBalance()
@@ -76,8 +76,8 @@ test('HTTP update does not change a frozen Opening Balance', function () {
         ->and($property->opening_balance)->toBe('200.00');
 });
 
-test('Super Admin can set Opening Balance when creating a Property via HTTP', function () {
-    $user = User::factory()->superAdmin()->create();
+test('Officer can set Opening Balance when creating a Property via HTTP', function () {
+    $user = User::factory()->officer()->create();
 
     $this->actingAs($user)
         ->post(route('officer.properties.store'), [

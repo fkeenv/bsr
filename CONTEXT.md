@@ -56,21 +56,30 @@ account without yet holding a Membership. It holds that person's email and mobil
 _Avoid_: Member, user (when the Membership is what's meant)
 
 **Super Admin**:
-A seeded User Account with every product permission. It does not require a Membership. Super Admin
-accounts are created by seed or ops, not in the application.
+A seeded User Account with the highest platform role (level 0). It does not require a
+Membership. Super Admin accounts are created by seed or ops, not in the application.
 _Avoid_: Superuser, Administrator (when the seeded account is meant)
 
 **Administrator**:
-A person with a current Administrator assignment. They appoint Officers and Administrators. This
-assignment does not include Officer powers. It requires an approved owner Membership.
+A person with the Administrator platform role (level 1). They may appoint Officers and
+inherit Officer powers. Appointment requires an approved owner Membership.
 _Avoid_: Super Admin, Superuser, admin (when Officer is meant)
 
 **Officer**:
-A person with a current Officer assignment, acting on the association's behalf — posting
-Announcements, levying dues, approving Membership Applications, and recording Payments. An
-assignment requires an approved owner Membership. Treasurer, President, and Secretary are optional
-titles on the assignment, not separate roles.
+A person with the Officer platform role (level 2), acting on the association's behalf —
+posting Announcements, levying dues, approving Membership Applications, and recording
+Payments. Appointment requires an approved owner Membership.
 _Avoid_: Admin, staff
+
+**Member** (platform role):
+The Spatie role (level 3) synced from holding at least one live Membership. It is not
+hand-assigned and is not the same thing as a Membership.
+_Avoid_: Member record, membership role (when Membership owner/resident is meant)
+
+**User** (platform role):
+The Spatie role (level 4) given to every User Account on registration. It is the base
+of the role stack.
+_Avoid_: Member (when only a login is meant)
 
 **Announcement**:
 A notice an Officer authors on behalf of the association. It is a draft until published; published
