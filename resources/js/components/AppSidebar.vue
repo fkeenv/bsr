@@ -40,7 +40,10 @@ const homeHref = computed(() =>
 );
 
 const platformNavItems = computed((): NavItem[] => {
-    if (capabilities.value?.isMembershipHolder || capabilities.value?.isSuperAdmin) {
+    if (
+        capabilities.value?.isMembershipHolder ||
+        capabilities.value?.isSuperAdmin
+    ) {
         return [
             {
                 title: 'Dashboard',

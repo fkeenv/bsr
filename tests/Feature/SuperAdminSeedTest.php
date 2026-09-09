@@ -4,31 +4,12 @@ use App\Models\User;
 use Database\Seeders\SuperAdminSeeder;
 use Illuminate\Support\Facades\Hash;
 
-/**
- * @param  array<string, string|null>  $variables
- */
-function setSuperAdminEnv(array $variables): void
-{
-    foreach ($variables as $key => $value) {
-        if ($value === null) {
-            putenv($key);
-            unset($_ENV[$key], $_SERVER[$key]);
-
-            continue;
-        }
-
-        putenv("{$key}={$value}");
-        $_ENV[$key] = $value;
-        $_SERVER[$key] = $value;
-    }
-}
-
 test('seeding creates an authenticatable Super Admin', function () {
-    setSuperAdminEnv([
-        'SUPER_ADMIN_NAME' => 'Super Admin',
-        'SUPER_ADMIN_EMAIL' => 'superadmin@example.com',
-        'SUPER_ADMIN_PASSWORD' => 'secret-password',
-        'SUPER_ADMIN_MOBILE_NUMBER' => '+639171234567',
+    config([
+        'bsr.super_admin.name' => 'Super Admin',
+        'bsr.super_admin.email' => 'superadmin@example.com',
+        'bsr.super_admin.password' => 'secret-password',
+        'bsr.super_admin.mobile_number' => '+639171234567',
     ]);
 
     $this->seed(SuperAdminSeeder::class);
@@ -48,19 +29,19 @@ test('seeding creates an authenticatable Super Admin', function () {
 });
 
 test('seeding upserts the Super Admin by email', function () {
-    setSuperAdminEnv([
-        'SUPER_ADMIN_NAME' => 'Super Admin',
-        'SUPER_ADMIN_EMAIL' => 'superadmin@example.com',
-        'SUPER_ADMIN_PASSWORD' => 'secret-password',
-        'SUPER_ADMIN_MOBILE_NUMBER' => '+639171234567',
+    config([
+        'bsr.super_admin.name' => 'Super Admin',
+        'bsr.super_admin.email' => 'superadmin@example.com',
+        'bsr.super_admin.password' => 'secret-password',
+        'bsr.super_admin.mobile_number' => '+639171234567',
     ]);
 
     $this->seed(SuperAdminSeeder::class);
 
-    setSuperAdminEnv([
-        'SUPER_ADMIN_NAME' => 'Updated Super Admin',
-        'SUPER_ADMIN_PASSWORD' => 'new-secret-password',
-        'SUPER_ADMIN_MOBILE_NUMBER' => '+639179999999',
+    config([
+        'bsr.super_admin.name' => 'Updated Super Admin',
+        'bsr.super_admin.password' => 'new-secret-password',
+        'bsr.super_admin.mobile_number' => '+639179999999',
     ]);
 
     $this->seed(SuperAdminSeeder::class);

@@ -10,7 +10,6 @@ class EnsureRoleSurfaceAccess
 {
     /**
      * @param  Closure(Request): Response  $next
-     * @param  'officer'|'administrator'  $surface
      */
     public function handle(Request $request, Closure $next, string $surface): Response
     {

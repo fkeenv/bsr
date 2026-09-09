@@ -13,3 +13,12 @@ Run typechecking regularly, single test files regularly, and the full test suite
 Once done, use /code-review to review the work.
 
 Commit your work to the current branch.
+
+## Before any push
+
+Do **not** push until local checks that mirror CI are green:
+
+1. Prefer the project's full CI script when it exists (this repo: `composer ci:check`).
+2. Otherwise: format/lint frontend, format PHP (`vendor/bin/pint --dirty`), run the **full** test suite.
+3. Fix failures and re-run until green.
+4. Only then push.

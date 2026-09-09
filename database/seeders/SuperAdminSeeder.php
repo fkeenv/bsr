@@ -12,7 +12,7 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $email = env('SUPER_ADMIN_EMAIL', 'keenvergara@gmail.com');
+        $email = config('bsr.super_admin.email');
 
         if (! is_string($email) || $email === '') {
             return;
@@ -21,9 +21,9 @@ class SuperAdminSeeder extends Seeder
         $user = User::query()->firstOrNew(['email' => $email]);
 
         $user->forceFill([
-            'name' => env('SUPER_ADMIN_NAME', 'Keen Vergara'),
-            'password' => env('SUPER_ADMIN_PASSWORD', 'password'),
-            'mobile_number' => env('SUPER_ADMIN_MOBILE_NUMBER', null),
+            'name' => config('bsr.super_admin.name'),
+            'password' => config('bsr.super_admin.password'),
+            'mobile_number' => config('bsr.super_admin.mobile_number'),
             'is_super_admin' => true,
             'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();
