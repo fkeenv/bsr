@@ -21,8 +21,34 @@ is not a platform role.
 _Avoid_: Member, member record, subscription
 
 **Membership Application**:
-A person's request to be recognised as holding a Membership of one Property. It carries an
-optional note; the role is not on the application.
+A person's request to be recognised as holding a Membership of one Property. It selects that
+Property from the roster, may list Household Members, Emergency Contacts, and Vehicles, may carry
+an optional note, and must accept the current Terms of Service and Privacy Policy. The role is not
+on the application — an Officer records owner or resident on approval.
+_Avoid_: Registration form, onboarding form (when the application record is meant)
+
+**Household Member**:
+A person named on a Membership Application only. Listing them does not create a User Account or a
+Membership.
+_Avoid_: Family member, dependent, occupant (when the application listing is meant)
+
+**Emergency Contact**:
+A name, contact number, and relationship listed on a Membership Application for use if the
+association must reach someone other than the applicant.
+
+**Vehicle**:
+A year, make, model, plate, and sticker number listed on a Membership Application for vehicles kept
+at the Property.
+_Avoid_: Car, sticker (when the vehicle record is meant)
+
+**Terms of Service**:
+The association's published terms a person must accept to submit a Membership Application. Super
+Admin maintains the text; acceptance records which version was accepted.
+_Avoid_: Bylaws checkbox, user agreement (when this document is meant)
+
+**Privacy Policy**:
+The association's published privacy notice a person must accept to submit a Membership Application.
+Super Admin maintains the text; acceptance records which version was accepted.
 
 **User Account**:
 A login belonging to one person. It exists independently of any Membership — a person can hold an

@@ -1,5 +1,7 @@
 # Membership is recognised by Officer judgment, not proof
 
+**Status**: amended by [ADR-0014](0014-membership-application-carries-household-details.md) (field scope only)
+
 There is no owner register, so a **Membership Application** does not collect title, lease, or other
 proof. The Officer recognises the person from knowledge of the village; the applicant may leave an
 optional note. The Officer records owner or resident on approval — the application has no role
