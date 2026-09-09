@@ -3,7 +3,7 @@
  * PROTOTYPE: three variants of the Officer unpaid roster.
  * Switch via ?variant=A|B|C and ?scenario=mixed|clear|crowded
  *
- * A = dense scan table · B = severity groups · C = split roster workspace
+ * A = dense scan table · B = severity groups · C = split roster + filters
  */
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
