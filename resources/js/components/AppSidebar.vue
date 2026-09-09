@@ -28,6 +28,7 @@ import { dashboard } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { create as membershipApplicationCreate } from '@/routes/membership-application';
 import { dashboard as officerDashboard } from '@/routes/officer';
+import { index as propertiesIndex } from '@/routes/officer/properties';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -86,6 +87,11 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Officer',
             href: officerDashboard(),
             icon: Shield,
+        },
+        {
+            title: 'Properties',
+            href: propertiesIndex(),
+            icon: ClipboardList,
         },
     ];
 });
