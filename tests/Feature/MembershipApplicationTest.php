@@ -168,11 +168,19 @@ test('Officer Membership Application index searches by applicant and Property', 
 
     MembershipApplication::factory()->pending()->withCurrentLegalDocuments()->create([
         'user_id' => $match->id,
-        'property_id' => Property::factory()->create(['block' => '1', 'lot' => '1'])->id,
+        'property_id' => Property::factory()->create([
+            'block' => '1',
+            'lot' => '1',
+            'street_address' => null,
+        ])->id,
     ]);
     MembershipApplication::factory()->pending()->withCurrentLegalDocuments()->create([
         'user_id' => $other->id,
-        'property_id' => Property::factory()->create(['block' => '9', 'lot' => '9'])->id,
+        'property_id' => Property::factory()->create([
+            'block' => '9',
+            'lot' => '9',
+            'street_address' => null,
+        ])->id,
     ]);
 
     $this->actingAs($officer)

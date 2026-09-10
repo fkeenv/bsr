@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\MembershipRole;
 use App\Enums\PlatformRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -104,6 +105,14 @@ class User extends Authenticatable
     public function hasLiveMembership(): bool
     {
         return $this->memberships()->live()->exists();
+    }
+
+    public function hasLiveOwnerMembership(): bool
+    {
+        return $this->memberships()
+            ->live()
+            ->where('role', MembershipRole::Owner)
+            ->exists();
     }
 
     public function isMembershipHolder(): bool

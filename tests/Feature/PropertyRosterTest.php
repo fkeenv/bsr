@@ -89,11 +89,13 @@ test('roster searches across owner name Block and Lot', function () {
     Property::factory()->create([
         'block' => '1',
         'lot' => '1',
+        'street_address' => null,
         'recorded_owner_name' => 'Ana Reyes',
     ]);
     Property::factory()->create([
         'block' => '9',
         'lot' => '9',
+        'street_address' => null,
         'recorded_owner_name' => 'Ben Cruz',
     ]);
 

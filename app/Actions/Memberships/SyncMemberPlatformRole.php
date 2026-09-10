@@ -2,9 +2,7 @@
 
 namespace App\Actions\Memberships;
 
-use App\Enums\MembershipRole;
 use App\Enums\PlatformRole;
-use App\Models\Membership;
 use App\Models\User;
 
 class SyncMemberPlatformRole
@@ -15,7 +13,7 @@ class SyncMemberPlatformRole
             return;
         }
 
-        $hasLiveMembership = $user->memberships()->live()->exists();
+        $hasLiveMembership = $user->hasLiveMembership();
 
         if ($hasLiveMembership) {
             if (! $user->hasRole(PlatformRole::Member)) {
@@ -30,13 +28,7 @@ class SyncMemberPlatformRole
 
     private function syncLeadershipRoles(User $user): void
     {
-        $hasLiveOwnerMembership = Membership::query()
-            ->live()
-            ->where('user_id', $user->id)
-            ->where('role', MembershipRole::Owner)
-            ->exists();
-
-        if ($hasLiveOwnerMembership) {
+        if ($user->hasLiveOwnerMembership()) {
             return;
         }
 
