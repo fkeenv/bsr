@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Administrator\DashboardController as AdministratorDashboardController;
+use App\Http\Controllers\Administrator\OfficerController as AdministratorOfficerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\MembershipApplicationController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Officer\MembershipController as OfficerMembershipContro
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
+use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
 use App\Http\Middleware\EnsureMembershipOnboardingIsComplete;
@@ -97,10 +99,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':administrator'])->prefix('administrator')->name('administrator.')->group(function () {
         Route::get('/', AdministratorDashboardController::class)->name('dashboard');
+
+        Route::get('officers', [AdministratorOfficerController::class, 'index'])
+            ->name('officers.index');
+        Route::post('officers', [AdministratorOfficerController::class, 'store'])
+            ->name('officers.store');
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':super-admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
         Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
+
+        Route::get('administrators', [SuperAdminAdministratorController::class, 'index'])
+            ->name('administrators.index');
+        Route::post('administrators', [SuperAdminAdministratorController::class, 'store'])
+            ->name('administrators.store');
 
         Route::get('terms-of-service', [SuperAdminLegalDocumentController::class, 'editTermsOfService'])
             ->name('terms-of-service.edit');

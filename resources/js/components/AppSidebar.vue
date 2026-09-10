@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
+import { index as officersIndex } from '@/routes/administrator/officers';
 import { create as membershipApplicationCreate } from '@/routes/membership-application';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as chargesIndex } from '@/routes/officer/charges';
@@ -41,6 +42,7 @@ import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
+import { index as administratorsIndex } from '@/routes/super-admin/administrators';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
 import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
 import type { NavItem } from '@/types';
@@ -89,6 +91,11 @@ const superAdminNavItems = computed((): NavItem[] => {
             title: 'Super Admin',
             href: superAdminDashboard(),
             icon: KeyRound,
+        },
+        {
+            title: 'Administrators',
+            href: administratorsIndex(),
+            icon: ShieldCheck,
         },
         {
             title: 'Terms of Service',
@@ -167,6 +174,11 @@ const administratorNavItems = computed((): NavItem[] => {
             title: 'Administrator',
             href: administratorDashboard(),
             icon: ShieldCheck,
+        },
+        {
+            title: 'Officers',
+            href: officersIndex(),
+            icon: Users,
         },
     ];
 });
