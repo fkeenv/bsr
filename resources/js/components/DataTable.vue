@@ -49,9 +49,12 @@ type Props = {
     searchables?: string[];
     filters?: string[];
     filterOptions?: Record<string, DataTableFilterOption[]>;
+    /** Keys that use from/to date pickers (`{key}_from`, `{key}_to` query params). */
+    dateRanges?: string[];
     values?: DataTableValues;
     searchableLabels?: Record<string, string>;
     filterLabels?: Record<string, string>;
+    dateRangeLabels?: Record<string, string>;
     emptyText?: string;
 };
 
@@ -59,9 +62,11 @@ const props = withDefaults(defineProps<Props>(), {
     searchables: () => [],
     filters: () => [],
     filterOptions: () => ({}),
+    dateRanges: () => [],
     values: () => ({}),
     searchableLabels: () => ({}),
     filterLabels: () => ({}),
+    dateRangeLabels: () => ({}),
     emptyText: 'No results.',
 });
 
@@ -116,14 +121,34 @@ const searchPlaceholder = computed(() => {
 const filterLabel = (key: string): string =>
     props.filterLabels[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 
-const hasToolbar = computed(() => showSearch.value || props.filters.length > 0);
+const dateRangeLabel = (key: string): string =>
+    props.dateRangeLabels[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
+
+const dateFromKey = (key: string): string => `${key}_from`;
+const dateToKey = (key: string): string => `${key}_to`;
+
+const hasToolbar = computed(
+    () =>
+        showSearch.value ||
+        props.filters.length > 0 ||
+        props.dateRanges.length > 0,
+);
 
 const hasActiveFilters = computed(() => {
     if ((props.values.search ?? '') !== '') {
         return true;
     }
 
-    return props.filters.some((key) => (props.values[key] ?? '') !== '');
+    if (props.filters.some((key) => (props.values[key] ?? '') !== '')) {
+        return true;
+    }
+
+    return props.dateRanges.some((key) => {
+        return (
+            (props.values[dateFromKey(key)] ?? '') !== '' ||
+            (props.values[dateToKey(key)] ?? '') !== ''
+        );
+    });
 });
 
 function currentQuery(): Record<string, string> {
@@ -138,6 +163,19 @@ function currentQuery(): Record<string, string> {
 
         if (value) {
             query[key] = value;
+        }
+    }
+
+    for (const key of props.dateRanges) {
+        const from = props.values[dateFromKey(key)];
+        const to = props.values[dateToKey(key)];
+
+        if (from) {
+            query[dateFromKey(key)] = from;
+        }
+
+        if (to) {
+            query[dateToKey(key)] = to;
         }
     }
 
@@ -185,6 +223,24 @@ function onFilterChange(key: string, value: string): void {
     visit(query);
 }
 
+function onDateRangeChange(
+    rangeKey: string,
+    bound: 'from' | 'to',
+    value: string,
+): void {
+    const query = currentQuery();
+    const param =
+        bound === 'from' ? dateFromKey(rangeKey) : dateToKey(rangeKey);
+
+    if (value.trim() === '') {
+        delete query[param];
+    } else {
+        query[param] = value;
+    }
+
+    visit(query);
+}
+
 function clearFilters(): void {
     search.value = '';
     visit({});
@@ -207,6 +263,47 @@ function clearFilters(): void {
             />
 
             <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <div
+                    v-for="rangeKey in dateRanges"
+                    :key="rangeKey"
+                    class="flex flex-wrap items-center gap-2"
+                >
+                    <span
+                        class="text-muted-foreground text-sm whitespace-nowrap"
+                    >
+                        {{ dateRangeLabel(rangeKey) }}
+                    </span>
+                    <Input
+                        type="date"
+                        :model-value="values[dateFromKey(rangeKey)] ?? ''"
+                        :aria-label="`${dateRangeLabel(rangeKey)} from`"
+                        class="w-[10.5rem]"
+                        @update:model-value="
+                            (value) =>
+                                onDateRangeChange(
+                                    rangeKey,
+                                    'from',
+                                    String(value ?? ''),
+                                )
+                        "
+                    />
+                    <span class="text-muted-foreground text-sm">to</span>
+                    <Input
+                        type="date"
+                        :model-value="values[dateToKey(rangeKey)] ?? ''"
+                        :aria-label="`${dateRangeLabel(rangeKey)} to`"
+                        class="w-[10.5rem]"
+                        @update:model-value="
+                            (value) =>
+                                onDateRangeChange(
+                                    rangeKey,
+                                    'to',
+                                    String(value ?? ''),
+                                )
+                        "
+                    />
+                </div>
+
                 <Select
                     v-for="filterKey in filters"
                     :key="filterKey"

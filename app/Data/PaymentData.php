@@ -20,12 +20,15 @@ class PaymentData extends Data
         public ?string $void_reason,
         public ?string $confirmed_at,
         public ?string $created_at,
+        public ?string $recorded_on,
         public bool $has_screenshot,
     ) {}
 
     public static function fromModel(Payment $payment): self
     {
         $payment->loadMissing(['property', 'declaredBy']);
+
+        $createdAt = $payment->created_at;
 
         return new self(
             id: $payment->id,
@@ -39,7 +42,8 @@ class PaymentData extends Data
             rejection_reason: $payment->rejection_reason,
             void_reason: $payment->void_reason,
             confirmed_at: $payment->confirmed_at?->toIso8601String(),
-            created_at: $payment->created_at?->toIso8601String(),
+            created_at: $createdAt?->toIso8601String(),
+            recorded_on: $createdAt?->timezone('Asia/Manila')->format('Y-m-d'),
             has_screenshot: filled($payment->screenshot_path),
         );
     }

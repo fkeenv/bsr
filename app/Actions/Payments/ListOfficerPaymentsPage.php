@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class ListOfficerPaymentsPage
 {
@@ -16,18 +17,42 @@ class ListOfficerPaymentsPage
      *     table: array{
      *         searchables: list<string>,
      *         filters: list<string>,
+     *         dateRanges: list<string>,
      *         filterOptions: object,
-     *         values: array{search: string|null, status: string|null}
+     *         values: array{
+     *             search: string|null,
+     *             status: string|null,
+     *             recorded_from: string|null,
+     *             recorded_to: string|null
+     *         }
      *     }
      * }
      */
-    public function handle(?string $search = null, ?string $status = null): array
-    {
+    public function handle(
+        ?string $search = null,
+        ?string $status = null,
+        ?string $recordedFrom = null,
+        ?string $recordedTo = null,
+    ): array {
         $paymentsQuery = Payment::query()
             ->with(['property', 'declaredBy'])
             ->when(
                 filled($status),
                 fn ($query) => $query->where('status', $status),
+            )
+            ->when(
+                filled($recordedFrom),
+                function ($query) use ($recordedFrom): void {
+                    $start = Carbon::parse($recordedFrom, 'Asia/Manila')->startOfDay()->utc();
+                    $query->where('created_at', '>=', $start);
+                },
+            )
+            ->when(
+                filled($recordedTo),
+                function ($query) use ($recordedTo): void {
+                    $end = Carbon::parse($recordedTo, 'Asia/Manila')->endOfDay()->utc();
+                    $query->where('created_at', '<=', $end);
+                },
             )
             ->when(
                 filled($search),
@@ -73,12 +98,15 @@ class ListOfficerPaymentsPage
             'table' => [
                 'searchables' => ['reference', 'property', 'declarer'],
                 'filters' => ['status'],
+                'dateRanges' => ['recorded'],
                 'filterOptions' => (object) [
                     'status' => $statusOptions,
                 ],
                 'values' => [
                     'search' => $search,
                     'status' => $status,
+                    'recorded_from' => $recordedFrom,
+                    'recorded_to' => $recordedTo,
                 ],
             ],
         ];

@@ -20,6 +20,7 @@ type Props = {
     table: {
         searchables: string[];
         filters: string[];
+        dateRanges: string[];
         filterOptions: Record<string, DataTableFilterOption[]>;
         values: DataTableValues;
     };
@@ -66,12 +67,16 @@ defineOptions({
             :action="paymentsIndex.url()"
             :searchables="table.searchables"
             :filters="table.filters"
+            :date-ranges="table.dateRanges"
             :filter-options="table.filterOptions"
             :values="table.values"
             :searchable-labels="{
                 reference: 'reference',
                 property: 'Property',
                 declarer: 'declarer',
+            }"
+            :date-range-labels="{
+                recorded: 'Recorded',
             }"
             empty-text="No Payments yet."
         />

@@ -27,6 +27,8 @@ class PaymentController
         $payload = $listOfficerPaymentsPage->handle(
             search: $request->string('search')->toString() ?: null,
             status: $request->string('status')->toString() ?: null,
+            recordedFrom: $request->string('recorded_from')->toString() ?: null,
+            recordedTo: $request->string('recorded_to')->toString() ?: null,
         );
 
         return Inertia::render('officer/payments/Index', $payload);

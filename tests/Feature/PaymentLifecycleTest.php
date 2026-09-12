@@ -13,6 +13,7 @@ use App\Models\Property;
 use App\Models\User;
 use App\Support\PropertyBalances;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 test('Member with a live Membership can declare a Payment on that Property', function () {
@@ -179,6 +180,39 @@ test('Super Admin can confirm a pending Payment', function () {
 
     expect($payment->fresh()->status)->toBe(PaymentStatus::Confirmed)
         ->and(app(PropertyBalances::class)->forProperty($property->fresh())['outstanding_balance'])->toBe('0.00');
+});
+
+test('Officer Payments index shows recorded date and filters by recorded date range', function () {
+    $officer = User::factory()->officer()->create();
+    $property = Property::factory()->create();
+
+    $inRange = Payment::factory()->pending()->create([
+        'property_id' => $property->id,
+        'reference' => 'IN-RANGE',
+        'created_at' => Carbon::parse('2026-09-10 08:00:00', 'Asia/Manila')->utc(),
+    ]);
+    $outOfRange = Payment::factory()->pending()->create([
+        'property_id' => $property->id,
+        'reference' => 'OUT-OF-RANGE',
+        'created_at' => Carbon::parse('2026-09-01 08:00:00', 'Asia/Manila')->utc(),
+    ]);
+
+    $this->actingAs($officer)
+        ->get(route('officer.payments.index', [
+            'recorded_from' => '2026-09-09',
+            'recorded_to' => '2026-09-11',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/payments/Index')
+            ->has('payments', 1)
+            ->where('payments.0.id', $inRange->id)
+            ->where('payments.0.recorded_on', '2026-09-10')
+            ->where('table.dateRanges', ['recorded'])
+            ->where('table.values.recorded_from', '2026-09-09')
+            ->where('table.values.recorded_to', '2026-09-11'));
+
+    expect(Payment::query()->whereKey($outOfRange->id)->exists())->toBeTrue();
 });
 
 test('confirmed Payment leftover becomes Prepaid', function () {

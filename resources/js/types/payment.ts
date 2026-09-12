@@ -11,5 +11,6 @@ export type Payment = {
     void_reason: string | null;
     confirmed_at: string | null;
     created_at: string | null;
+    recorded_on: string | null;
     has_screenshot: boolean;
 };

@@ -34,7 +34,32 @@ function methodLabel(method: string): string {
     return method.charAt(0).toUpperCase() + method.slice(1);
 }
 
+function formatRecordedOn(value: string | null): string {
+    if (!value) {
+        return '—';
+    }
+
+    const [year, month, day] = value.split('-').map(Number);
+
+    if (!year || !month || !day) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    }).format(new Date(Date.UTC(year, month - 1, day, 12)));
+}
+
 export const paymentColumns = columnHelper.columns([
+    columnHelper.accessor('recorded_on', {
+        header: ({ column }) =>
+            h(DataTableColumnHeader, { column, title: 'Recorded' }),
+        cell: ({ getValue }) => formatRecordedOn(getValue()),
+        sortFn: 'alphanumeric',
+    }),
     columnHelper.accessor('property_label', {
         header: ({ column }) =>
             h(DataTableColumnHeader, { column, title: 'Property' }),
