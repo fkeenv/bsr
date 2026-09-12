@@ -18,6 +18,7 @@ use InvalidArgumentException;
  * @property string|null $street_address
  * @property string|null $recorded_owner_name
  * @property string $opening_balance
+ * @property string $prepaid_balance
  * @property Carbon|null $opening_balance_frozen_at
  * @property Carbon|null $first_charged_at
  * @property bool $is_active
@@ -42,6 +43,7 @@ class Property extends Model
      */
     protected $attributes = [
         'opening_balance' => '0.00',
+        'prepaid_balance' => '0.00',
         'is_active' => true,
     ];
 
@@ -52,6 +54,7 @@ class Property extends Model
     {
         return [
             'opening_balance' => 'decimal:2',
+            'prepaid_balance' => 'decimal:2',
             'opening_balance_frozen_at' => 'datetime',
             'first_charged_at' => 'datetime',
             'is_active' => 'boolean',
@@ -72,6 +75,18 @@ class Property extends Model
 
         $this->forceFill([
             'opening_balance_frozen_at' => now(),
+        ])->save();
+    }
+
+    /** Called when the last confirmed Payment on this Property is voided (#payment). */
+    public function unfreezeOpeningBalance(): void
+    {
+        if (! $this->openingBalanceIsFrozen()) {
+            return;
+        }
+
+        $this->forceFill([
+            'opening_balance_frozen_at' => null,
         ])->save();
     }
 

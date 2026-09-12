@@ -2,6 +2,7 @@
 
 namespace App\Actions\Charges;
 
+use App\Actions\Payments\ApplyPrepaidToProperty;
 use App\Models\Charge;
 use App\Models\FeeType;
 use App\Models\Property;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class GenerateChargesForPeriod
 {
+    public function __construct(private ApplyPrepaidToProperty $applyPrepaidToProperty) {}
+
     public function handle(BillingPeriod $period): int
     {
         $feeTypes = FeeType::query()
@@ -56,6 +59,7 @@ class GenerateChargesForPeriod
                 }
 
                 $property->markAsCharged();
+                $this->applyPrepaidToProperty->handle($property->fresh());
                 $created++;
             });
         }

@@ -13,9 +13,11 @@ use App\Http\Controllers\Officer\FeeTypeController;
 use App\Http\Controllers\Officer\LevySettingsController;
 use App\Http\Controllers\Officer\MembershipApplicationController as OfficerMembershipApplicationController;
 use App\Http\Controllers\Officer\MembershipController as OfficerMembershipController;
+use App\Http\Controllers\Officer\PaymentController as OfficerPaymentController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
@@ -41,6 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post('memberships/{membership}/end', [MembershipController::class, 'end'])
             ->name('memberships.end');
+
+        Route::post('payments', [PaymentController::class, 'store'])
+            ->name('payments.store');
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
@@ -61,6 +66,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('memberships.update-role');
         Route::post('memberships/{membership}/end', [OfficerMembershipController::class, 'end'])
             ->name('memberships.end');
+
+        Route::get('payments', [OfficerPaymentController::class, 'index'])
+            ->name('payments.index');
+        Route::get('payments/create', [OfficerPaymentController::class, 'create'])
+            ->name('payments.create');
+        Route::post('payments', [OfficerPaymentController::class, 'store'])
+            ->name('payments.store');
+        Route::post('payments/{payment}/confirm', [OfficerPaymentController::class, 'confirm'])
+            ->name('payments.confirm');
+        Route::post('payments/{payment}/reject', [OfficerPaymentController::class, 'reject'])
+            ->name('payments.reject');
+        Route::post('payments/{payment}/void', [OfficerPaymentController::class, 'void'])
+            ->name('payments.void');
 
         Route::get('properties/import', [PropertyImportController::class, 'create'])
             ->name('properties.import.create');
