@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\Payments;
+namespace App\Support;
 
 use App\Enums\PaymentAllocationTarget;
 use App\Enums\PaymentStatus;
@@ -8,12 +8,12 @@ use App\Models\Charge;
 use App\Models\PaymentAllocation;
 use App\Models\Property;
 
-class ComputePropertyBalances
+class PropertyBalances
 {
     /**
      * @return array{outstanding_balance: string, remaining_opening_balance: string, prepaid_balance: string}
      */
-    public function handle(Property $property): array
+    public function forProperty(Property $property): array
     {
         $remainingOpening = $this->remainingOpeningBalance($property);
         $remainingCharges = '0.00';

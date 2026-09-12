@@ -7,16 +7,17 @@ use App\Models\Charge;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Property;
+use App\Support\PropertyBalances;
 
 class AllocatePaymentOnProperty
 {
-    public function __construct(private ComputePropertyBalances $computePropertyBalances) {}
+    public function __construct(private PropertyBalances $propertyBalances) {}
 
     public function handle(Payment $payment, Property $property): void
     {
         $remaining = number_format((float) $payment->amount, 2, '.', '');
 
-        $openingRemaining = $this->computePropertyBalances->remainingOpeningBalance($property);
+        $openingRemaining = $this->propertyBalances->remainingOpeningBalance($property);
 
         if ((float) $openingRemaining > 0 && (float) $remaining > 0) {
             $applied = $this->min($openingRemaining, $remaining);
@@ -39,7 +40,7 @@ class AllocatePaymentOnProperty
                 break;
             }
 
-            $chargeRemaining = $this->computePropertyBalances->remainingChargeAmount($charge);
+            $chargeRemaining = $this->propertyBalances->remainingChargeAmount($charge);
 
             if ((float) $chargeRemaining <= 0) {
                 continue;

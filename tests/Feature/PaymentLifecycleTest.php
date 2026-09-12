@@ -1,7 +1,6 @@
 <?php
 
 use App\Actions\Payments\ApplyPrepaidToProperty;
-use App\Actions\Payments\ComputePropertyBalances;
 use App\Enums\PaymentAllocationTarget;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -12,6 +11,7 @@ use App\Models\Membership;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Models\User;
+use App\Support\PropertyBalances;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -92,8 +92,8 @@ test('pending Payment declarations leave Outstanding Balance unchanged', functio
         'amount' => '200.00',
     ]);
 
-    $balances = app(ComputePropertyBalances::class);
-    $before = $balances->handle($property);
+    $balances = app(PropertyBalances::class);
+    $before = $balances->forProperty($property);
 
     $this->actingAs($member)
         ->post(route('payments.store'), [
@@ -105,7 +105,7 @@ test('pending Payment declarations leave Outstanding Balance unchanged', functio
         ])
         ->assertRedirect();
 
-    expect($balances->handle($property->fresh()))->toBe($before)
+    expect($balances->forProperty($property->fresh()))->toBe($before)
         ->and($before['outstanding_balance'])->toBe('500.00');
 });
 
@@ -148,7 +148,7 @@ test('Officer confirmation allocates Opening Balance then oldest Charge then Pre
     $older->refresh();
     $newer->refresh();
 
-    $balances = app(ComputePropertyBalances::class)->handle($property);
+    $balances = app(PropertyBalances::class)->forProperty($property);
 
     expect($payment->status)->toBe(PaymentStatus::Confirmed)
         ->and($payment->confirmed_by_user_id)->toBe($officer->id)
@@ -163,6 +163,22 @@ test('Officer confirmation allocates Opening Balance then oldest Charge then Pre
     expect($payment->allocations->firstWhere('target', PaymentAllocationTarget::OpeningBalance)?->amount)->toBe('100.00')
         ->and($payment->allocations->firstWhere('charge_id', $older->id)?->amount)->toBe('200.00')
         ->and($payment->allocations->firstWhere('charge_id', $newer->id)?->amount)->toBe('150.00');
+});
+
+test('Super Admin can confirm a pending Payment', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+    $property = Property::factory()->create(['opening_balance' => '75.00']);
+    $payment = Payment::factory()->pending()->create([
+        'property_id' => $property->id,
+        'amount' => '75.00',
+    ]);
+
+    $this->actingAs($superAdmin)
+        ->post(route('officer.payments.confirm', $payment))
+        ->assertRedirect(route('officer.payments.index'));
+
+    expect($payment->fresh()->status)->toBe(PaymentStatus::Confirmed)
+        ->and(app(PropertyBalances::class)->forProperty($property->fresh())['outstanding_balance'])->toBe('0.00');
 });
 
 test('confirmed Payment leftover becomes Prepaid', function () {
@@ -187,7 +203,7 @@ test('confirmed Payment leftover becomes Prepaid', function () {
         ->post(route('officer.payments.confirm', $payment))
         ->assertRedirect();
 
-    $balances = app(ComputePropertyBalances::class)->handle($property->fresh());
+    $balances = app(PropertyBalances::class)->forProperty($property->fresh());
 
     expect($balances['outstanding_balance'])->toBe('0.00')
         ->and($balances['prepaid_balance'])->toBe('100.00')
@@ -202,7 +218,7 @@ test('Officer can reject a pending Payment with a reason', function () {
     $property = $payment->property;
     $property->forceFill(['opening_balance' => '250.00'])->save();
 
-    $before = app(ComputePropertyBalances::class)->handle($property);
+    $before = app(PropertyBalances::class)->forProperty($property);
 
     $this->actingAs($officer)
         ->post(route('officer.payments.reject', $payment), [
@@ -215,7 +231,7 @@ test('Officer can reject a pending Payment with a reason', function () {
     expect($payment->status)->toBe(PaymentStatus::Rejected)
         ->and($payment->rejection_reason)->toBe('No matching bank transfer.')
         ->and($payment->rejected_by_user_id)->toBe($officer->id)
-        ->and(app(ComputePropertyBalances::class)->handle($property->fresh()))->toBe($before);
+        ->and(app(PropertyBalances::class)->forProperty($property->fresh()))->toBe($before);
 });
 
 test('Officer can create-and-confirm a Payment without a Member declaration', function () {
@@ -234,7 +250,7 @@ test('Officer can create-and-confirm a Payment without a Member declaration', fu
         ->assertRedirect();
 
     $payment = Payment::query()->where('property_id', $property->id)->first();
-    $balances = app(ComputePropertyBalances::class)->handle($property->fresh());
+    $balances = app(PropertyBalances::class)->forProperty($property->fresh());
 
     expect($payment)->not->toBeNull()
         ->and($payment->status)->toBe(PaymentStatus::Confirmed)
@@ -266,7 +282,7 @@ test('voiding a confirmed Payment reverses allocation and can unfreeze Charges',
         ->post(route('officer.payments.confirm', $payment))
         ->assertRedirect();
 
-    expect(app(ComputePropertyBalances::class)->handle($property->fresh())['outstanding_balance'])->toBe('0.00')
+    expect(app(PropertyBalances::class)->forProperty($property->fresh())['outstanding_balance'])->toBe('0.00')
         ->and($charge->fresh()->isFrozen())->toBeTrue();
 
     $this->actingAs($officer)
@@ -276,7 +292,7 @@ test('voiding a confirmed Payment reverses allocation and can unfreeze Charges',
         ->assertRedirect();
 
     $payment->refresh();
-    $balances = app(ComputePropertyBalances::class)->handle($property->fresh());
+    $balances = app(PropertyBalances::class)->forProperty($property->fresh());
 
     expect($payment->status)->toBe(PaymentStatus::Voided)
         ->and($payment->void_reason)->toBe('Duplicate entry.')
@@ -319,7 +335,7 @@ test('Prepaid applies to new debt in Opening Balance then oldest Charge order', 
         ->post(route('officer.payments.confirm', $payment))
         ->assertRedirect();
 
-    expect(app(ComputePropertyBalances::class)->handle($property->fresh())['prepaid_balance'])->toBe('250.00');
+    expect(app(PropertyBalances::class)->forProperty($property->fresh())['prepaid_balance'])->toBe('250.00');
 
     $charge = Charge::factory()->create([
         'property_id' => $property->id,
@@ -333,7 +349,7 @@ test('Prepaid applies to new debt in Opening Balance then oldest Charge order', 
 
     app(ApplyPrepaidToProperty::class)->handle($property->fresh());
 
-    $balances = app(ComputePropertyBalances::class)->handle($property->fresh());
+    $balances = app(PropertyBalances::class)->forProperty($property->fresh());
     $payment->refresh();
 
     expect($balances['outstanding_balance'])->toBe('0.00')

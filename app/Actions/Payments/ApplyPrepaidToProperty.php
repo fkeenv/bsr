@@ -8,11 +8,12 @@ use App\Models\Charge;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Property;
+use App\Support\PropertyBalances;
 use Illuminate\Support\Facades\DB;
 
 class ApplyPrepaidToProperty
 {
-    public function __construct(private ComputePropertyBalances $computePropertyBalances) {}
+    public function __construct(private PropertyBalances $propertyBalances) {}
 
     public function handle(Property $property): void
     {
@@ -50,7 +51,7 @@ class ApplyPrepaidToProperty
             return;
         }
 
-        $openingRemaining = $this->computePropertyBalances->remainingOpeningBalance($property);
+        $openingRemaining = $this->propertyBalances->remainingOpeningBalance($property);
 
         if ((float) $openingRemaining > 0 && (float) $remaining > 0) {
             $applied = $this->min($openingRemaining, $remaining);
@@ -79,7 +80,7 @@ class ApplyPrepaidToProperty
                 break;
             }
 
-            $chargeRemaining = $this->computePropertyBalances->remainingChargeAmount($charge);
+            $chargeRemaining = $this->propertyBalances->remainingChargeAmount($charge);
 
             if ((float) $chargeRemaining <= 0) {
                 continue;
