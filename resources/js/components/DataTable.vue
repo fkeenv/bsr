@@ -9,6 +9,7 @@ import {
     dataTableFeatures,
     type DataTableFeatures,
 } from '@/components/data-table/features';
+import DataTableDateRangeFilter from '@/components/data-table/DataTableDateRangeFilter.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -225,17 +226,23 @@ function onFilterChange(key: string, value: string): void {
 
 function onDateRangeChange(
     rangeKey: string,
-    bound: 'from' | 'to',
-    value: string,
+    from: string | null,
+    to: string | null,
 ): void {
     const query = currentQuery();
-    const param =
-        bound === 'from' ? dateFromKey(rangeKey) : dateToKey(rangeKey);
+    const fromKey = dateFromKey(rangeKey);
+    const toKeyName = dateToKey(rangeKey);
 
-    if (value.trim() === '') {
-        delete query[param];
+    if (from) {
+        query[fromKey] = from;
     } else {
-        query[param] = value;
+        delete query[fromKey];
+    }
+
+    if (to) {
+        query[toKeyName] = to;
+    } else {
+        delete query[toKeyName];
     }
 
     visit(query);
@@ -263,46 +270,16 @@ function clearFilters(): void {
             />
 
             <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
-                <div
+                <DataTableDateRangeFilter
                     v-for="rangeKey in dateRanges"
                     :key="rangeKey"
-                    class="flex flex-wrap items-center gap-2"
-                >
-                    <span
-                        class="text-muted-foreground text-sm whitespace-nowrap"
-                    >
-                        {{ dateRangeLabel(rangeKey) }}
-                    </span>
-                    <Input
-                        type="date"
-                        :model-value="values[dateFromKey(rangeKey)] ?? ''"
-                        :aria-label="`${dateRangeLabel(rangeKey)} from`"
-                        class="w-[10.5rem]"
-                        @update:model-value="
-                            (value) =>
-                                onDateRangeChange(
-                                    rangeKey,
-                                    'from',
-                                    String(value ?? ''),
-                                )
-                        "
-                    />
-                    <span class="text-muted-foreground text-sm">to</span>
-                    <Input
-                        type="date"
-                        :model-value="values[dateToKey(rangeKey)] ?? ''"
-                        :aria-label="`${dateRangeLabel(rangeKey)} to`"
-                        class="w-[10.5rem]"
-                        @update:model-value="
-                            (value) =>
-                                onDateRangeChange(
-                                    rangeKey,
-                                    'to',
-                                    String(value ?? ''),
-                                )
-                        "
-                    />
-                </div>
+                    :label="dateRangeLabel(rangeKey)"
+                    :from="values[dateFromKey(rangeKey)]"
+                    :to="values[dateToKey(rangeKey)]"
+                    @change="
+                        (from, to) => onDateRangeChange(rangeKey, from, to)
+                    "
+                />
 
                 <Select
                     v-for="filterKey in filters"
