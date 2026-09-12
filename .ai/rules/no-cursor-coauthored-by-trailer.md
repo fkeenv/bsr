@@ -9,3 +9,5 @@ Co-authored-by: Cursor <cursoragent@cursor.com>
 ```
 
 Do not pass that via `--trailer`, commit message body, or any other mechanism. Commit as the normal author only.
+
+Cursor CLI also auto-appends this when `attribution.attributeCommitsToAgent` is true in `~/.cursor/cli-config.json`. Keep that set to `false` for this preference.
