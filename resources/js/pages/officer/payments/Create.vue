@@ -114,12 +114,13 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="screenshot">Receipt screenshot (optional)</Label>
+                <Label for="screenshot">Receipt screenshot</Label>
                 <Input
                     id="screenshot"
                     name="screenshot"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
+                    required
                 />
                 <InputError :message="errors.screenshot" />
             </div>

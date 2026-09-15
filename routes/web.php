@@ -17,6 +17,7 @@ use App\Http\Controllers\Officer\PaymentController as OfficerPaymentController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
+use App\Http\Controllers\Officer\UnpaidRosterController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
@@ -85,6 +86,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('payments.reject');
         Route::post('payments/{payment}/void', [OfficerPaymentController::class, 'void'])
             ->name('payments.void');
+
+        Route::get('unpaid', [UnpaidRosterController::class, 'index'])
+            ->name('unpaid.index');
 
         Route::get('properties/import', [PropertyImportController::class, 'create'])
             ->name('properties.import.create');

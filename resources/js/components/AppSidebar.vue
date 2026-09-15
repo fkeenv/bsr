@@ -42,6 +42,7 @@ import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as paymentsIndex } from '@/routes/officer/payments';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
+import { index as unpaidIndex } from '@/routes/officer/unpaid';
 import { index as statementOfAccountIndex } from '@/routes/statement-of-account';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
 import { index as administratorsIndex } from '@/routes/super-admin/administrators';
@@ -124,6 +125,11 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Officer',
             href: officerDashboard(),
             icon: Shield,
+        },
+        {
+            title: 'Unpaid',
+            href: unpaidIndex(),
+            icon: Receipt,
         },
         {
             title: 'Membership Applications',

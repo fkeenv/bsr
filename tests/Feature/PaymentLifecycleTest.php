@@ -52,6 +52,31 @@ test('Member with a live Membership can declare a Payment on that Property', fun
     Storage::disk('local')->assertExists($payment->screenshot_path);
 });
 
+test('Member cannot declare a Payment without a receipt screenshot', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $property = Property::factory()->create(['opening_balance' => '500.00']);
+    Membership::factory()->owner()->create([
+        'user_id' => $user->id,
+        'property_id' => $property->id,
+    ]);
+    $user->assignPlatformRole(PlatformRole::Member);
+
+    $this->actingAs($user)
+        ->from(route('statement-of-account.show', $property))
+        ->post(route('payments.store'), [
+            'property_id' => $property->id,
+            'amount' => '500.00',
+            'method' => PaymentMethod::GCash->value,
+            'reference' => 'GC-NO-RECEIPT',
+        ])
+        ->assertRedirect(route('statement-of-account.show', $property))
+        ->assertSessionHasErrors('screenshot');
+
+    expect(Payment::query()->count())->toBe(0);
+});
+
 test('Member cannot declare a Payment on a Property without a live Membership', function () {
     Storage::fake('local');
 
@@ -280,6 +305,7 @@ test('Officer can create-and-confirm a Payment without a Member declaration', fu
             'amount' => '150.00',
             'method' => PaymentMethod::Bank->value,
             'reference' => 'OTC-9',
+            'screenshot' => UploadedFile::fake()->image('receipt.jpg'),
         ])
         ->assertRedirect();
 
@@ -290,8 +316,31 @@ test('Officer can create-and-confirm a Payment without a Member declaration', fu
         ->and($payment->status)->toBe(PaymentStatus::Confirmed)
         ->and($payment->declared_by_user_id)->toBeNull()
         ->and($payment->confirmed_by_user_id)->toBe($officer->id)
+        ->and($payment->screenshot_path)->not->toBeNull()
         ->and($balances['outstanding_balance'])->toBe('0.00')
         ->and($balances['remaining_opening_balance'])->toBe('0.00');
+
+    Storage::disk('local')->assertExists($payment->screenshot_path);
+});
+
+test('Officer cannot create-and-confirm a Payment without a receipt screenshot', function () {
+    Storage::fake('local');
+
+    $officer = User::factory()->officer()->create();
+    $property = Property::factory()->create(['opening_balance' => '150.00']);
+
+    $this->actingAs($officer)
+        ->from(route('officer.payments.create'))
+        ->post(route('officer.payments.store'), [
+            'property_id' => $property->id,
+            'amount' => '150.00',
+            'method' => PaymentMethod::Bank->value,
+            'reference' => 'OTC-NO-RECEIPT',
+        ])
+        ->assertRedirect(route('officer.payments.create'))
+        ->assertSessionHasErrors('screenshot');
+
+    expect(Payment::query()->count())->toBe(0);
 });
 
 test('voiding a confirmed Payment reverses allocation and can unfreeze Charges', function () {
