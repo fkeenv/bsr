@@ -23,6 +23,7 @@ class PropertyFactory extends Factory
             'street_address' => fake()->optional()->streetAddress(),
             'recorded_owner_name' => fake()->optional()->name(),
             'opening_balance' => '0.00',
+            'prepaid_balance' => '0.00',
             'opening_balance_frozen_at' => null,
             'first_charged_at' => null,
             'is_active' => true,

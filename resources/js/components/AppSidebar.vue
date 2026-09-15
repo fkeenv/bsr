@@ -39,6 +39,7 @@ import { index as feeTypesIndex } from '@/routes/officer/fee-types';
 import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
 import { index as membershipApplicationsIndex } from '@/routes/officer/membership-applications';
 import { index as membershipsIndex } from '@/routes/officer/memberships';
+import { index as paymentsIndex } from '@/routes/officer/payments';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
@@ -130,6 +131,11 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Memberships',
             href: membershipsIndex(),
             icon: Users,
+        },
+        {
+            title: 'Payments',
+            href: paymentsIndex(),
+            icon: Receipt,
         },
         {
             title: 'Properties',
