@@ -18,6 +18,7 @@ use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
@@ -46,6 +47,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post('payments', [PaymentController::class, 'store'])
             ->name('payments.store');
+
+        Route::get('statement-of-account', [StatementOfAccountController::class, 'index'])
+            ->name('statement-of-account.index');
+        Route::get('properties/{property}/statement-of-account', [StatementOfAccountController::class, 'show'])
+            ->name('statement-of-account.show');
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {

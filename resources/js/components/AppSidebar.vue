@@ -42,6 +42,7 @@ import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as paymentsIndex } from '@/routes/officer/payments';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
+import { index as statementOfAccountIndex } from '@/routes/statement-of-account';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
 import { index as administratorsIndex } from '@/routes/super-admin/administrators';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
@@ -199,6 +200,11 @@ const membershipNavItems = computed((): NavItem[] => {
             title: 'Membership',
             href: dashboard(),
             icon: Users,
+        },
+        {
+            title: 'Statement of Account',
+            href: statementOfAccountIndex(),
+            icon: Receipt,
         },
     ];
 });
