@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     Car,
     CircleAlert,
@@ -65,6 +65,17 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+
+const page = usePage();
+const isMembershipHolder = computed(
+    () => page.props.auth.capabilities?.isMembershipHolder === true,
+);
+
+const pageDescription = computed(() =>
+    isMembershipHolder.value
+        ? 'Apply to be recognised on another roster Property. An Officer records owner or resident on approval.'
+        : 'Apply to be recognised on one roster Property. An Officer records owner or resident on approval.',
+);
 
 const isEditing = ref(false);
 
@@ -327,7 +338,7 @@ defineOptions({
                 </div>
                 <Heading
                     title="Membership Application"
-                    description="Apply to be recognised on one roster Property. An Officer records owner or resident on approval."
+                    :description="pageDescription"
                 />
             </div>
 

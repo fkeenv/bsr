@@ -74,7 +74,9 @@ const platformNavItems = computed((): NavItem[] => {
 
     if (!capabilities.value?.isSuperAdmin) {
         items.push({
-            title: 'Membership Application',
+            title: capabilities.value?.isMembershipHolder
+                ? 'Apply for another Property'
+                : 'Membership Application',
             href: membershipApplicationCreate(),
             icon: ClipboardList,
         });
