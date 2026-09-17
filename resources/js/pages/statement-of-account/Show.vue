@@ -440,9 +440,13 @@ function closeSheet(): void {
                                 id="screenshot"
                                 name="screenshot"
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/png,image/webp"
                                 required
                             />
+                            <p class="text-muted-foreground text-xs">
+                                Required — attach a photo of the receipt before
+                                declaring.
+                            </p>
                             <InputError :message="errors.screenshot" />
                         </div>
                     </div>

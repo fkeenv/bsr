@@ -23,7 +23,7 @@ class StoreConfirmedPaymentRequest extends FormRequest
             'amount' => ['required', 'numeric', 'gt:0'],
             'method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference' => ['nullable', 'string', 'max:255'],
-            'screenshot' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'screenshot' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 }

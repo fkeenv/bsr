@@ -59,7 +59,7 @@ class PaymentController
         $officer = $request->user();
         assert($officer !== null);
 
-        /** @var array{property_id: int, amount: string|float|int, method: string, reference?: string|null, screenshot?: UploadedFile|null} $validated */
+        /** @var array{property_id: int, amount: string|float|int, method: string, reference?: string|null, screenshot: UploadedFile} $validated */
         $validated = $request->validated();
 
         $createAndConfirmPayment->handle($officer, $validated);
