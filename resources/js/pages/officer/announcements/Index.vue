@@ -2,8 +2,10 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import AnnouncementController from '@/actions/App/Http/Controllers/Officer/AnnouncementController';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import {
     create as createAnnouncement,
@@ -12,8 +14,16 @@ import {
 } from '@/routes/officer/announcements';
 import type { Announcement } from '@/types/announcement';
 
+type VisibilityOption = {
+    value: string;
+    label: string;
+    description: string;
+};
+
 defineProps<{
     announcements: Announcement[];
+    pageVisibility: string;
+    pageVisibilityOptions: VisibilityOption[];
 }>();
 
 defineOptions({
@@ -41,13 +51,59 @@ defineOptions({
         >
             <Heading
                 title="Announcements"
-                description="Shared drafts among Officers. Publish to the Membership feed and pin up to three."
+                description="Shared drafts among Officers. Publish to the feed and pin up to three."
             />
 
             <Button as-child>
                 <Link :href="createAnnouncement()">New draft</Link>
             </Button>
         </div>
+
+        <section class="max-w-xl space-y-4 border-b pb-6">
+            <Heading
+                title="Feed visibility"
+                description="Controls who can open /announcements."
+            />
+
+            <Form
+                v-bind="AnnouncementController.updatePageVisibility.form()"
+                class="space-y-4"
+                v-slot="{ errors, processing }"
+            >
+                <fieldset class="space-y-3">
+                    <legend class="sr-only">
+                        Announcements page visibility
+                    </legend>
+                    <div
+                        v-for="option in pageVisibilityOptions"
+                        :key="option.value"
+                        class="flex items-start gap-3"
+                    >
+                        <input
+                            :id="`visibility-${option.value}`"
+                            type="radio"
+                            name="announcements_page_visibility"
+                            :value="option.value"
+                            :checked="pageVisibility === option.value"
+                            class="border-input text-primary mt-1 size-4"
+                        />
+                        <Label
+                            :for="`visibility-${option.value}`"
+                            class="grid gap-1 font-normal"
+                        >
+                            <span class="font-medium">{{ option.label }}</span>
+                            <span class="text-muted-foreground text-sm">
+                                {{ option.description }}
+                            </span>
+                        </Label>
+                    </div>
+                </fieldset>
+                <InputError :message="errors.announcements_page_visibility" />
+                <Button type="submit" :disabled="processing">
+                    Save visibility
+                </Button>
+            </Form>
+        </section>
 
         <div
             v-if="announcements.length === 0"

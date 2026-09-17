@@ -20,7 +20,7 @@ export type AuthCapabilities = {
 };
 
 export type Auth = {
-    user: User;
+    user: User | null;
     capabilities: AuthCapabilities | null;
 };
 

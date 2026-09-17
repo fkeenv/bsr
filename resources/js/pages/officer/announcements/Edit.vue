@@ -6,11 +6,11 @@ import AnnouncementController from '@/actions/App/Http/Controllers/Officer/Annou
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import RichTextContent from '@/components/RichTextContent.vue';
-import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AnnouncementFormFields from '@/pages/officer/announcements/AnnouncementFormFields.vue';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as announcementsIndex } from '@/routes/officer/announcements';
 import type { Announcement } from '@/types/announcement';
@@ -48,7 +48,7 @@ defineOptions({
         <div class="flex flex-wrap items-center gap-2">
             <Heading
                 :title="announcement.title"
-                description="Edit the shared draft or published notice. Attach images or PDFs below."
+                description="Edit with the rich text editor. Attach images or PDFs below."
             />
             <Badge v-if="announcement.is_published" variant="default">
                 Published
@@ -64,23 +64,11 @@ defineOptions({
             class="max-w-3xl space-y-6"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-2">
-                <Label for="title">Title</Label>
-                <Input
-                    id="title"
-                    name="title"
-                    required
-                    :default-value="announcement.title"
-                />
-                <InputError :message="errors.title" />
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="body">Body</Label>
-                <input type="hidden" name="body" :value="body" />
-                <RichTextEditor id="body" v-model="body" />
-                <InputError :message="errors.body" />
-            </div>
+            <AnnouncementFormFields
+                :title="announcement.title"
+                v-model:body="body"
+                :errors="errors"
+            />
 
             <div class="flex flex-wrap gap-2">
                 <Button type="submit" :disabled="processing">

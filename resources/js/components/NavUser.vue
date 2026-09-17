@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { ChevronsUpDown } from '@lucide/vue';
 import { computed } from 'vue';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import UserInfo from '@/components/UserInfo.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
+import { login } from '@/routes';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -23,7 +24,7 @@ const { isMobile, state } = useSidebar();
 
 <template>
     <SidebarMenu>
-        <SidebarMenuItem>
+        <SidebarMenuItem v-if="user">
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                     <SidebarMenuButton
@@ -50,6 +51,11 @@ const { isMobile, state } = useSidebar();
                     <UserMenuContent :user="user" />
                 </DropdownMenuContent>
             </DropdownMenu>
+        </SidebarMenuItem>
+        <SidebarMenuItem v-else>
+            <SidebarMenuButton size="lg" as-child>
+                <Link :href="login()">Log in</Link>
+            </SidebarMenuButton>
         </SidebarMenuItem>
     </SidebarMenu>
 </template>

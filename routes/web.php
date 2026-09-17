@@ -38,6 +38,13 @@ Route::get('terms-of-service', [LegalDocumentController::class, 'termsOfService'
 Route::get('privacy-policy', [LegalDocumentController::class, 'privacyPolicy'])
     ->name('privacy-policy.show');
 
+Route::get('announcements', [AnnouncementController::class, 'index'])
+    ->name('announcements.index');
+Route::get('announcements/{announcement}', [AnnouncementController::class, 'show'])
+    ->name('announcements.show');
+Route::get('announcement-attachments/{attachment}', [AnnouncementAttachmentController::class, 'show'])
+    ->name('announcements.attachments.show');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('membership-application', [MembershipApplicationController::class, 'create'])
         ->name('membership-application.create');
@@ -58,13 +65,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('properties/{property}/statement-of-account', [StatementOfAccountController::class, 'show'])
             ->name('statement-of-account.show');
     });
-
-    Route::get('announcements', [AnnouncementController::class, 'index'])
-        ->name('announcements.index');
-    Route::get('announcements/{announcement}', [AnnouncementController::class, 'show'])
-        ->name('announcements.show');
-    Route::get('announcement-attachments/{attachment}', [AnnouncementAttachmentController::class, 'show'])
-        ->name('announcements.attachments.show');
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
         Route::get('/', OfficerDashboardController::class)->name('dashboard');
@@ -89,6 +89,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('announcements.unpin');
         Route::post('announcements/{announcement}/attachments', [OfficerAnnouncementAttachmentController::class, 'store'])
             ->name('announcements.attachments.store');
+        Route::put('announcements-page-visibility', [OfficerAnnouncementController::class, 'updatePageVisibility'])
+            ->name('announcements.page-visibility.update');
 
         Route::get('membership-applications', [OfficerMembershipApplicationController::class, 'index'])
             ->name('membership-applications.index');

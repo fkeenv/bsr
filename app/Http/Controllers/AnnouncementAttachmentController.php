@@ -3,38 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\AnnouncementAttachment;
-use App\Models\User;
+use App\Support\AnnouncementsPageAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AnnouncementAttachmentController
 {
-    public function show(Request $request, AnnouncementAttachment $attachment): StreamedResponse
-    {
+    public function show(
+        Request $request,
+        AnnouncementAttachment $attachment,
+        AnnouncementsPageAccess $announcementsPageAccess,
+    ): StreamedResponse {
+        $attachment->loadMissing('announcement');
         $user = $request->user();
-        $this->ensureCanReadAttachment($user, $attachment);
+
+        if ($attachment->announcement->isPublished()) {
+            $announcementsPageAccess->ensureCanViewFeed($user);
+        } else {
+            abort_unless($user?->canAccessOfficerSurfaces() ?? false, 404);
+        }
 
         return Storage::disk($attachment->disk)->response(
             $attachment->path,
             $attachment->original_filename,
-        );
-    }
-
-    private function ensureCanReadAttachment(?User $user, AnnouncementAttachment $attachment): void
-    {
-        abort_unless($user !== null, 403);
-
-        $attachment->loadMissing('announcement');
-        $announcement = $attachment->announcement;
-
-        if ($user->canAccessOfficerSurfaces()) {
-            return;
-        }
-
-        abort_unless(
-            $user->hasLiveMembership() && $announcement->isPublished(),
-            403,
         );
     }
 }

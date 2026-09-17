@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\AnnouncementsPageVisibility;
 use App\Enums\PlatformRole;
 use App\Models\Announcement;
+use App\Models\AssociationSetting;
 use App\Models\Membership;
 use App\Models\Property;
 use App\Models\User;
@@ -251,4 +253,85 @@ test('plain User Account cannot manage Officer Announcements', function () {
     $this->actingAs($user)
         ->get(route('officer.announcements.index'))
         ->assertRedirect(route('membership-application.create'));
+});
+
+test('Officer create and edit pages use the rich text Announcement form', function () {
+    $officer = User::factory()->officer()->create();
+    $announcement = Announcement::factory()->draft()->create([
+        'created_by_user_id' => $officer->id,
+    ]);
+
+    $this->actingAs($officer)
+        ->get(route('officer.announcements.create'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('officer/announcements/Create'));
+
+    $this->actingAs($officer)
+        ->get(route('officer.announcements.edit', $announcement))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/announcements/Edit')
+            ->where('announcement.id', $announcement->id)
+        );
+});
+
+test('Officer can set Announcements page visibility to public, private, or hidden', function () {
+    $officer = User::factory()->officer()->create();
+
+    $this->actingAs($officer)
+        ->put(route('officer.announcements.page-visibility.update'), [
+            'announcements_page_visibility' => 'public',
+        ])
+        ->assertRedirect(route('officer.announcements.index'));
+
+    expect(AssociationSetting::current()->announcements_page_visibility)
+        ->toBe(AnnouncementsPageVisibility::Public);
+
+    $this->actingAs($officer)
+        ->put(route('officer.announcements.page-visibility.update'), [
+            'announcements_page_visibility' => 'hidden',
+        ])
+        ->assertRedirect(route('officer.announcements.index'));
+
+    expect(AssociationSetting::current()->announcements_page_visibility)
+        ->toBe(AnnouncementsPageVisibility::Hidden);
+});
+
+test('guests can read the feed when Announcements page visibility is public', function () {
+    AssociationSetting::current()->update([
+        'announcements_page_visibility' => AnnouncementsPageVisibility::Public,
+    ]);
+
+    $announcement = Announcement::factory()->published()->create([
+        'title' => 'Open notice',
+    ]);
+
+    $this->get(route('announcements.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('announcements/Index')
+            ->where('isPublicVisitor', true)
+            ->has('announcements', 1)
+            ->where('announcements.0.id', $announcement->id)
+        );
+});
+
+test('members cannot read the feed when Announcements page visibility is hidden', function () {
+    AssociationSetting::current()->update([
+        'announcements_page_visibility' => AnnouncementsPageVisibility::Hidden,
+    ]);
+
+    $member = User::factory()->create();
+    $property = Property::factory()->create();
+    Membership::factory()->owner()->create([
+        'user_id' => $member->id,
+        'property_id' => $property->id,
+    ]);
+    $member->assignPlatformRole(PlatformRole::Member);
+
+    Announcement::factory()->published()->create();
+
+    $this->actingAs($member)
+        ->get(route('announcements.index'))
+        ->assertNotFound();
 });

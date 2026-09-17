@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import RichTextContent from '@/components/RichTextContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { dashboard } from '@/routes';
+import { dashboard, home } from '@/routes';
 import {
     index as announcementsIndex,
     show as announcementShow,
@@ -18,6 +18,7 @@ const props = defineProps<{
     filters: {
         search: string;
     };
+    isPublicVisitor: boolean;
 }>();
 
 const search = ref(props.filters.search);
@@ -28,6 +29,19 @@ watch(
         search.value = value;
     },
 );
+
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: props.isPublicVisitor ? 'Home' : 'Dashboard',
+            href: props.isPublicVisitor ? home() : dashboard(),
+        },
+        {
+            title: 'Announcements',
+            href: announcementsIndex(),
+        },
+    ],
+});
 
 function submitSearch(): void {
     router.get(
@@ -43,21 +57,6 @@ function submitSearch(): void {
         },
     );
 }
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-            },
-            {
-                title: 'Announcements',
-                href: announcementsIndex(),
-            },
-        ],
-    },
-});
 </script>
 
 <template>

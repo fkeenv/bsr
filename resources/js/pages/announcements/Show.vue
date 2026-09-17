@@ -1,30 +1,29 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import RichTextContent from '@/components/RichTextContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
+import { dashboard, home } from '@/routes';
 import { index as announcementsIndex } from '@/routes/announcements';
 import type { Announcement } from '@/types/announcement';
 
-defineProps<{
+const props = defineProps<{
     announcement: Announcement;
+    isPublicVisitor: boolean;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-            },
-            {
-                title: 'Announcements',
-                href: announcementsIndex(),
-            },
-        ],
-    },
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: props.isPublicVisitor ? 'Home' : 'Dashboard',
+            href: props.isPublicVisitor ? home() : dashboard(),
+        },
+        {
+            title: 'Announcements',
+            href: announcementsIndex(),
+        },
+    ],
 });
 </script>
 

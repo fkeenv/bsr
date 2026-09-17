@@ -4,16 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Data\AnnouncementData;
 use App\Models\Announcement;
-use App\Models\User;
+use App\Support\AnnouncementsPageAccess;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AnnouncementController
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AnnouncementsPageAccess $announcementsPageAccess): Response
     {
-        $this->ensureCanReadFeed($request->user());
+        $announcementsPageAccess->ensureCanViewFeed($request->user());
 
         $search = $request->string('search')->toString();
 
@@ -32,26 +32,23 @@ class AnnouncementController
             'filters' => [
                 'search' => $search,
             ],
+            'isPublicVisitor' => $request->user() === null,
         ]);
     }
 
-    public function show(Request $request, Announcement $announcement): Response
-    {
-        $this->ensureCanReadFeed($request->user());
+    public function show(
+        Request $request,
+        Announcement $announcement,
+        AnnouncementsPageAccess $announcementsPageAccess,
+    ): Response {
+        $announcementsPageAccess->ensureCanViewFeed($request->user());
         abort_unless($announcement->isPublished(), 404);
 
         $announcement->load('attachments');
 
         return Inertia::render('announcements/Show', [
             'announcement' => AnnouncementData::fromModel($announcement),
+            'isPublicVisitor' => $request->user() === null,
         ]);
-    }
-
-    private function ensureCanReadFeed(?User $user): void
-    {
-        abort_unless(
-            $user !== null && ($user->hasLiveMembership() || $user->canAccessOfficerSurfaces()),
-            403,
-        );
     }
 }
