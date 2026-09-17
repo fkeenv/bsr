@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\Administrator\DashboardController as AdministratorDashboardController;
 use App\Http\Controllers\Administrator\OfficerController as AdministratorOfficerController;
+use App\Http\Controllers\AnnouncementAttachmentController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\Officer\AnnouncementAttachmentController as OfficerAnnouncementAttachmentController;
+use App\Http\Controllers\Officer\AnnouncementController as OfficerAnnouncementController;
 use App\Http\Controllers\Officer\ChargeController;
 use App\Http\Controllers\Officer\ChargeGenerationController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
@@ -34,6 +38,13 @@ Route::get('terms-of-service', [LegalDocumentController::class, 'termsOfService'
 Route::get('privacy-policy', [LegalDocumentController::class, 'privacyPolicy'])
     ->name('privacy-policy.show');
 
+Route::get('announcements', [AnnouncementController::class, 'index'])
+    ->name('announcements.index');
+Route::get('announcements/{announcement}', [AnnouncementController::class, 'show'])
+    ->name('announcements.show');
+Route::get('announcement-attachments/{attachment}', [AnnouncementAttachmentController::class, 'show'])
+    ->name('announcements.attachments.show');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('membership-application', [MembershipApplicationController::class, 'create'])
         ->name('membership-application.create');
@@ -57,6 +68,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
         Route::get('/', OfficerDashboardController::class)->name('dashboard');
+
+        Route::get('announcements', [OfficerAnnouncementController::class, 'index'])
+            ->name('announcements.index');
+        Route::get('announcements/create', [OfficerAnnouncementController::class, 'create'])
+            ->name('announcements.create');
+        Route::post('announcements', [OfficerAnnouncementController::class, 'store'])
+            ->name('announcements.store');
+        Route::get('announcements/{announcement}/edit', [OfficerAnnouncementController::class, 'edit'])
+            ->name('announcements.edit');
+        Route::put('announcements/{announcement}', [OfficerAnnouncementController::class, 'update'])
+            ->name('announcements.update');
+        Route::post('announcements/{announcement}/publish', [OfficerAnnouncementController::class, 'publish'])
+            ->name('announcements.publish');
+        Route::post('announcements/{announcement}/unpublish', [OfficerAnnouncementController::class, 'unpublish'])
+            ->name('announcements.unpublish');
+        Route::post('announcements/{announcement}/pin', [OfficerAnnouncementController::class, 'pin'])
+            ->name('announcements.pin');
+        Route::post('announcements/{announcement}/unpin', [OfficerAnnouncementController::class, 'unpin'])
+            ->name('announcements.unpin');
+        Route::post('announcements/{announcement}/attachments', [OfficerAnnouncementAttachmentController::class, 'store'])
+            ->name('announcements.attachments.store');
+        Route::put('announcements-page-visibility', [OfficerAnnouncementController::class, 'updatePageVisibility'])
+            ->name('announcements.page-visibility.update');
 
         Route::get('membership-applications', [OfficerMembershipApplicationController::class, 'index'])
             ->name('membership-applications.index');

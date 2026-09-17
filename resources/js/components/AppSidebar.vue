@@ -7,6 +7,7 @@ import {
     FolderGit2,
     KeyRound,
     LayoutGrid,
+    Megaphone,
     Pause,
     Receipt,
     Settings2,
@@ -29,10 +30,13 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { home } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as officersIndex } from '@/routes/administrator/officers';
 import { create as membershipApplicationCreate } from '@/routes/membership-application';
+import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
+import { index as officerAnnouncementsIndex } from '@/routes/officer/announcements';
 import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
 import { index as feeTypesIndex } from '@/routes/officer/fee-types';
@@ -52,19 +56,48 @@ import type { NavItem } from '@/types';
 
 const page = usePage();
 const capabilities = computed(() => page.props.auth.capabilities);
-
-const homeHref = computed(() =>
-    capabilities.value?.isSuperAdmin || capabilities.value?.isMembershipHolder
-        ? dashboard()
-        : membershipApplicationCreate(),
+const announcementsPageVisibility = computed(
+    () => page.props.announcementsPageVisibility ?? 'private',
+);
+const announcementsPageListed = computed(
+    () => page.props.announcementsPageListed !== false,
 );
 
+const homeHref = computed(() => {
+    if (!capabilities.value) {
+        return home();
+    }
+
+    if (
+        capabilities.value.isSuperAdmin ||
+        capabilities.value.isMembershipHolder
+    ) {
+        return dashboard();
+    }
+
+    return membershipApplicationCreate();
+});
+
 const platformNavItems = computed((): NavItem[] => {
+    if (!capabilities.value) {
+        if (announcementsPageVisibility.value !== 'public') {
+            return [];
+        }
+
+        return [
+            {
+                title: 'Announcements',
+                href: announcementsIndex(),
+                icon: Megaphone,
+            },
+        ];
+    }
+
     const items: NavItem[] = [];
 
     if (
-        capabilities.value?.isMembershipHolder ||
-        capabilities.value?.isSuperAdmin
+        capabilities.value.isMembershipHolder ||
+        capabilities.value.isSuperAdmin
     ) {
         items.push({
             title: 'Dashboard',
@@ -73,9 +106,9 @@ const platformNavItems = computed((): NavItem[] => {
         });
     }
 
-    if (!capabilities.value?.isSuperAdmin) {
+    if (!capabilities.value.isSuperAdmin) {
         items.push({
-            title: capabilities.value?.isMembershipHolder
+            title: capabilities.value.isMembershipHolder
                 ? 'Apply for another Property'
                 : 'Membership Application',
             href: membershipApplicationCreate(),
@@ -125,6 +158,11 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Officer',
             href: officerDashboard(),
             icon: Shield,
+        },
+        {
+            title: 'Announcements',
+            href: officerAnnouncementsIndex(),
+            icon: Megaphone,
         },
         {
             title: 'Unpaid',
@@ -203,18 +241,29 @@ const membershipNavItems = computed((): NavItem[] => {
         return [];
     }
 
-    return [
+    const items: NavItem[] = [
         {
             title: 'Membership',
             href: dashboard(),
             icon: Users,
         },
-        {
-            title: 'Statement of Account',
-            href: statementOfAccountIndex(),
-            icon: Receipt,
-        },
     ];
+
+    if (announcementsPageListed.value) {
+        items.push({
+            title: 'Announcements',
+            href: announcementsIndex(),
+            icon: Megaphone,
+        });
+    }
+
+    items.push({
+        title: 'Statement of Account',
+        href: statementOfAccountIndex(),
+        icon: Receipt,
+    });
+
+    return items;
 });
 
 const footerNavItems: NavItem[] = [
