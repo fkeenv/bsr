@@ -8,6 +8,16 @@ class SanitizeHtml
 
     public static function legalDocument(string $html): string
     {
+        return self::richText($html);
+    }
+
+    public static function announcement(string $html): string
+    {
+        return self::richText($html);
+    }
+
+    public static function richText(string $html): string
+    {
         $stripped = strip_tags($html, self::AllowedTags);
 
         // strip_tags keeps attributes on allowed tags; drop them for a safe allow-list.

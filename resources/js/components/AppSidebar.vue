@@ -7,6 +7,7 @@ import {
     FolderGit2,
     KeyRound,
     LayoutGrid,
+    Megaphone,
     Pause,
     Receipt,
     Settings2,
@@ -32,7 +33,9 @@ import { dashboard } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as officersIndex } from '@/routes/administrator/officers';
 import { create as membershipApplicationCreate } from '@/routes/membership-application';
+import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
+import { index as officerAnnouncementsIndex } from '@/routes/officer/announcements';
 import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
 import { index as feeTypesIndex } from '@/routes/officer/fee-types';
@@ -127,6 +130,11 @@ const officerNavItems = computed((): NavItem[] => {
             icon: Shield,
         },
         {
+            title: 'Announcements',
+            href: officerAnnouncementsIndex(),
+            icon: Megaphone,
+        },
+        {
             title: 'Unpaid',
             href: unpaidIndex(),
             icon: Receipt,
@@ -208,6 +216,11 @@ const membershipNavItems = computed((): NavItem[] => {
             title: 'Membership',
             href: dashboard(),
             icon: Users,
+        },
+        {
+            title: 'Announcements',
+            href: announcementsIndex(),
+            icon: Megaphone,
         },
         {
             title: 'Statement of Account',
