@@ -37,6 +37,7 @@ import { create as membershipApplicationCreate } from '@/routes/membership-appli
 import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as officerAnnouncementsIndex } from '@/routes/officer/announcements';
+import { edit as billSettingsEdit } from '@/routes/officer/bill-settings';
 import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
 import { index as feeTypesIndex } from '@/routes/officer/fee-types';
@@ -213,6 +214,11 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Levy day',
             href: levySettingsEdit(),
             icon: Settings2,
+        },
+        {
+            title: 'Printed Bill',
+            href: billSettingsEdit(),
+            icon: Receipt,
         },
     ];
 });

@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { show as printedBillShow } from '@/routes/officer/printed-bills';
 import type { StatementOfAccountPage } from '@/types/statement-of-account';
 
-defineProps<{
+const props = defineProps<{
     statement: StatementOfAccountPage;
 }>();
 
@@ -31,6 +34,21 @@ function methodLabel(value: string): string {
 
     return labels[value] ?? value;
 }
+
+const printUrl = computed((): string | null => {
+    const period = props.statement.selected_period;
+
+    if (!period) {
+        return null;
+    }
+
+    return printedBillShow.url(props.statement.property.id, {
+        query: {
+            year: period.year,
+            month: period.month,
+        },
+    });
+});
 </script>
 
 <template>
@@ -136,16 +154,34 @@ function methodLabel(value: string): string {
                 v-if="statement.selected_period"
                 class="flex flex-col gap-4 p-4"
             >
-                <div>
-                    <h3 class="text-lg font-semibold">
-                        Statement of Account ·
-                        {{ statement.selected_period.label }}
-                    </h3>
-                    <p class="text-muted-foreground text-sm">
-                        Remaining
-                        {{ formatPhp(statement.selected_period.remaining) }} of
-                        {{ formatPhp(statement.selected_period.charge_total) }}
-                    </p>
+                <div
+                    class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                >
+                    <div>
+                        <h3 class="text-lg font-semibold">
+                            Statement of Account ·
+                            {{ statement.selected_period.label }}
+                        </h3>
+                        <p class="text-muted-foreground text-sm">
+                            Remaining
+                            {{ formatPhp(statement.selected_period.remaining) }}
+                            of
+                            {{
+                                formatPhp(
+                                    statement.selected_period.charge_total,
+                                )
+                            }}
+                        </p>
+                    </div>
+                    <Button
+                        v-if="printUrl"
+                        as-child
+                        variant="outline"
+                        size="sm"
+                        class="shrink-0"
+                    >
+                        <a :href="printUrl">Print Printed Bill</a>
+                    </Button>
                 </div>
 
                 <table class="w-full text-sm">

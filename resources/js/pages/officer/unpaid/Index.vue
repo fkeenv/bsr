@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import PropertyStatementPanel from '@/pages/officer/unpaid/PropertyStatementPanel.vue';
 import { dashboard as officerDashboard } from '@/routes/officer';
+import { batch as printedBillsBatch } from '@/routes/officer/printed-bills';
 import { index as unpaidIndex } from '@/routes/officer/unpaid';
 import type { StatementOfAccountPage } from '@/types/statement-of-account';
 import type { UnpaidRosterPage } from '@/types/unpaid-roster';
@@ -141,16 +142,40 @@ function rowHint(row: UnpaidRosterPage['rows'][number]): string {
 const selectedStatement = computed(
     (): StatementOfAccountPage | null => props.selected,
 );
+
+const batchPrintUrl = computed((): string =>
+    printedBillsBatch.url({
+        query: {
+            year: props.this_billing_period.year,
+            month: props.this_billing_period.month,
+        },
+    }),
+);
 </script>
 
 <template>
     <Head title="Unpaid" />
 
     <div class="flex flex-col gap-3 p-4 pb-8">
-        <Heading
-            title="Unpaid"
-            :description="`${this_billing_period.label} · Outstanding > ₱0`"
-        />
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <Heading
+                title="Unpaid"
+                :description="`${this_billing_period.label} · Outstanding > ₱0`"
+            />
+            <Button
+                v-if="empty_state !== 'clear'"
+                as-child
+                variant="outline"
+                size="sm"
+                class="shrink-0"
+            >
+                <a :href="batchPrintUrl">
+                    Print unpaid ({{ this_billing_period.label }})
+                </a>
+            </Button>
+        </div>
 
         <div
             v-if="empty_state === 'clear'"
