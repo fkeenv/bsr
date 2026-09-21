@@ -9,9 +9,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProfileAvatarController extends Controller
 {
-    /**
-     * Stream the authenticated user's avatar image.
-     */
     public function __invoke(Request $request): StreamedResponse
     {
         $profile = $request->user()?->profile;
