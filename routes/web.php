@@ -10,6 +10,7 @@ use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\Officer\AnnouncementAttachmentController as OfficerAnnouncementAttachmentController;
 use App\Http\Controllers\Officer\AnnouncementController as OfficerAnnouncementController;
+use App\Http\Controllers\Officer\BillSettingsController;
 use App\Http\Controllers\Officer\ChargeController;
 use App\Http\Controllers\Officer\ChargeGenerationController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Officer\LevySettingsController;
 use App\Http\Controllers\Officer\MembershipApplicationController as OfficerMembershipApplicationController;
 use App\Http\Controllers\Officer\MembershipController as OfficerMembershipController;
 use App\Http\Controllers\Officer\PaymentController as OfficerPaymentController;
+use App\Http\Controllers\Officer\PrintedBillController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
@@ -124,6 +126,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('unpaid', [UnpaidRosterController::class, 'index'])
             ->name('unpaid.index');
 
+        Route::get('printed-bills/batch', [PrintedBillController::class, 'batch'])
+            ->name('printed-bills.batch');
+        Route::get('printed-bills/{property}', [PrintedBillController::class, 'show'])
+            ->name('printed-bills.show');
+
         Route::get('properties/import', [PropertyImportController::class, 'create'])
             ->name('properties.import.create');
         Route::get('properties/import/sample', [PropertyImportController::class, 'sample'])
@@ -157,6 +164,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('levy-settings.edit');
         Route::put('levy-settings', [LevySettingsController::class, 'update'])
             ->name('levy-settings.update');
+
+        Route::get('bill-settings', [BillSettingsController::class, 'edit'])
+            ->name('bill-settings.edit');
+        Route::put('bill-settings', [BillSettingsController::class, 'update'])
+            ->name('bill-settings.update');
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':administrator'])->prefix('administrator')->name('administrator.')->group(function () {
