@@ -4,7 +4,8 @@ export type User = {
     email: string;
     mobile_number: string | null;
     is_super_admin: boolean;
-    avatar?: string;
+    title?: string | null;
+    avatar?: string | null;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

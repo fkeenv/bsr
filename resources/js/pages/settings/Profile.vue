@@ -6,9 +6,11 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import DeleteUser from '@/components/DeleteUser.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInitials } from '@/composables/useInitials';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 
@@ -24,6 +26,7 @@ defineOptions({
 });
 
 const page = usePage();
+const { getInitials } = useInitials();
 const user = computed(() => {
     const current = page.props.auth.user;
 
@@ -46,14 +49,45 @@ const user = computed(() => {
         <Heading
             variant="small"
             title="Profile"
-            description="Update your name, email address, and mobile number"
+            description="Update your name, email address, mobile number, title, and avatar"
         />
 
         <Form
             v-bind="ProfileController.update.form()"
+            enctype="multipart/form-data"
             class="space-y-6"
             v-slot="{ errors, processing }"
         >
+            <div class="flex items-center gap-4">
+                <Avatar class="size-16 overflow-hidden rounded-full">
+                    <AvatarImage
+                        v-if="user.avatar"
+                        :src="user.avatar"
+                        :alt="user.name"
+                    />
+                    <AvatarFallback
+                        class="bg-neutral-200 text-lg font-semibold text-black dark:bg-neutral-700 dark:text-white"
+                    >
+                        {{ getInitials(user.name) }}
+                    </AvatarFallback>
+                </Avatar>
+                <div class="grid flex-1 gap-2">
+                    <Label for="avatar">Avatar</Label>
+                    <Input
+                        id="avatar"
+                        class="mt-1 block w-full"
+                        name="avatar"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                    />
+                    <p class="text-muted-foreground text-sm">
+                        Optional. Without an upload, your initials are shown
+                        (for example, Keen Vergara → KV).
+                    </p>
+                    <InputError class="mt-2" :message="errors.avatar" />
+                </div>
+            </div>
+
             <div class="grid gap-2">
                 <Label for="name">Name</Label>
                 <Input
@@ -66,6 +100,22 @@ const user = computed(() => {
                     placeholder="Full name"
                 />
                 <InputError class="mt-2" :message="errors.name" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="title">Title</Label>
+                <Input
+                    id="title"
+                    class="mt-1 block w-full"
+                    name="title"
+                    :default-value="user.title ?? ''"
+                    autocomplete="organization-title"
+                    placeholder="e.g. Treasurer"
+                />
+                <p class="text-muted-foreground text-sm">
+                    Optional display title. Not a platform role.
+                </p>
+                <InputError class="mt-2" :message="errors.title" />
             </div>
 
             <div class="grid gap-2">

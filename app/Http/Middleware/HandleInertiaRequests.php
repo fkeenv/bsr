@@ -38,14 +38,19 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $announcementsPageAccess = app(AnnouncementsPageAccess::class);
+        $profile = $user?->profile;
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $user === null ? null : [
-                    ...$user->toArray(),
+                    ...collect($user->toArray())->except(['profile'])->all(),
                     'is_super_admin' => $user->isSuperAdmin(),
+                    'title' => $profile?->title,
+                    'avatar' => filled($profile?->avatar_path)
+                        ? route('profile.avatar.show')
+                        : null,
                 ],
                 'capabilities' => $user === null ? null : [
                     'isSuperAdmin' => $user->isSuperAdmin(),
