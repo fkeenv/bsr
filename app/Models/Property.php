@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
@@ -24,6 +25,7 @@ use InvalidArgumentException;
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read PropertyProfile|null $profile
  */
 #[Fillable([
     'block',
@@ -59,6 +61,14 @@ class Property extends Model
             'first_charged_at' => 'datetime',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return HasOne<PropertyProfile, $this>
+     */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(PropertyProfile::class);
     }
 
     public function openingBalanceIsFrozen(): bool
