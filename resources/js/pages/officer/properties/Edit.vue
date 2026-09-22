@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as propertiesIndex } from '@/routes/officer/properties';
+import { edit as editPropertyProfile } from '@/routes/property-profile';
 import type { Property } from '@/types/property';
 
 type Props = {
@@ -40,10 +41,19 @@ defineOptions({
     <Head :title="`Edit Block ${property.block} Lot ${property.lot}`" />
 
     <div class="flex flex-col space-y-6 p-4">
-        <Heading
-            :title="`Block ${property.block} · Lot ${property.lot}`"
-            description="Block and Lot are immutable. Update address, recorded owner, and Opening Balance when still editable."
-        />
+        <div
+            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <Heading
+                :title="`Block ${property.block} · Lot ${property.lot}`"
+                description="Block and Lot are immutable. Update address, recorded owner, and Opening Balance when still editable."
+            />
+            <Button variant="outline" as-child>
+                <Link :href="editPropertyProfile(property.id)">
+                    Shared profile
+                </Link>
+            </Button>
+        </div>
 
         <Form
             v-bind="PropertyController.update.form(property)"

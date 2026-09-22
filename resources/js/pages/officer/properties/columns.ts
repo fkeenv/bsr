@@ -1,11 +1,9 @@
-import { Link } from '@inertiajs/vue3';
 import { createColumnHelper } from '@tanstack/vue-table';
 import { h } from 'vue';
 import DataTableColumnHeader from '@/components/data-table/DataTableColumnHeader.vue';
 import type { DataTableFeatures } from '@/components/data-table/features';
 import { Badge } from '@/components/ui/badge';
 import PropertyRowActions from '@/pages/officer/properties/PropertyRowActions.vue';
-import { edit as editPropertyProfile } from '@/routes/property-profile';
 import type { Property } from '@/types/property';
 
 const columnHelper = createColumnHelper<DataTableFeatures, Property>();
@@ -48,19 +46,6 @@ export const propertyColumns = columnHelper.columns([
                 getValue() ? 'Active' : 'Inactive',
             ),
         sortFn: 'basic',
-    }),
-    columnHelper.display({
-        id: 'profile',
-        header: 'Shared profile',
-        cell: ({ row }) =>
-            h(
-                Link,
-                {
-                    href: editPropertyProfile(row.original.id),
-                    class: 'text-primary font-medium underline-offset-4 hover:underline',
-                },
-                () => 'Open',
-            ),
     }),
     columnHelper.display({
         id: 'actions',

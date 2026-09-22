@@ -27,6 +27,7 @@ class PropertyProfileController extends Controller
 
         return Inertia::render('property-profile/Edit', [
             'profile' => PropertyProfileData::fromProperty($property),
+            'canAccessOfficerProperties' => $user->canAccessOfficerSurfaces(),
         ]);
     }
 

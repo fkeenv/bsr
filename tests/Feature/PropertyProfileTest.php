@@ -29,6 +29,7 @@ test('live Membership holder can open an empty shared Property profile', functio
             ->component('property-profile/Edit')
             ->where('profile.property_id', $property->id)
             ->where('profile.property_label', 'Block '.$property->block.' · Lot '.$property->lot)
+            ->where('canAccessOfficerProperties', false)
             ->where('profile.saved_at', null)
             ->where('profile.household_members', [])
             ->where('profile.emergency_contacts', [])
@@ -87,7 +88,8 @@ test('Officer can maintain a shared profile for any Property', function () {
 
     $this->actingAs($officer)
         ->get(route('property-profile.edit', $property))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('canAccessOfficerProperties', true));
 
     $this->actingAs($officer)
         ->from(route('property-profile.edit', $property))

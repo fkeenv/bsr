@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { Car, Phone, Plus, Save, Trash2, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
@@ -7,7 +7,13 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { update as updatePropertyProfile } from '@/routes/property-profile';
+import { dashboard } from '@/routes';
+import { dashboard as officerDashboard } from '@/routes/officer';
+import { index as officerProperties } from '@/routes/officer/properties';
+import {
+    edit as editPropertyProfile,
+    update as updatePropertyProfile,
+} from '@/routes/property-profile';
 import type {
     PropertyEmergencyContact,
     PropertyProfile,
@@ -16,7 +22,36 @@ import type {
 
 const props = defineProps<{
     profile: PropertyProfile;
+    canAccessOfficerProperties: boolean;
 }>();
+
+setLayoutProps({
+    breadcrumbs: props.canAccessOfficerProperties
+        ? [
+              {
+                  title: 'Officer',
+                  href: officerDashboard(),
+              },
+              {
+                  title: 'Properties',
+                  href: officerProperties(),
+              },
+              {
+                  title: 'Shared profile',
+                  href: editPropertyProfile(props.profile.property_id),
+              },
+          ]
+        : [
+              {
+                  title: 'Dashboard',
+                  href: dashboard(),
+              },
+              {
+                  title: 'Shared profile',
+                  href: editPropertyProfile(props.profile.property_id),
+              },
+          ],
+});
 
 const form = useForm<PropertyProfileForm>({
     household_members: props.profile.household_members.map((member) => ({
