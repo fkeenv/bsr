@@ -15,7 +15,8 @@ import {
     ShieldCheck,
     Users,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { AccordionRoot } from 'reka-ui';
+import { computed, ref, watch } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -29,6 +30,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { dashboard } from '@/routes';
 import { home } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
@@ -48,14 +50,18 @@ import { index as paymentsIndex } from '@/routes/officer/payments';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
 import { index as unpaidIndex } from '@/routes/officer/unpaid';
-import { index as statementOfAccountIndex } from '@/routes/statement-of-account';
+import {
+    index as statementOfAccountIndex,
+    show as statementOfAccountShow,
+} from '@/routes/statement-of-account';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
 import { index as administratorsIndex } from '@/routes/super-admin/administrators';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
 import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
-import type { NavItem } from '@/types';
+import type { NavItem, NavSection } from '@/types';
 
 const page = usePage();
+const { currentUrl, isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
 const capabilities = computed(() => page.props.auth.capabilities);
 const announcementsPageVisibility = computed(
     () => page.props.announcementsPageVisibility ?? 'private',
@@ -272,6 +278,96 @@ const membershipNavItems = computed((): NavItem[] => {
     return items;
 });
 
+const navSections = computed<NavSection[]>(() => {
+    return [
+        {
+            id: 'platform',
+            title: 'Platform',
+            icon: LayoutGrid,
+            items: platformNavItems.value,
+        },
+        {
+            id: 'super-admin',
+            title: 'Super Admin',
+            icon: KeyRound,
+            items: superAdminNavItems.value,
+        },
+        {
+            id: 'officer',
+            title: 'Officer',
+            icon: Shield,
+            items: officerNavItems.value,
+        },
+        {
+            id: 'administrator',
+            title: 'Administrator',
+            icon: ShieldCheck,
+            items: administratorNavItems.value,
+        },
+        {
+            id: 'membership',
+            title: 'Membership',
+            icon: Users,
+            items: membershipNavItems.value,
+            activeRoutePatterns: [statementOfAccountShow.definition.url],
+        },
+    ].filter((section) => section.items.length > 0);
+});
+
+function matchesRoutePattern(
+    routePattern: string,
+    currentPath: string,
+): boolean {
+    const routeSegments = routePattern.split('/');
+    const currentSegments = currentPath.split('/');
+
+    return (
+        routeSegments.length === currentSegments.length &&
+        routeSegments.every(
+            (segment, index) =>
+                (segment.startsWith('{') && segment.endsWith('}')) ||
+                segment === currentSegments[index],
+        )
+    );
+}
+
+const activeSectionId = computed<string | undefined>(() => {
+    const sectionsInPriorityOrder = [...navSections.value].reverse();
+    const exactMatch = sectionsInPriorityOrder.find((section) =>
+        section.items.some((item) => isCurrentUrl(item.href)),
+    );
+
+    if (exactMatch) {
+        return exactMatch.id;
+    }
+
+    const routePatternMatch = sectionsInPriorityOrder.find((section) =>
+        section.activeRoutePatterns?.some((routePattern) =>
+            matchesRoutePattern(routePattern, currentUrl.value),
+        ),
+    );
+
+    if (routePatternMatch) {
+        return routePatternMatch.id;
+    }
+
+    return (
+        sectionsInPriorityOrder.find((section) =>
+            section.items.some((item) => isCurrentOrParentUrl(item.href)),
+        )?.id ?? navSections.value[0]?.id
+    );
+});
+
+const openSection = ref<string>();
+
+watch(
+    [currentUrl, navSections],
+    () => {
+        openSection.value = activeSectionId.value;
+    },
+    { immediate: true },
+);
+
 const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
@@ -300,29 +396,16 @@ const footerNavItems: NavItem[] = [
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent>
-            <NavMain label="Platform" :items="platformNavItems" />
-            <NavMain
-                v-if="superAdminNavItems.length"
-                label="Super Admin"
-                :items="superAdminNavItems"
-            />
-            <NavMain
-                v-if="officerNavItems.length"
-                label="Officer"
-                :items="officerNavItems"
-            />
-            <NavMain
-                v-if="administratorNavItems.length"
-                label="Administrator"
-                :items="administratorNavItems"
-            />
-            <NavMain
-                v-if="membershipNavItems.length"
-                label="Membership"
-                :items="membershipNavItems"
-            />
-        </SidebarContent>
+        <AccordionRoot v-model="openSection" type="single" as-child>
+            <SidebarContent>
+                <NavMain
+                    v-for="section in navSections"
+                    :key="section.id"
+                    :section="section"
+                    :is-active="activeSectionId === section.id"
+                />
+            </SidebarContent>
+        </AccordionRoot>
 
         <SidebarFooter>
             <NavFooter :items="footerNavItems" />
