@@ -25,6 +25,7 @@ use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\Officer\UnpaidRosterController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PropertyProfileController;
 use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -52,6 +53,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('membership-application.create');
     Route::post('membership-application', [MembershipApplicationController::class, 'store'])
         ->name('membership-application.store');
+
+    Route::get('properties/{property}/profile', [PropertyProfileController::class, 'edit'])
+        ->name('property-profile.edit');
+    Route::put('properties/{property}/profile', [PropertyProfileController::class, 'update'])
+        ->name('property-profile.update');
 
     Route::middleware(EnsureMembershipOnboardingIsComplete::class)->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
