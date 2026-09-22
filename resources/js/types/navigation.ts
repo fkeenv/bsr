@@ -12,3 +12,11 @@ export type NavItem = {
     icon?: LucideIcon;
     isActive?: boolean;
 };
+
+export type NavSection = {
+    id: string;
+    title: string;
+    icon: LucideIcon;
+    items: NavItem[];
+    activeRoutePatterns?: string[];
+};
