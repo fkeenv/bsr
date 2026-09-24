@@ -7,6 +7,7 @@ import {
     FolderGit2,
     KeyRound,
     LayoutGrid,
+    MailPlus,
     Megaphone,
     Pause,
     Receipt,
@@ -47,6 +48,7 @@ import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
 import { index as membershipApplicationsIndex } from '@/routes/officer/membership-applications';
 import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as paymentsIndex } from '@/routes/officer/payments';
+import { index as propertyInvitationsIndex } from '@/routes/officer/property-invitations';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
 import { index as unpaidIndex } from '@/routes/officer/unpaid';
@@ -185,6 +187,11 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Memberships',
             href: membershipsIndex(),
             icon: Users,
+        },
+        {
+            title: 'Invitations',
+            href: propertyInvitationsIndex(),
+            icon: MailPlus,
         },
         {
             title: 'Payments',

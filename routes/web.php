@@ -22,6 +22,7 @@ use App\Http\Controllers\Officer\PaymentController as OfficerPaymentController;
 use App\Http\Controllers\Officer\PrintedBillController;
 use App\Http\Controllers\Officer\PropertyController;
 use App\Http\Controllers\Officer\PropertyImportController;
+use App\Http\Controllers\Officer\PropertyInvitationController;
 use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\Officer\UnpaidRosterController;
 use App\Http\Controllers\PaymentController;
@@ -115,6 +116,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('memberships.update-role');
         Route::post('memberships/{membership}/end', [OfficerMembershipController::class, 'end'])
             ->name('memberships.end');
+
+        Route::get('property-invitations', [PropertyInvitationController::class, 'index'])
+            ->name('property-invitations.index');
+        Route::post('property-invitations', [PropertyInvitationController::class, 'store'])
+            ->name('property-invitations.store');
+        Route::delete('property-invitations/{propertyInvitation}', [PropertyInvitationController::class, 'destroy'])
+            ->name('property-invitations.destroy');
 
         Route::get('payments', [OfficerPaymentController::class, 'index'])
             ->name('payments.index');
