@@ -184,3 +184,29 @@ test('losing and regaining Officer access keeps current Officer progress', funct
         ->and($progress->tour_acknowledged_at)->not->toBeNull()
         ->and($progress->completed_steps)->toBe([OnboardingStep::OfficerInvitations->value]);
 });
+
+test('acknowledging the Officer tour records it once so replays keep progress', function () {
+    $this->travelTo('2026-10-03 09:00:00');
+    $officer = User::factory()->officer()->create();
+    $progress = OnboardingProgress::factory()->for($officer)->officer()->create([
+        'completed_steps' => [OnboardingStep::OfficerCharges->value],
+    ]);
+
+    $this->actingAs($officer)
+        ->post(route('onboarding.tour-acknowledgement.store', 'officer'))
+        ->assertNoContent();
+
+    $this->travelTo('2026-10-04 09:00:00');
+
+    $this->actingAs($officer)
+        ->post(route('onboarding.tour-acknowledgement.store', 'officer'))
+        ->assertNoContent();
+
+    $this->actingAs($officer)
+        ->get(route('officer.dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('onboarding.tour_acknowledged', true)
+            ->where('onboarding.completed_steps', ['officer-charges']));
+
+    expect($progress->refresh()->tour_acknowledged_at?->toIso8601String())->toBe('2026-10-03T09:00:00+00:00');
+});

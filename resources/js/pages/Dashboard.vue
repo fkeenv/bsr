@@ -90,7 +90,7 @@ const checklistItems = computed((): OnboardingChecklistItem[] => {
 const onboardingTour = useOnboardingTour({
     experience: 'member',
     onboarding: props.onboarding,
-    steps: (): TourStep[] => {
+    steps: ({ isMobile, revealNavigationSection }): TourStep[] => {
         const firstMembership = props.memberships[0];
         const steps: TourStep[] = [
             {
@@ -112,7 +112,7 @@ const onboardingTour = useOnboardingTour({
             },
         ];
 
-        if (!onboardingTour.isMobile.value) {
+        if (!isMobile) {
             steps.push({
                 target: 'nav-membership',
                 title: 'Membership menu',
@@ -120,7 +120,7 @@ const onboardingTour = useOnboardingTour({
                     ? 'Announcements and your Statement of Account are always here.'
                     : 'Your Statement of Account is always here.',
                 side: 'right',
-                prepare: onboardingTour.revealNavigationSection('membership'),
+                prepare: revealNavigationSection('membership'),
             });
         }
 

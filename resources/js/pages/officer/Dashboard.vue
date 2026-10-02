@@ -37,7 +37,8 @@ const checklistCopy: Record<
     },
     'officer-payments': {
         title: 'Check Payments and Unpaid',
-        description: 'Declarations waiting for you, and who still owes.',
+        description:
+            'Declarations waiting for you. Unpaid sits beside it in the menu.',
     },
     'officer-charges': {
         title: 'See the Charges',
@@ -71,7 +72,7 @@ const checklistItems = computed((): OnboardingChecklistItem[] => {
 const onboardingTour = useOnboardingTour({
     experience: 'officer',
     onboarding: props.onboarding,
-    steps: (): TourStep[] => {
+    steps: ({ isMobile, revealNavigationSection }): TourStep[] => {
         const steps: TourStep[] = [
             {
                 target: 'officer-checklist',
@@ -82,35 +83,15 @@ const onboardingTour = useOnboardingTour({
             },
         ];
 
-        if (!onboardingTour.isMobile.value) {
-            const revealOfficerNavigation =
-                onboardingTour.revealNavigationSection('officer');
-
-            steps.push(
-                {
-                    target: 'nav-officer-invitations',
-                    title: 'Households',
-                    description:
-                        'Invitations, Memberships, and the Properties roster: who lives where and how they join.',
-                    side: 'right',
-                    prepare: revealOfficerNavigation,
-                },
-                {
-                    target: 'nav-officer-payments',
-                    title: 'Money',
-                    description:
-                        'Payments, Unpaid, and Charges: what is owed, declared, and confirmed.',
-                    side: 'right',
-                    prepare: revealOfficerNavigation,
-                },
-                {
-                    target: 'nav-officer-announcements',
-                    title: 'Announcements',
-                    description: 'Draft and publish notices for every Member.',
-                    side: 'right',
-                    prepare: revealOfficerNavigation,
-                },
-            );
+        if (!isMobile) {
+            steps.push({
+                target: 'nav-officer',
+                title: 'Officer menu',
+                description:
+                    'Households: Properties, Invitations, and Memberships. Money: Payments, Unpaid, and Charges. Notices: Announcements.',
+                side: 'right',
+                prepare: revealNavigationSection('officer'),
+            });
         }
 
         steps.push({

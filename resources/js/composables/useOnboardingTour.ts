@@ -9,6 +9,11 @@ import type { Onboarding, OnboardingExperience } from '@/types/onboarding';
 
 const SIDEBAR_TRANSITION_MS = 250;
 
+export type OnboardingTourContext = {
+    isMobile: boolean;
+    revealNavigationSection: (sectionId: string) => () => Promise<void>;
+};
+
 /**
  * Runs an onboarding experience's tour: once automatically until it is
  * acknowledged, and again on demand from Help, restoring the sidebar after.
@@ -16,7 +21,7 @@ const SIDEBAR_TRANSITION_MS = 250;
 export function useOnboardingTour(options: {
     experience: OnboardingExperience;
     onboarding: Onboarding | null;
-    steps: () => TourStep[];
+    steps: (context: OnboardingTourContext) => TourStep[];
 }) {
     const sidebar = useSidebar();
     const { openNavigationSection } = useNavigationSection();
@@ -43,23 +48,29 @@ export function useOnboardingTour(options: {
         const previousSidebarOpen = sidebar.open.value;
         const previousSection = openNavigationSection.value;
 
-        void tour.start(options.steps(), {
-            onDismiss: () => {
-                if (!acknowledge || isTourAcknowledged.value) {
-                    return;
-                }
+        void tour.start(
+            options.steps({
+                isMobile: sidebar.isMobile.value,
+                revealNavigationSection,
+            }),
+            {
+                onDismiss: () => {
+                    if (!acknowledge || isTourAcknowledged.value) {
+                        return;
+                    }
 
-                isTourAcknowledged.value = true;
-                void tourAcknowledgement.submit();
-            },
-            onEnd: () => {
-                if (!sidebar.isMobile.value) {
-                    sidebar.setOpen(previousSidebarOpen);
-                }
+                    isTourAcknowledged.value = true;
+                    void tourAcknowledgement.submit();
+                },
+                onEnd: () => {
+                    if (!sidebar.isMobile.value) {
+                        sidebar.setOpen(previousSidebarOpen);
+                    }
 
-                openNavigationSection.value = previousSection;
+                    openNavigationSection.value = previousSection;
+                },
             },
-        });
+        );
     };
 
     onMounted(() => {
@@ -70,8 +81,6 @@ export function useOnboardingTour(options: {
 
     return {
         isRunning: tour.isRunning,
-        isMobile: sidebar.isMobile,
         replay: () => run(false),
-        revealNavigationSection,
     };
 }

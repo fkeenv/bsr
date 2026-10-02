@@ -64,7 +64,6 @@ const showAccordion = computed(
                     <SidebarMenuSubItem
                         v-for="item in section.items"
                         :key="item.title"
-                        :data-tour="item.tourTarget"
                     >
                         <SidebarMenuSubButton
                             as-child
