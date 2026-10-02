@@ -1,20 +1,23 @@
 <script setup lang="ts">
-import { Head, Link, useHttp, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { CircleHelp, HousePlus } from '@lucide/vue';
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
-import MemberOnboardingChecklist from '@/components/MemberOnboardingChecklist.vue';
+import OnboardingChecklist from '@/components/OnboardingChecklist.vue';
 import { Button } from '@/components/ui/button';
-import { useSidebar } from '@/components/ui/sidebar';
-import { useNavigationSection } from '@/composables/useNavigationSection';
-import { useTour } from '@/composables/useTour';
+import { useOnboardingTour } from '@/composables/useOnboardingTour';
 import type { TourStep } from '@/composables/useTour';
 import { dashboardMembershipColumns } from '@/pages/dashboard-membership-columns';
 import { dashboard, joinProperty } from '@/routes';
-import { store as acknowledgeOnboardingTour } from '@/routes/onboarding/tour-acknowledgement';
+import { store as completeOnboardingStep } from '@/routes/onboarding/steps';
+import { edit as editPropertyProfile } from '@/routes/property-profile';
 import type { Membership } from '@/types/membership';
-import type { Onboarding } from '@/types/onboarding';
+import type {
+    MemberOnboardingStepKey,
+    Onboarding,
+    OnboardingChecklistItem,
+} from '@/types/onboarding';
 
 type Props = {
     memberships: Membership[];
@@ -28,94 +31,108 @@ const canJoinProperty = computed(
     () => page.props.auth.capabilities?.isSuperAdmin !== true,
 );
 const hasMemberships = computed(() => props.memberships.length > 0);
+const isAnnouncementsPageListed = computed(
+    () => page.props.announcementsPageListed !== false,
+);
+const profilePropertyId = computed(
+    () => props.memberships[0]?.property_id ?? null,
+);
 
-const SIDEBAR_TRANSITION_MS = 250;
+const checklistCopy: Record<
+    MemberOnboardingStepKey,
+    { title: string; description: string }
+> = {
+    announcements: {
+        title: 'Read the Announcements',
+        description: 'Notices the association posts for every Member.',
+    },
+    'statement-of-account': {
+        title: 'Open your Statement of Account',
+        description: 'Charges, Payments, and what your Property owes.',
+    },
+    'property-profile': {
+        title: 'Save your Property profile',
+        description: 'Household Members, Emergency Contacts, and Vehicles.',
+    },
+};
 
-const sidebar = useSidebar();
-const { openNavigationSection } = useNavigationSection();
-const tour = useTour();
-const tourAcknowledgement = useHttp(acknowledgeOnboardingTour('member'), {});
-const isTourAcknowledged = ref(props.onboarding?.tour_acknowledged ?? true);
+const checklistItems = computed((): OnboardingChecklistItem[] => {
+    const onboarding = props.onboarding;
 
-const memberTourSteps = (): TourStep[] => {
-    const firstMembership = props.memberships[0];
-    const steps: TourStep[] = [
-        {
-            target: 'member-memberships',
-            title: 'Your Properties',
-            description:
-                firstMembership?.property_label === null ||
-                firstMembership === undefined
-                    ? 'Each Property you belong to is listed here.'
-                    : `You are a ${firstMembership.role} of ${firstMembership.property_label}. Every Property you belong to is listed here.`,
-            side: 'bottom',
-        },
-        {
-            target: 'member-checklist',
-            title: 'Getting started',
-            description:
-                'A short checklist to help you settle in. It stays here until each item is done.',
-            side: 'bottom',
-        },
-    ];
+    if (onboarding === null) {
+        return [];
+    }
 
-    if (!sidebar.isMobile.value) {
-        steps.push({
-            target: 'nav-membership',
-            title: 'Membership menu',
-            description:
-                page.props.announcementsPageListed === false
-                    ? 'Your Statement of Account is always here.'
-                    : 'Announcements and your Statement of Account are always here.',
-            side: 'right',
-            prepare: async () => {
-                sidebar.setOpen(true);
-                openNavigationSection.value = 'membership';
-                await nextTick();
-                await new Promise((resolve) =>
-                    setTimeout(resolve, SIDEBAR_TRANSITION_MS),
-                );
+    return (onboarding.steps as MemberOnboardingStepKey[])
+        .filter(
+            (step) =>
+                step !== 'announcements' || isAnnouncementsPageListed.value,
+        )
+        .filter(
+            (step) =>
+                step !== 'property-profile' || profilePropertyId.value !== null,
+        )
+        .map((step) => ({
+            key: step,
+            ...checklistCopy[step],
+            isComplete: onboarding.completed_steps.includes(step),
+            link:
+                step === 'property-profile' && profilePropertyId.value !== null
+                    ? { href: editPropertyProfile(profilePropertyId.value) }
+                    : {
+                          href: completeOnboardingStep('member'),
+                          data: { step },
+                          as: 'button',
+                      },
+        }));
+});
+
+const onboardingTour = useOnboardingTour({
+    experience: 'member',
+    onboarding: props.onboarding,
+    steps: (): TourStep[] => {
+        const firstMembership = props.memberships[0];
+        const steps: TourStep[] = [
+            {
+                target: 'member-memberships',
+                title: 'Your Properties',
+                description:
+                    firstMembership?.property_label === null ||
+                    firstMembership === undefined
+                        ? 'Each Property you belong to is listed here.'
+                        : `You are a ${firstMembership.role} of ${firstMembership.property_label}. Every Property you belong to is listed here.`,
+                side: 'bottom',
             },
+            {
+                target: 'member-checklist',
+                title: 'Getting started',
+                description:
+                    'A short checklist to help you settle in. It stays here until each item is done.',
+                side: 'bottom',
+            },
+        ];
+
+        if (!onboardingTour.isMobile.value) {
+            steps.push({
+                target: 'nav-membership',
+                title: 'Membership menu',
+                description: isAnnouncementsPageListed.value
+                    ? 'Announcements and your Statement of Account are always here.'
+                    : 'Your Statement of Account is always here.',
+                side: 'right',
+                prepare: onboardingTour.revealNavigationSection('membership'),
+            });
+        }
+
+        steps.push({
+            target: 'member-help',
+            title: 'Need a refresher?',
+            description: 'Select Help any time to replay this tour.',
+            side: 'bottom',
         });
-    }
 
-    steps.push({
-        target: 'member-help',
-        title: 'Need a refresher?',
-        description: 'Select Help any time to replay this tour.',
-        side: 'bottom',
-    });
-
-    return steps;
-};
-
-const runMemberTour = (options: { acknowledge: boolean }) => {
-    const previousSidebarOpen = sidebar.open.value;
-    const previousSection = openNavigationSection.value;
-
-    void tour.start(memberTourSteps(), {
-        onDismiss: () => {
-            if (!options.acknowledge || isTourAcknowledged.value) {
-                return;
-            }
-
-            isTourAcknowledged.value = true;
-            void tourAcknowledgement.submit();
-        },
-        onEnd: () => {
-            if (!sidebar.isMobile.value) {
-                sidebar.setOpen(previousSidebarOpen);
-            }
-
-            openNavigationSection.value = previousSection;
-        },
-    });
-};
-
-onMounted(() => {
-    if (props.onboarding !== null && !isTourAcknowledged.value) {
-        runMemberTour({ acknowledge: true });
-    }
+        return steps;
+    },
 });
 
 defineOptions({
@@ -147,8 +164,8 @@ defineOptions({
                 variant="outline"
                 class="self-start"
                 data-tour="member-help"
-                :disabled="tour.isRunning.value"
-                @click="runMemberTour({ acknowledge: false })"
+                :disabled="onboardingTour.isRunning.value"
+                @click="onboardingTour.replay()"
             >
                 <CircleHelp class="size-4" />
                 Help
@@ -177,10 +194,11 @@ defineOptions({
         </div>
 
         <template v-else>
-            <MemberOnboardingChecklist
-                v-if="onboarding !== null"
-                :onboarding="onboarding"
-                :profile-property-id="memberships[0]?.property_id ?? null"
+            <OnboardingChecklist
+                v-if="checklistItems.length > 0"
+                data-tour="member-checklist"
+                title="Getting started"
+                :items="checklistItems"
             />
 
             <div data-tour="member-memberships">

@@ -28,6 +28,14 @@ class OnboardingProgressFactory extends Factory
         ];
     }
 
+    public function officer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'experience' => OnboardingExperience::Officer,
+            'version' => OnboardingExperience::Officer->currentVersion(),
+        ]);
+    }
+
     public function tourAcknowledged(): static
     {
         return $this->state(fn (array $attributes) => [

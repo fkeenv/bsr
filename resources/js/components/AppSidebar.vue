@@ -167,6 +167,7 @@ const officerNavItems = computed((): NavItem[] => {
         {
             title: 'Announcements',
             href: officerAnnouncementsIndex(),
+            tourTarget: 'nav-officer-announcements',
             icon: Megaphone,
         },
         {
@@ -182,11 +183,13 @@ const officerNavItems = computed((): NavItem[] => {
         {
             title: 'Invitations',
             href: propertyInvitationsIndex(),
+            tourTarget: 'nav-officer-invitations',
             icon: MailPlus,
         },
         {
             title: 'Payments',
             href: paymentsIndex(),
+            tourTarget: 'nav-officer-payments',
             icon: Receipt,
         },
         {
