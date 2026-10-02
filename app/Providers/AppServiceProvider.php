@@ -30,9 +30,6 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
     }
 
-    /**
-     * Configure rate limiters that combine account and network context.
-     */
     protected function configureRateLimiting(): void
     {
         RateLimiter::for('property-invitation-redemption', fn (Request $request): array => [
