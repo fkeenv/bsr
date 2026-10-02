@@ -29,6 +29,8 @@ const canJoinProperty = computed(
 );
 const hasMemberships = computed(() => props.memberships.length > 0);
 
+const SIDEBAR_TRANSITION_MS = 250;
+
 const sidebar = useSidebar();
 const { openNavigationSection } = useNavigationSection();
 const tour = useTour();
@@ -62,13 +64,17 @@ const memberTourSteps = (): TourStep[] => {
             target: 'nav-membership',
             title: 'Membership menu',
             description:
-                'Announcements and your Statement of Account are always here.',
+                page.props.announcementsPageListed === false
+                    ? 'Your Statement of Account is always here.'
+                    : 'Announcements and your Statement of Account are always here.',
             side: 'right',
             prepare: async () => {
                 sidebar.setOpen(true);
                 openNavigationSection.value = 'membership';
                 await nextTick();
-                await new Promise((resolve) => setTimeout(resolve, 250));
+                await new Promise((resolve) =>
+                    setTimeout(resolve, SIDEBAR_TRANSITION_MS),
+                );
             },
         });
     }

@@ -47,7 +47,10 @@ class PropertyProfileController extends Controller
 
         $updatePropertyProfile->handle($property, $request->validated());
 
-        $onboardingProgress = $findOnboardingProgress->handle($user, OnboardingExperience::Member);
+        $savedOwnPropertyProfile = $user->memberships()->live()->whereBelongsTo($property)->exists();
+        $onboardingProgress = $savedOwnPropertyProfile
+            ? $findOnboardingProgress->handle($user, OnboardingExperience::Member)
+            : null;
 
         if ($onboardingProgress !== null) {
             $completeOnboardingStep->handle($onboardingProgress, OnboardingStep::PropertyProfile);

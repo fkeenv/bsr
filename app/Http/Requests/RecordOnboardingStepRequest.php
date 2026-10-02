@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\OnboardingExperience;
 use App\Enums\OnboardingStep;
+use App\Support\AnnouncementsPageAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,8 +24,14 @@ class RecordOnboardingStepRequest extends FormRequest
         $experience = $this->route('experience');
         assert($experience instanceof OnboardingExperience);
 
+        $recordableSteps = array_values(array_filter(
+            $experience->stepsCompletedByVisit(),
+            fn (OnboardingStep $step): bool => $step !== OnboardingStep::Announcements
+                || app(AnnouncementsPageAccess::class)->isListedInMembershipNav(),
+        ));
+
         return [
-            'step' => ['required', 'string', Rule::enum(OnboardingStep::class)->only($experience->stepsCompletedByVisit())],
+            'step' => ['required', 'string', Rule::enum(OnboardingStep::class)->only($recordableSteps)],
         ];
     }
 

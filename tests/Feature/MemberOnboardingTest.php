@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\AnnouncementsPageVisibility;
 use App\Enums\OnboardingExperience;
 use App\Enums\OnboardingStep;
+use App\Models\AssociationSetting;
 use App\Models\LegalDocumentVersion;
 use App\Models\Membership;
 use App\Models\OnboardingProgress;
@@ -184,6 +186,18 @@ test('checklist links reject unknown and save-only steps', function (mixed $step
     'Property profile' => ['property-profile'],
 ]);
 
+test('the Announcements step cannot be recorded while the Announcements page is hidden', function () {
+    AssociationSetting::current()->update(['announcements_page_visibility' => AnnouncementsPageVisibility::Hidden]);
+    $user = User::factory()->member()->create();
+    $progress = OnboardingProgress::factory()->for($user)->create();
+
+    $this->actingAs($user)
+        ->post(route('onboarding.steps.store', 'member'), ['step' => 'announcements'])
+        ->assertSessionHasErrors('step');
+
+    expect($progress->refresh()->completed_steps)->toBe([]);
+});
+
 test('checklist links reject ineligible User Accounts', function () {
     $progress = OnboardingProgress::factory()->create();
 
@@ -220,6 +234,22 @@ test('a failed Property profile save leaves the Property profile step open', fun
             'vehicles' => [],
         ])
         ->assertSessionHasErrors();
+
+    expect($progress->refresh()->completed_steps)->toBe([]);
+});
+
+test('an Officer saving another Property profile leaves their own Property profile step open', function () {
+    $officer = User::factory()->officer()->create();
+    $progress = OnboardingProgress::factory()->for($officer)->create();
+    $otherProperty = Property::factory()->create();
+
+    $this->actingAs($officer)
+        ->put(route('property-profile.update', $otherProperty), [
+            'household_members' => [['name' => 'Recorded by Officer']],
+            'emergency_contacts' => [],
+            'vehicles' => [],
+        ])
+        ->assertRedirect();
 
     expect($progress->refresh()->completed_steps)->toBe([]);
 });

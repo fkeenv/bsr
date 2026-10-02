@@ -37,11 +37,14 @@ export function useTour() {
     let activeDriver: Driver | null = null;
     let removeNavigationListener: (() => void) | null = null;
 
+    let endActiveTour: (() => void) | null = null;
+
     const destroy = (): void => {
         removeNavigationListener?.();
         removeNavigationListener = null;
         activeDriver?.destroy();
         activeDriver = null;
+        endActiveTour?.();
     };
 
     const start = async (
@@ -60,10 +63,24 @@ export function useTour() {
             return;
         }
 
+        let hasEnded = false;
+        endActiveTour = () => {
+            if (hasEnded) {
+                return;
+            }
+
+            hasEnded = true;
+            endActiveTour = null;
+            isRunning.value = false;
+            options.onEnd?.();
+        };
+
         const dismiss = (): void => {
             options.onDismiss?.();
             destroy();
         };
+
+        let isMoving = false;
 
         const moveTo = async (index: number): Promise<void> => {
             const step = availableSteps[index];
@@ -74,8 +91,18 @@ export function useTour() {
                 return;
             }
 
-            await step.prepare?.();
-            activeDriver?.moveTo(index);
+            if (isMoving) {
+                return;
+            }
+
+            isMoving = true;
+
+            try {
+                await step.prepare?.();
+                activeDriver?.moveTo(index);
+            } finally {
+                isMoving = false;
+            }
         };
 
         const driveSteps: DriveStep[] = availableSteps.map((step, index) => ({
@@ -102,10 +129,7 @@ export function useTour() {
             prevBtnText: 'Back',
             doneBtnText: 'Done',
             onDestroyStarted: dismiss,
-            onDestroyed: () => {
-                isRunning.value = false;
-                options.onEnd?.();
-            },
+            onDestroyed: () => endActiveTour?.(),
         });
 
         removeNavigationListener = router.on('start', destroy);

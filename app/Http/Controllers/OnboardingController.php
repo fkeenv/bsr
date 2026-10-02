@@ -7,6 +7,8 @@ use App\Actions\Onboarding\CompleteOnboardingStep;
 use App\Actions\Onboarding\FindCurrentOnboardingProgress;
 use App\Enums\OnboardingExperience;
 use App\Http\Requests\RecordOnboardingStepRequest;
+use App\Models\OnboardingProgress;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -22,7 +24,7 @@ class OnboardingController extends Controller
         $user = $request->user();
         assert($user !== null);
 
-        $acknowledgeTour->handle($findProgress->handleOrFail($user, $experience));
+        $acknowledgeTour->handle($this->currentProgressOrFail($findProgress, $user, $experience));
 
         return response()->noContent();
     }
@@ -37,11 +39,24 @@ class OnboardingController extends Controller
         assert($user !== null);
 
         $step = $request->step();
-        $completeStep->handle($findProgress->handleOrFail($user, $experience), $step);
+        $completeStep->handle($this->currentProgressOrFail($findProgress, $user, $experience), $step);
 
         $routeName = $step->visitRouteName();
         assert($routeName !== null);
 
         return redirect()->route($routeName);
+    }
+
+    private function currentProgressOrFail(
+        FindCurrentOnboardingProgress $findProgress,
+        User $user,
+        OnboardingExperience $experience,
+    ): OnboardingProgress {
+        abort_unless($experience->isAvailableTo($user), 403);
+
+        $progress = $findProgress->handle($user, $experience);
+        abort_if($progress === null, 404);
+
+        return $progress;
     }
 }
