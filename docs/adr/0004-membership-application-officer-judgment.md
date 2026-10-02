@@ -1,6 +1,6 @@
 # Membership is recognised by Officer judgment, not proof
 
-**Status**: amended by [ADR-0014](0014-membership-application-carries-household-details.md) (field scope only)
+**Status**: amended by [ADR-0014](0014-membership-application-carries-household-details.md) (field scope only); creation path superseded by the Property Invitation flow (see Amendment)
 
 There is no owner register, so a **Membership Application** does not collect title, lease, or other
 proof. The Officer recognises the person from knowledge of the village; the applicant may leave an
@@ -41,3 +41,15 @@ later claim is a new application; the ended Membership stays in history.
 
 Who may see a Statement of Account, and whether one person may hold Memberships on several
 Properties, remain a separate question.
+
+## Amendment: Property Invitations replace Membership Applications
+
+Before launch, the Membership Application workflow was retired and its routes, Officer queue,
+records, and schema were removed in a clean rebuild with no compatibility layer. A Membership is
+now created only when a signed-in User Account redeems a **Property Invitation**. An Officer
+issues the invitation for one Property and one role, so Officer judgment and the Officer-chosen
+role move from approval time to invitation time. No proof is collected, and no applicant states a
+role. There is no approval queue and no reject-and-edit loop: an unwanted invitation is revoked,
+and a mistaken Membership is ended. One live Membership per person per Property still holds.
+Plain User Accounts reach the dashboard and use **Join a Property** instead of being sent to
+onboarding. Property-specific Member operations still require a live Membership.

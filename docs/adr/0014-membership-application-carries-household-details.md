@@ -1,5 +1,7 @@
 # Membership Application carries household details; Officer judgment still decides
 
+**Status**: superseded — Membership Applications were retired before launch (see Amendment)
+
 A **Membership Application** still creates Membership only when an **Officer** (or Super Admin)
 approves it by judgment — no title or lease upload (that part of ADR-0004 stands). The application
 itself is no longer note-only: the applicant selects a roster **Property**, may list **Household
@@ -26,3 +28,11 @@ into Officer surfaces. Name, email, and mobile stay on the User Account; Block+L
 selected Property on the roster. Legal-document publishing and versioned acceptance are covered in
 ADR-0015. This supersedes the field-scope part of ADR-0004; Officer judgment, no-proof, no
 applicant role, and reject-and-edit remain.
+
+## Amendment: household details belong to the Property Profile
+
+The Membership Application and its Household Member, Emergency Contact, and Vehicle tables were
+removed before launch in a clean rebuild. Those details now live only on the shared **Property
+Profile**, which a Property's live Memberships and Officers maintain. Memberships come from
+redeeming a **Property Invitation** (ADR-0004 amendment). Plain User Accounts without a live
+Membership are no longer routed to onboarding; they open the dashboard and use **Join a Property**.

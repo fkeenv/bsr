@@ -23,7 +23,6 @@ class MembershipFactory extends Factory
         return [
             'user_id' => User::factory(),
             'property_id' => Property::factory(),
-            'membership_application_id' => null,
             'role' => MembershipRole::Owner,
             'started_at' => now(),
             'ended_at' => null,

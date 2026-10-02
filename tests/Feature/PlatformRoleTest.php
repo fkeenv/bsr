@@ -54,11 +54,10 @@ test('Super Admin is a Spatie role stack without is_super_admin column', functio
         ->and(array_key_exists('is_super_admin', $user->getAttributes()))->toBeFalse();
 });
 
-test('Member role skips membership onboarding redirect', function () {
+test('Member role reaches the dashboard as a Membership holder', function () {
     $user = User::factory()->member()->create();
 
-    expect($user->isMembershipHolder())->toBeTrue()
-        ->and($user->mustCompleteMembershipOnboarding())->toBeFalse();
+    expect($user->isMembershipHolder())->toBeTrue();
 
     $this->actingAs($user)
         ->get(route('dashboard'))

@@ -87,7 +87,7 @@ test('plain User Account cannot import the Property CSV', function () {
 
     $this->actingAs($user)
         ->post(route('officer.properties.import.store'), ['csv' => $csv])
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });
 
 test('Officer surface users can open the CSV import page and download the sample', function () {
@@ -117,5 +117,5 @@ test('plain User Account cannot download the sample Property CSV', function () {
 
     $this->actingAs($user)
         ->get(route('officer.properties.import.sample'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });

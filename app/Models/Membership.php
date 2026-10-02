@@ -16,7 +16,6 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $user_id
  * @property int $property_id
- * @property int|null $membership_application_id
  * @property int|null $property_invitation_id
  * @property int|null $terms_of_service_version_id
  * @property int|null $privacy_policy_version_id
@@ -31,7 +30,6 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'user_id',
     'property_id',
-    'membership_application_id',
     'property_invitation_id',
     'terms_of_service_version_id',
     'privacy_policy_version_id',
@@ -72,14 +70,6 @@ class Membership extends Model
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
-    }
-
-    /**
-     * @return BelongsTo<MembershipApplication, $this>
-     */
-    public function membershipApplication(): BelongsTo
-    {
-        return $this->belongsTo(MembershipApplication::class);
     }
 
     /**

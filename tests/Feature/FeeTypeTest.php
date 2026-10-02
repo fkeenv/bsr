@@ -77,5 +77,5 @@ test('plain User Account cannot manage Fee Types', function () {
 
     $this->actingAs($user)
         ->get(route('officer.fee-types.index'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });

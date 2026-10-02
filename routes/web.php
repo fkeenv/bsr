@@ -6,7 +6,6 @@ use App\Http\Controllers\AnnouncementAttachmentController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LegalDocumentController;
-use App\Http\Controllers\MembershipApplicationController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\Officer\AnnouncementAttachmentController as OfficerAnnouncementAttachmentController;
 use App\Http\Controllers\Officer\AnnouncementController as OfficerAnnouncementController;
@@ -16,7 +15,6 @@ use App\Http\Controllers\Officer\ChargeGenerationController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
 use App\Http\Controllers\Officer\FeeTypeController;
 use App\Http\Controllers\Officer\LevySettingsController;
-use App\Http\Controllers\Officer\MembershipApplicationController as OfficerMembershipApplicationController;
 use App\Http\Controllers\Officer\MembershipController as OfficerMembershipController;
 use App\Http\Controllers\Officer\PaymentController as OfficerPaymentController;
 use App\Http\Controllers\Officer\PrintedBillController;
@@ -32,7 +30,6 @@ use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
-use App\Http\Middleware\EnsureMembershipOnboardingIsComplete;
 use App\Http\Middleware\EnsureRoleSurfaceAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -59,30 +56,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:property-invitation-redemption')
         ->name('property-invitations.store');
 
-    Route::get('membership-application', [MembershipApplicationController::class, 'create'])
-        ->name('membership-application.create');
-    Route::post('membership-application', [MembershipApplicationController::class, 'store'])
-        ->name('membership-application.store');
+    Route::inertia('join-property', 'join-property/Show')
+        ->name('join-property');
 
     Route::get('properties/{property}/profile', [PropertyProfileController::class, 'edit'])
         ->name('property-profile.edit');
     Route::put('properties/{property}/profile', [PropertyProfileController::class, 'update'])
         ->name('property-profile.update');
 
-    Route::middleware(EnsureMembershipOnboardingIsComplete::class)->group(function () {
-        Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-        Route::post('memberships/{membership}/end', [MembershipController::class, 'end'])
-            ->name('memberships.end');
+    Route::post('memberships/{membership}/end', [MembershipController::class, 'end'])
+        ->name('memberships.end');
 
-        Route::post('payments', [PaymentController::class, 'store'])
-            ->name('payments.store');
+    Route::post('payments', [PaymentController::class, 'store'])
+        ->name('payments.store');
 
-        Route::get('statement-of-account', [StatementOfAccountController::class, 'index'])
-            ->name('statement-of-account.index');
-        Route::get('properties/{property}/statement-of-account', [StatementOfAccountController::class, 'show'])
-            ->name('statement-of-account.show');
-    });
+    Route::get('statement-of-account', [StatementOfAccountController::class, 'index'])
+        ->name('statement-of-account.index');
+    Route::get('properties/{property}/statement-of-account', [StatementOfAccountController::class, 'show'])
+        ->name('statement-of-account.show');
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
         Route::get('/', OfficerDashboardController::class)->name('dashboard');
@@ -109,15 +102,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('announcements.attachments.store');
         Route::put('announcements-page-visibility', [OfficerAnnouncementController::class, 'updatePageVisibility'])
             ->name('announcements.page-visibility.update');
-
-        Route::get('membership-applications', [OfficerMembershipApplicationController::class, 'index'])
-            ->name('membership-applications.index');
-        Route::get('membership-applications/{membershipApplication}', [OfficerMembershipApplicationController::class, 'show'])
-            ->name('membership-applications.show');
-        Route::post('membership-applications/{membershipApplication}/approve', [OfficerMembershipApplicationController::class, 'approve'])
-            ->name('membership-applications.approve');
-        Route::post('membership-applications/{membershipApplication}/reject', [OfficerMembershipApplicationController::class, 'reject'])
-            ->name('membership-applications.reject');
 
         Route::get('memberships', [OfficerMembershipController::class, 'index'])
             ->name('memberships.index');
