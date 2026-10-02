@@ -14,41 +14,47 @@ set without losing history.
 _Avoid_: Unit, household, home, address
 
 **Membership**:
-A person's tie to a Property in a role — owner or resident — that an Officer records and may
-change. It is what a Membership Application creates once approved, it can be ended, a person
-holds at most one live on a given Property and may hold live ones on several Properties, and it
-is not a platform role.
+A person's tie to a Property in a role — owner or resident — that an Officer may change. It is
+what redeeming a Property Invitation creates, it keeps a reference to that invitation and to the
+Terms of Service and Privacy Policy versions accepted, it can be ended, a person holds at most one
+live on a given Property and may hold live ones on several Properties, and it is not a platform
+role.
 _Avoid_: Member, member record, subscription
 
-**Membership Application**:
-A person's request to be recognised as holding a Membership of one Property. It selects that
-Property from the roster, may list Household Members, Emergency Contacts, and Vehicles, may carry
-an optional note, and must accept the current Terms of Service and Privacy Policy. The role is not
-on the application — an Officer records owner or resident on approval.
-_Avoid_: Registration form, onboarding form (when the application record is meant)
+**Property Invitation**:
+A single-use link an Officer issues for one Property and one role — owner or resident. It expires
+after 30 days and may be revoked while unused. A signed-in User Account that accepts the current
+Terms of Service and Privacy Policy redeems it into a live Membership straight away, with no
+Officer approval step. Following one from **Join a Property** is how a person gains a Membership.
+_Avoid_: Membership Application (retired before launch), registration form, onboarding form
+
+**Property Profile**:
+The shared household details of one Property — Household Members, Emergency Contacts, and Vehicles —
+kept by its live Memberships and by Officers. It belongs to the Property, not to any one Membership.
+_Avoid_: Application details, member profile
 
 **Household Member**:
-A person named on a Membership Application only. Listing them does not create a User Account or a
+A person named on a Property Profile only. Listing them does not create a User Account or a
 Membership.
-_Avoid_: Family member, dependent, occupant (when the application listing is meant)
+_Avoid_: Family member, dependent, occupant (when the profile listing is meant)
 
 **Emergency Contact**:
-A name, contact number, and relationship listed on a Membership Application for use if the
-association must reach someone other than the applicant.
+A name, contact number, and relationship listed on a Property Profile for use if the association
+must reach someone other than the household.
 
 **Vehicle**:
-A year, make, model, plate, and sticker number listed on a Membership Application for vehicles kept
-at the Property.
+A year, make, model, plate, and sticker number listed on a Property Profile for vehicles kept at the
+Property.
 _Avoid_: Car, sticker (when the vehicle record is meant)
 
 **Terms of Service**:
-The association's published terms a person must accept to submit a Membership Application. Super
-Admin maintains the text; acceptance records which version was accepted.
+The association's published terms a person must accept to redeem a Property Invitation. Super
+Admin maintains the text; the resulting Membership records which version was accepted.
 _Avoid_: Bylaws checkbox, user agreement (when this document is meant)
 
 **Privacy Policy**:
-The association's published privacy notice a person must accept to submit a Membership Application.
-Super Admin maintains the text; acceptance records which version was accepted.
+The association's published privacy notice a person must accept to redeem a Property Invitation.
+Super Admin maintains the text; the resulting Membership records which version was accepted.
 
 **User Account**:
 A login belonging to one person. It exists independently of any Membership — a person can hold an
@@ -62,13 +68,13 @@ _Avoid_: Superuser, Administrator (when the seeded account is meant)
 
 **Administrator**:
 A person with the Administrator platform role (level 1). They may appoint Officers and
-inherit Officer powers. Appointment requires an approved owner Membership.
+inherit Officer powers. Appointment requires a live owner Membership.
 _Avoid_: Super Admin, Superuser, admin (when Officer is meant)
 
 **Officer**:
 A person with the Officer platform role (level 2), acting on the association's behalf —
-posting Announcements, levying dues, approving Membership Applications, and recording
-Payments. Appointment requires an approved owner Membership.
+posting Announcements, levying dues, issuing Property Invitations, and recording
+Payments. Appointment requires a live owner Membership.
 _Avoid_: Admin, staff
 
 **Member** (platform role):

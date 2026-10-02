@@ -103,5 +103,5 @@ test('plain User Account cannot manage Suspends', function () {
 
     $this->actingAs($user)
         ->get(route('officer.suspends.index'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });

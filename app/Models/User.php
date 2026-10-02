@@ -103,14 +103,6 @@ class User extends Authenticatable
         return $this->hasMany(Membership::class);
     }
 
-    /**
-     * @return HasMany<MembershipApplication, $this>
-     */
-    public function membershipApplications(): HasMany
-    {
-        return $this->hasMany(MembershipApplication::class);
-    }
-
     public function hasLiveMembership(): bool
     {
         return $this->memberships()->live()->exists();
@@ -127,11 +119,6 @@ class User extends Authenticatable
     public function isMembershipHolder(): bool
     {
         return $this->hasLiveMembership();
-    }
-
-    public function mustCompleteMembershipOnboarding(): bool
-    {
-        return ! $this->isSuperAdmin() && ! $this->hasLiveMembership();
     }
 
     public function assignPlatformRole(PlatformRole $role): void

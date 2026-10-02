@@ -187,5 +187,5 @@ test('plain User Account cannot manage the Property roster', function () {
 
     $this->actingAs($user)
         ->get(route('officer.properties.index'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });

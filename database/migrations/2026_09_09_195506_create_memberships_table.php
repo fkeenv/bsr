@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('property_id')->constrained()->restrictOnDelete();
-            $table->foreignId('membership_application_id')->nullable()->constrained()->nullOnDelete();
             $table->string('role');
             $table->timestamp('started_at');
             $table->timestamp('ended_at')->nullable();

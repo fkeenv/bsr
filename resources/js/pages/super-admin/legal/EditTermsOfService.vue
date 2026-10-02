@@ -39,7 +39,7 @@ defineOptions({
     <div class="flex flex-col space-y-6 p-4">
         <Heading
             title="Terms of Service"
-            description="Publishing creates a new version. Applicants will accept the latest published text."
+            description="Publishing creates a new version. People joining a Property will accept the latest published text."
         />
 
         <Form

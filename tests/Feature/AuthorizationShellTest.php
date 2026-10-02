@@ -31,7 +31,7 @@ test('plain User Account cannot reach the Officer stub surface', function () {
 
     $this->actingAs($user)
         ->get(route('officer.dashboard'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });
 
 test('dashboard shares authorization capability flags for Super Admin', function () {
@@ -50,26 +50,18 @@ test('dashboard shares authorization capability flags for Super Admin', function
         );
 });
 
-test('onboarding shares authorization capability flags for a plain User Account', function () {
+test('dashboard shares authorization capability flags for a plain User Account', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->get(route('membership-application.create'))
+        ->get(route('dashboard'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('membership-application/Create')
+            ->component('Dashboard')
             ->where('auth.user.is_super_admin', false)
             ->where('auth.capabilities.isSuperAdmin', false)
             ->where('auth.capabilities.canAccessOfficer', false)
             ->where('auth.capabilities.canAccessAdministrator', false)
             ->where('auth.capabilities.isMembershipHolder', false)
         );
-});
-
-test('plain User Account is redirected away from the dashboard', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user)
-        ->get(route('dashboard'))
-        ->assertRedirect(route('membership-application.create'));
 });

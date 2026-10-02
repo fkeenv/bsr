@@ -26,14 +26,10 @@ class EnsureRoleSurfaceAccess
             default => false,
         };
 
-        if ($allowed) {
-            return $next($request);
+        if (! $allowed) {
+            abort(403);
         }
 
-        if ($user->mustCompleteMembershipOnboarding()) {
-            return redirect()->route('membership-application.create');
-        }
-
-        abort(403);
+        return $next($request);
     }
 }

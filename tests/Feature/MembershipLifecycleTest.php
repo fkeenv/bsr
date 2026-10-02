@@ -2,8 +2,10 @@
 
 use App\Enums\MembershipRole;
 use App\Enums\PlatformRole;
+use App\Models\LegalDocumentVersion;
 use App\Models\Membership;
 use App\Models\Property;
+use App\Models\PropertyInvitation;
 use App\Models\User;
 
 test('Member can end their own Membership without a reason', function () {
@@ -21,6 +23,45 @@ test('Member can end their own Membership without a reason', function () {
         ->and($membership->end_reason)->toBeNull()
         ->and($user->hasLiveMembership())->toBeFalse()
         ->and($user->hasRole(PlatformRole::Member))->toBeFalse();
+});
+
+test('ending the last Membership keeps the dashboard open and allows rejoining by invitation', function () {
+    $user = User::factory()->member()->create();
+    $membership = $user->memberships()->live()->sole();
+
+    $this->actingAs($user)
+        ->followingRedirects()
+        ->post(route('memberships.end', $membership))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('memberships', [])
+            ->where('auth.capabilities.isMembershipHolder', false));
+
+    $terms = LegalDocumentVersion::factory()->termsOfService()->create(['published_at' => now()->subMinute()]);
+    $privacy = LegalDocumentVersion::factory()->privacyPolicy()->create(['published_at' => now()->subMinute()]);
+    $token = str_repeat('r', 64);
+    $invitation = PropertyInvitation::factory()->create([
+        'property_id' => $membership->property_id,
+        'role' => MembershipRole::Resident,
+        'token_hash' => hash('sha256', $token),
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('property-invitations.store', $token), [
+            'accept_terms' => '1',
+            'accept_privacy' => '1',
+            'terms_of_service_version_id' => $terms->id,
+            'privacy_policy_version_id' => $privacy->id,
+        ])
+        ->assertRedirect(route('dashboard'));
+
+    $rejoined = $user->memberships()->live()->sole();
+
+    expect($rejoined->id)->not->toBe($membership->id)
+        ->and($rejoined->property_invitation_id)->toBe($invitation->id)
+        ->and($rejoined->role)->toBe(MembershipRole::Resident)
+        ->and($user->refresh()->hasRole(PlatformRole::Member))->toBeTrue();
 });
 
 test('Officer can end a Membership with a reason', function () {

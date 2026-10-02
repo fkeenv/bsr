@@ -5,6 +5,7 @@ import {
     CalendarClock,
     ClipboardList,
     FolderGit2,
+    HousePlus,
     KeyRound,
     LayoutGrid,
     MailPlus,
@@ -32,11 +33,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { dashboard } from '@/routes';
-import { home } from '@/routes';
+import { dashboard, home, joinProperty } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as officersIndex } from '@/routes/administrator/officers';
-import { create as membershipApplicationCreate } from '@/routes/membership-application';
 import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as officerAnnouncementsIndex } from '@/routes/officer/announcements';
@@ -45,7 +44,6 @@ import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
 import { index as feeTypesIndex } from '@/routes/officer/fee-types';
 import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
-import { index as membershipApplicationsIndex } from '@/routes/officer/membership-applications';
 import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as paymentsIndex } from '@/routes/officer/payments';
 import { index as propertyInvitationsIndex } from '@/routes/officer/property-invitations';
@@ -77,14 +75,7 @@ const homeHref = computed(() => {
         return home();
     }
 
-    if (
-        capabilities.value.isSuperAdmin ||
-        capabilities.value.isMembershipHolder
-    ) {
-        return dashboard();
-    }
-
-    return membershipApplicationCreate();
+    return dashboard();
 });
 
 const platformNavItems = computed((): NavItem[] => {
@@ -102,26 +93,30 @@ const platformNavItems = computed((): NavItem[] => {
         ];
     }
 
-    const items: NavItem[] = [];
-
-    if (
-        capabilities.value.isMembershipHolder ||
-        capabilities.value.isSuperAdmin
-    ) {
-        items.push({
+    const items: NavItem[] = [
+        {
             title: 'Dashboard',
             href: dashboard(),
             icon: LayoutGrid,
-        });
-    }
+        },
+    ];
 
     if (!capabilities.value.isSuperAdmin) {
         items.push({
-            title: capabilities.value.isMembershipHolder
-                ? 'Apply for another Property'
-                : 'Membership Application',
-            href: membershipApplicationCreate(),
-            icon: ClipboardList,
+            title: 'Join a Property',
+            href: joinProperty(),
+            icon: HousePlus,
+        });
+    }
+
+    if (
+        !capabilities.value.isMembershipHolder &&
+        announcementsPageVisibility.value === 'public'
+    ) {
+        items.push({
+            title: 'Announcements',
+            href: announcementsIndex(),
+            icon: Megaphone,
         });
     }
 
@@ -177,11 +172,6 @@ const officerNavItems = computed((): NavItem[] => {
             title: 'Unpaid',
             href: unpaidIndex(),
             icon: Receipt,
-        },
-        {
-            title: 'Membership Applications',
-            href: membershipApplicationsIndex(),
-            icon: ClipboardList,
         },
         {
             title: 'Memberships',

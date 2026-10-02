@@ -199,5 +199,5 @@ test('plain User Account cannot open the Terms of Service editor', function () {
 
     $this->actingAs($user)
         ->get(route('super-admin.terms-of-service.edit'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });

@@ -252,7 +252,7 @@ test('plain User Account cannot manage Officer Announcements', function () {
 
     $this->actingAs($user)
         ->get(route('officer.announcements.index'))
-        ->assertRedirect(route('membership-application.create'));
+        ->assertForbidden();
 });
 
 test('Officer create and edit pages use the rich text Announcement form', function () {
