@@ -7,11 +7,13 @@ use App\Models\User;
 enum OnboardingExperience: string
 {
     case Member = 'member';
+    case Officer = 'officer';
 
     public function currentVersion(): int
     {
         return match ($this) {
             self::Member => 1,
+            self::Officer => 1,
         };
     }
 
@@ -25,6 +27,14 @@ enum OnboardingExperience: string
                 OnboardingStep::Announcements,
                 OnboardingStep::StatementOfAccount,
                 OnboardingStep::PropertyProfile,
+            ],
+            self::Officer => [
+                OnboardingStep::OfficerInvitations,
+                OnboardingStep::OfficerProperties,
+                OnboardingStep::OfficerMemberships,
+                OnboardingStep::OfficerPayments,
+                OnboardingStep::OfficerCharges,
+                OnboardingStep::OfficerAnnouncements,
             ],
         };
     }
@@ -44,6 +54,7 @@ enum OnboardingExperience: string
     {
         return match ($this) {
             self::Member => $user->hasLiveMembership(),
+            self::Officer => $user->canAccessOfficerSurfaces(),
         };
     }
 }

@@ -142,7 +142,7 @@ test('tour acknowledgement rejects ineligible or unknown onboarding experiences'
 })->with([
     'progress without a live Membership' => [fn () => OnboardingProgress::factory()->create()->user, 'member', 403],
     'Member without progress' => [fn () => User::factory()->member()->create(), 'member', 404],
-    'unknown experience' => [fn () => OnboardingProgress::factory()->for(User::factory()->member())->create()->user, 'officer', 404],
+    'unknown experience' => [fn () => OnboardingProgress::factory()->for(User::factory()->member())->create()->user, 'treasurer', 404],
 ]);
 
 test('guests cannot record onboarding progress', function () {
