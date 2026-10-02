@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Memberships\SyncMemberPlatformRole;
 use App\Enums\MembershipRole;
 use App\Enums\PlatformRole;
 use App\Models\LegalDocumentVersion;
@@ -50,7 +51,7 @@ test('authenticated recipient sees the invitation and current legal documents', 
     $recipient = User::factory()->create();
 
     $this->actingAs($recipient)
-        ->get('/property-invitations/'.$token)
+        ->get(route('property-invitations.show', $token))
         ->assertInertia(fn ($page) => $page
             ->component('property-invitations/Show')
             ->where('token', $token)
@@ -115,7 +116,7 @@ test('recipient redeems an invitation into a live Membership', function (Members
     $recipient = User::factory()->create();
 
     $response = $this->actingAs($recipient)
-        ->post('/property-invitations/'.$token, [
+        ->post(route('property-invitations.store', $token), [
             'accept_terms' => '1',
             'accept_privacy' => '1',
             'terms_of_service_version_id' => $terms->id,
@@ -168,11 +169,11 @@ test('unavailable invitations cannot be redeemed', function (Closure $makeInvita
     $recipient = User::factory()->create();
 
     $this->actingAs($recipient)
-        ->get('/property-invitations/'.$token)
+        ->get(route('property-invitations.show', $token))
         ->assertNotFound();
 
     $this->actingAs($recipient)
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertSessionHasErrors('invitation');
 
     expect(Membership::query()->count())->toBe(0)
@@ -197,7 +198,7 @@ test('inactive Property invitations stay unconsumed after a failed redemption', 
     ]);
 
     $this->actingAs(User::factory()->create())
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertSessionHasErrors('invitation');
 
     expect($invitation->refresh()->consumed_at)->toBeNull();
@@ -233,7 +234,7 @@ test('recipient with a live Membership on the Property cannot redeem again', fun
     ]);
 
     $this->actingAs($recipient)
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertSessionHasErrors('invitation');
 
     expect(Membership::query()->count())->toBe(1)
@@ -247,18 +248,36 @@ test('repeat redemption requests create only one Membership', function () {
     $recipient = User::factory()->create();
 
     $this->actingAs($recipient)
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertRedirect(route('dashboard'));
 
     $this->actingAs($recipient)
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertSessionHasErrors('invitation');
 
     $this->actingAs(User::factory()->create())
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertSessionHasErrors('invitation');
 
     expect(Membership::query()->count())->toBe(1);
+});
+
+test('failure after the Membership is created rolls back the whole redemption', function () {
+    $legalDocuments = publishInvitationRedemptionLegalDocuments();
+    $token = str_repeat('n', 64);
+    $invitation = createInvitationWithToken($token);
+    $this->mock(SyncMemberPlatformRole::class)
+        ->shouldReceive('handle')
+        ->andThrow(new RuntimeException('Role sync failed.'));
+
+    $this->withoutExceptionHandling();
+
+    expect(fn () => $this->actingAs(User::factory()->create())
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments)))
+        ->toThrow(RuntimeException::class, 'Role sync failed.');
+
+    expect(Membership::query()->count())->toBe(0)
+        ->and($invitation->refresh()->consumed_at)->toBeNull();
 });
 
 test('redemption requires accepting both legal documents', function (array $overrides, string $errorKey) {
@@ -267,7 +286,7 @@ test('redemption requires accepting both legal documents', function (array $over
     $invitation = createInvitationWithToken($token);
 
     $this->actingAs(User::factory()->create())
-        ->post('/property-invitations/'.$token, [
+        ->post(route('property-invitations.store', $token), [
             ...invitationRedemptionPayload($legalDocuments),
             ...$overrides,
         ])
@@ -292,7 +311,7 @@ test('redemption rejects superseded legal document versions', function () {
     $invitation = createInvitationWithToken($token);
 
     $this->actingAs(User::factory()->create())
-        ->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertSessionHasErrors('legal_documents');
 
     expect(Membership::query()->count())->toBe(0)
@@ -304,7 +323,7 @@ test('guests cannot redeem an invitation', function () {
     $token = str_repeat('k', 64);
     $invitation = createInvitationWithToken($token);
 
-    $this->post('/property-invitations/'.$token, invitationRedemptionPayload($legalDocuments))
+    $this->post(route('property-invitations.store', $token), invitationRedemptionPayload($legalDocuments))
         ->assertRedirect(route('login'));
 
     expect(Membership::query()->count())->toBe(0)
@@ -317,12 +336,12 @@ test('redemption is rate limited per account', function () {
 
     foreach (range(1, 5) as $attempt) {
         $this->actingAs($recipient)
-            ->post('/property-invitations/'.str_repeat('l', 64), invitationRedemptionPayload($legalDocuments))
+            ->post(route('property-invitations.store', str_repeat('l', 64)), invitationRedemptionPayload($legalDocuments))
             ->assertSessionHasErrors('invitation');
     }
 
     $this->actingAs($recipient)
-        ->post('/property-invitations/'.str_repeat('l', 64), invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', str_repeat('l', 64)), invitationRedemptionPayload($legalDocuments))
         ->assertTooManyRequests();
 });
 
@@ -331,11 +350,11 @@ test('redemption is rate limited per network address across accounts', function 
 
     foreach (range(1, 10) as $attempt) {
         $this->actingAs(User::factory()->create())
-            ->post('/property-invitations/'.str_repeat('m', 64), invitationRedemptionPayload($legalDocuments))
+            ->post(route('property-invitations.store', str_repeat('m', 64)), invitationRedemptionPayload($legalDocuments))
             ->assertSessionHasErrors('invitation');
     }
 
     $this->actingAs(User::factory()->create())
-        ->post('/property-invitations/'.str_repeat('m', 64), invitationRedemptionPayload($legalDocuments))
+        ->post(route('property-invitations.store', str_repeat('m', 64)), invitationRedemptionPayload($legalDocuments))
         ->assertTooManyRequests();
 });
