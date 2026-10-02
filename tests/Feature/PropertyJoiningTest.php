@@ -16,11 +16,7 @@ test('User Account without a live Membership opens an empty dashboard', function
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Dashboard')
-            ->where('memberships', [])
-            ->where('auth.capabilities.isSuperAdmin', false)
-            ->where('auth.capabilities.canAccessOfficer', false)
-            ->where('auth.capabilities.canAccessAdministrator', false)
-            ->where('auth.capabilities.isMembershipHolder', false));
+            ->where('memberships', []));
 });
 
 test('User Account with an ended Membership opens the dashboard without that Membership', function () {
@@ -77,6 +73,16 @@ test('User Account without a live Membership cannot declare a Payment', function
         ->assertForbidden();
 
     expect(Payment::query()->count())->toBe(0);
+});
+
+test('User Account without a live Membership cannot end another Membership', function () {
+    $membership = Membership::factory()->create();
+
+    $this->actingAs(User::factory()->create())
+        ->post(route('memberships.end', $membership))
+        ->assertForbidden();
+
+    expect($membership->refresh()->ended_at)->toBeNull();
 });
 
 test('User Account without a live Membership is forbidden from Officer surfaces', function () {

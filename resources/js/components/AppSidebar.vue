@@ -109,6 +109,17 @@ const platformNavItems = computed((): NavItem[] => {
         });
     }
 
+    if (
+        !capabilities.value.isMembershipHolder &&
+        announcementsPageVisibility.value === 'public'
+    ) {
+        items.push({
+            title: 'Announcements',
+            href: announcementsIndex(),
+            icon: Megaphone,
+        });
+    }
+
     return items;
 });
 
