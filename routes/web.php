@@ -26,6 +26,7 @@ use App\Http\Controllers\Officer\PropertyInvitationController;
 use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\Officer\UnpaidRosterController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PropertyInvitationRedemptionController;
 use App\Http\Controllers\PropertyProfileController;
 use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
@@ -50,6 +51,14 @@ Route::get('announcement-attachments/{attachment}', [AnnouncementAttachmentContr
     ->name('announcements.attachments.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('property-invitations/{token}', [PropertyInvitationRedemptionController::class, 'show'])
+        ->where('token', '[A-Za-z0-9]{64}')
+        ->name('property-invitations.show');
+    Route::post('property-invitations/{token}', [PropertyInvitationRedemptionController::class, 'store'])
+        ->where('token', '[A-Za-z0-9]{64}')
+        ->middleware('throttle:property-invitation-redemption')
+        ->name('property-invitations.store');
+
     Route::get('membership-application', [MembershipApplicationController::class, 'create'])
         ->name('membership-application.create');
     Route::post('membership-application', [MembershipApplicationController::class, 'store'])

@@ -17,6 +17,9 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $property_id
  * @property int|null $membership_application_id
+ * @property int|null $property_invitation_id
+ * @property int|null $terms_of_service_version_id
+ * @property int|null $privacy_policy_version_id
  * @property MembershipRole $role
  * @property Carbon $started_at
  * @property Carbon|null $ended_at
@@ -29,6 +32,9 @@ use Illuminate\Support\Carbon;
     'user_id',
     'property_id',
     'membership_application_id',
+    'property_invitation_id',
+    'terms_of_service_version_id',
+    'privacy_policy_version_id',
     'role',
     'started_at',
     'ended_at',
@@ -74,6 +80,30 @@ class Membership extends Model
     public function membershipApplication(): BelongsTo
     {
         return $this->belongsTo(MembershipApplication::class);
+    }
+
+    /**
+     * @return BelongsTo<PropertyInvitation, $this>
+     */
+    public function propertyInvitation(): BelongsTo
+    {
+        return $this->belongsTo(PropertyInvitation::class);
+    }
+
+    /**
+     * @return BelongsTo<LegalDocumentVersion, $this>
+     */
+    public function termsOfServiceVersion(): BelongsTo
+    {
+        return $this->belongsTo(LegalDocumentVersion::class, 'terms_of_service_version_id');
+    }
+
+    /**
+     * @return BelongsTo<LegalDocumentVersion, $this>
+     */
+    public function privacyPolicyVersion(): BelongsTo
+    {
+        return $this->belongsTo(LegalDocumentVersion::class, 'privacy_policy_version_id');
     }
 
     /**
