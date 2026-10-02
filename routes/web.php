@@ -23,6 +23,7 @@ use App\Http\Controllers\Officer\PropertyImportController;
 use App\Http\Controllers\Officer\PropertyInvitationController;
 use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\Officer\UnpaidRosterController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PropertyInvitationRedemptionController;
 use App\Http\Controllers\PropertyProfileController;
@@ -65,6 +66,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('property-profile.update');
 
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    Route::post('onboarding/{experience}/tour-acknowledgement', [OnboardingController::class, 'acknowledgeTour'])
+        ->name('onboarding.tour-acknowledgement.store');
+    Route::post('onboarding/{experience}/steps', [OnboardingController::class, 'completeStep'])
+        ->name('onboarding.steps.store');
 
     Route::post('memberships/{membership}/end', [MembershipController::class, 'end'])
         ->name('memberships.end');

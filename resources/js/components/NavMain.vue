@@ -41,7 +41,7 @@ const showAccordion = computed(
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-0">
+    <SidebarGroup class="px-2 py-0" :data-tour="`nav-${section.id}`">
         <AccordionItem
             v-if="showAccordion"
             :value="section.id"

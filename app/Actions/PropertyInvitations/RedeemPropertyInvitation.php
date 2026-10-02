@@ -3,7 +3,9 @@
 namespace App\Actions\PropertyInvitations;
 
 use App\Actions\Memberships\SyncMemberPlatformRole;
+use App\Actions\Onboarding\InitializeOnboarding;
 use App\Enums\LegalDocumentType;
+use App\Enums\OnboardingExperience;
 use App\Enums\PropertyInvitationStatus;
 use App\Models\LegalDocumentVersion;
 use App\Models\Membership;
@@ -15,7 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class RedeemPropertyInvitation
 {
-    public function __construct(private SyncMemberPlatformRole $syncMemberPlatformRole) {}
+    public function __construct(
+        private SyncMemberPlatformRole $syncMemberPlatformRole,
+        private InitializeOnboarding $initializeOnboarding,
+    ) {}
 
     public function handle(
         string $token,
@@ -75,6 +80,8 @@ class RedeemPropertyInvitation
                 ]);
             }
 
+            $isFirstLiveMembership = ! $lockedRecipient->hasLiveMembership();
+
             $membership = Membership::query()->create([
                 'user_id' => $lockedRecipient->id,
                 'property_id' => $property->id,
@@ -90,6 +97,10 @@ class RedeemPropertyInvitation
             ])->save();
 
             $this->syncMemberPlatformRole->handle($lockedRecipient);
+
+            if ($isFirstLiveMembership) {
+                $this->initializeOnboarding->handle($lockedRecipient, OnboardingExperience::Member);
+            }
 
             return $membership;
         }, attempts: 3);
