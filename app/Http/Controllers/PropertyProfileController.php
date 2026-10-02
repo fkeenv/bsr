@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Onboarding\CompleteOnboardingStep;
+use App\Actions\Onboarding\FindCurrentOnboardingProgress;
 use App\Actions\PropertyProfiles\AuthorizePropertyProfile;
 use App\Actions\PropertyProfiles\UpdatePropertyProfile;
 use App\Data\PropertyProfileData;
+use App\Enums\OnboardingExperience;
+use App\Enums\OnboardingStep;
 use App\Http\Requests\UpdatePropertyProfileRequest;
 use App\Models\Property;
 use App\Models\User;
@@ -35,8 +39,22 @@ class PropertyProfileController extends Controller
         UpdatePropertyProfileRequest $request,
         Property $property,
         UpdatePropertyProfile $updatePropertyProfile,
+        FindCurrentOnboardingProgress $findOnboardingProgress,
+        CompleteOnboardingStep $completeOnboardingStep,
     ): RedirectResponse {
+        $user = $request->user();
+        assert($user instanceof User);
+
         $updatePropertyProfile->handle($property, $request->validated());
+
+        $savedOwnPropertyProfile = $user->memberships()->live()->whereBelongsTo($property)->exists();
+        $onboardingProgress = $savedOwnPropertyProfile
+            ? $findOnboardingProgress->handle($user, OnboardingExperience::Member)
+            : null;
+
+        if ($onboardingProgress !== null) {
+            $completeOnboardingStep->handle($onboardingProgress, OnboardingStep::PropertyProfile);
+        }
 
         return back()->with('success', 'Property profile saved.');
     }

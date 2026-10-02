@@ -18,7 +18,7 @@ import {
     Users,
 } from '@lucide/vue';
 import { AccordionRoot } from 'reka-ui';
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -33,6 +33,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useNavigationSection } from '@/composables/useNavigationSection';
 import { dashboard, home, joinProperty } from '@/routes';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as officersIndex } from '@/routes/administrator/officers';
@@ -355,7 +356,7 @@ const activeSectionId = computed<string | undefined>(() => {
     );
 });
 
-const openSection = ref<string>();
+const { openNavigationSection: openSection } = useNavigationSection();
 
 watch(
     [currentUrl, navSections],
