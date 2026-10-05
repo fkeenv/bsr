@@ -172,6 +172,27 @@ defineOptions({
             </Button>
         </div>
 
+        <p
+            v-if="onboardingTour.acknowledgementStatus.value === 'saving'"
+            role="status"
+            class="text-muted-foreground text-sm"
+        >
+            Saving your tour preference…
+        </p>
+        <div
+            v-else-if="onboardingTour.acknowledgementStatus.value === 'failed'"
+            role="alert"
+            class="flex flex-wrap items-center gap-3 rounded-md border p-4 text-sm"
+        >
+            <p>We couldn’t save your tour preference. Please try again.</p>
+            <Button
+                variant="outline"
+                @click="onboardingTour.retryAcknowledgement()"
+            >
+                Retry
+            </Button>
+        </div>
+
         <div
             v-if="!hasMemberships && canJoinProperty"
             class="flex flex-col items-start gap-3 rounded-md border border-dashed p-6"

@@ -133,6 +133,34 @@ test('acknowledging the Member tour records it once', function () {
     expect($progress->refresh()->tour_acknowledged_at?->toIso8601String())->toBe('2026-10-02T09:00:00+00:00');
 });
 
+test('saved tour acknowledgement survives dashboard visits without changing checklist progress or another User Account', function () {
+    $user = User::factory()->member()->create();
+    $progress = OnboardingProgress::factory()->for($user)->create([
+        'completed_steps' => [OnboardingStep::Announcements->value],
+    ]);
+    $otherProgress = OnboardingProgress::factory()->for(User::factory()->member())->create();
+
+    $this->actingAs($user)->post(route('onboarding.tour-acknowledgement.store', 'member'))->assertNoContent();
+
+    $this->get(route('dashboard'))->assertInertia(fn ($page) => $page
+        ->where('onboarding.tour_acknowledged', true)
+        ->where('onboarding.completed_steps', ['announcements']));
+    $this->get(route('dashboard'))->assertInertia(fn ($page) => $page->where('onboarding.tour_acknowledged', true));
+    expect($progress->fresh()->completed_steps)->toBe(['announcements']);
+    expect($otherProgress->fresh()->tour_acknowledged_at)->toBeNull();
+});
+
+test('Member acknowledgement cannot save progress from an older tour version', function () {
+    $user = User::factory()->member()->create();
+    $progress = OnboardingProgress::factory()->for($user)->create([
+        'version' => OnboardingExperience::Member->currentVersion() - 1,
+    ]);
+
+    $this->actingAs($user)->postJson(route('onboarding.tour-acknowledgement.store', 'member'))->assertNotFound();
+
+    expect($progress->fresh()->tour_acknowledged_at)->toBeNull();
+});
+
 test('tour acknowledgement rejects ineligible or unknown onboarding experiences', function (Closure $makeUser, string $experience, int $status) {
     $this->actingAs($makeUser())
         ->post('/onboarding/'.$experience.'/tour-acknowledgement')

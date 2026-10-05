@@ -1,5 +1,5 @@
 import { useHttp } from '@inertiajs/vue3';
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, readonly, ref } from 'vue';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useNavigationSection } from '@/composables/useNavigationSection';
 import { useTour } from '@/composables/useTour';
@@ -30,9 +30,39 @@ export function useOnboardingTour(options: {
         acknowledgeOnboardingTour(options.experience),
         {},
     );
-    const isTourAcknowledged = ref(
-        options.onboarding?.tour_acknowledged ?? true,
+    const acknowledgementStatus = ref<
+        'unacknowledged' | 'saving' | 'acknowledged' | 'failed'
+    >(
+        (options.onboarding?.tour_acknowledged ?? true)
+            ? 'acknowledged'
+            : 'unacknowledged',
     );
+
+    const acknowledge = async (): Promise<void> => {
+        if (
+            acknowledgementStatus.value === 'acknowledged' ||
+            acknowledgementStatus.value === 'saving'
+        ) {
+            return;
+        }
+
+        acknowledgementStatus.value = 'saving';
+
+        try {
+            await tourAcknowledgement.submit({
+                onSuccess: () => {
+                    acknowledgementStatus.value = 'acknowledged';
+                },
+                onError: () => {
+                    acknowledgementStatus.value = 'failed';
+                },
+            });
+        } catch {
+            acknowledgementStatus.value = 'failed';
+        }
+    };
+
+    onBeforeUnmount(() => tourAcknowledgement.cancel());
 
     const revealNavigationSection =
         (sectionId: string) => async (): Promise<void> => {
@@ -44,7 +74,7 @@ export function useOnboardingTour(options: {
             );
         };
 
-    const run = (acknowledge: boolean): void => {
+    const run = (shouldAcknowledge: boolean): void => {
         const previousSidebarOpen = sidebar.open.value;
         const previousSection = openNavigationSection.value;
 
@@ -55,12 +85,11 @@ export function useOnboardingTour(options: {
             }),
             {
                 onDismiss: () => {
-                    if (!acknowledge || isTourAcknowledged.value) {
+                    if (!shouldAcknowledge) {
                         return;
                     }
 
-                    isTourAcknowledged.value = true;
-                    void tourAcknowledgement.submit();
+                    void acknowledge();
                 },
                 onEnd: () => {
                     if (!sidebar.isMobile.value) {
@@ -74,13 +103,18 @@ export function useOnboardingTour(options: {
     };
 
     onMounted(() => {
-        if (options.onboarding !== null && !isTourAcknowledged.value) {
+        if (
+            options.onboarding !== null &&
+            acknowledgementStatus.value === 'unacknowledged'
+        ) {
             run(true);
         }
     });
 
     return {
         isRunning: tour.isRunning,
+        acknowledgementStatus: readonly(acknowledgementStatus),
+        retryAcknowledgement: () => void acknowledge(),
         replay: () => run(false),
     };
 }
