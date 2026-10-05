@@ -1,17 +1,15 @@
 import { useHttp } from '@inertiajs/vue3';
-import { nextTick, onBeforeUnmount, onMounted, readonly, ref } from 'vue';
-import { useSidebar } from '@/components/ui/sidebar';
-import { useNavigationSection } from '@/composables/useNavigationSection';
+import { onBeforeUnmount, onMounted, readonly, ref } from 'vue';
 import { useTour } from '@/composables/useTour';
 import type { TourStep } from '@/composables/useTour';
 import { store as acknowledgeOnboardingTour } from '@/routes/onboarding/tour-acknowledgement';
 import type { Onboarding, OnboardingExperience } from '@/types/onboarding';
 
-const SIDEBAR_TRANSITION_MS = 250;
-
 export type OnboardingTourContext = {
     isMobile: boolean;
-    revealNavigationSection: (sectionId: string) => () => Promise<void>;
+    revealNavigationSection: (
+        sectionId: string,
+    ) => (signal: AbortSignal) => Promise<void>;
 };
 
 /**
@@ -23,8 +21,6 @@ export function useOnboardingTour(options: {
     onboarding: Onboarding | null;
     steps: (context: OnboardingTourContext) => TourStep[];
 }) {
-    const sidebar = useSidebar();
-    const { openNavigationSection } = useNavigationSection();
     const tour = useTour();
     const tourAcknowledgement = useHttp(
         acknowledgeOnboardingTour(options.experience),
@@ -64,24 +60,11 @@ export function useOnboardingTour(options: {
 
     onBeforeUnmount(() => tourAcknowledgement.cancel());
 
-    const revealNavigationSection =
-        (sectionId: string) => async (): Promise<void> => {
-            sidebar.setOpen(true);
-            openNavigationSection.value = sectionId;
-            await nextTick();
-            await new Promise((resolve) =>
-                setTimeout(resolve, SIDEBAR_TRANSITION_MS),
-            );
-        };
-
     const run = (shouldAcknowledge: boolean): void => {
-        const previousSidebarOpen = sidebar.open.value;
-        const previousSection = openNavigationSection.value;
-
         void tour.start(
             options.steps({
-                isMobile: sidebar.isMobile.value,
-                revealNavigationSection,
+                isMobile: tour.isMobile.value,
+                revealNavigationSection: tour.revealNavigationSection,
             }),
             {
                 onDismiss: () => {
@@ -90,13 +73,6 @@ export function useOnboardingTour(options: {
                     }
 
                     void acknowledge();
-                },
-                onEnd: () => {
-                    if (!sidebar.isMobile.value) {
-                        sidebar.setOpen(previousSidebarOpen);
-                    }
-
-                    openNavigationSection.value = previousSection;
                 },
             },
         );
