@@ -21,8 +21,8 @@ class ConfirmPayment
         }
 
         return DB::transaction(function () use ($payment, $officer): Payment {
-            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             $property = $payment->property()->lockForUpdate()->firstOrFail();
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
 
             if (! $payment->status->isPending()) {
                 throw ValidationException::withMessages([

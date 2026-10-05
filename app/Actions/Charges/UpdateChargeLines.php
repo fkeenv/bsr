@@ -3,8 +3,10 @@
 namespace App\Actions\Charges;
 
 use App\Actions\Concerns\NormalizesMoneyAmount;
+use App\Actions\Payments\ApplyPrepaidToProperty;
 use App\Models\Charge;
 use App\Models\ChargeLine;
+use App\Models\Property;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -12,13 +14,13 @@ class UpdateChargeLines
 {
     use NormalizesMoneyAmount;
 
+    public function __construct(private ApplyPrepaidToProperty $applyPrepaidToProperty) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function handle(Charge $charge, array $data): Charge
     {
-        $charge->assertMayBeEdited();
-
         $lines = $data['lines'] ?? null;
 
         if (! is_array($lines)) {
@@ -26,6 +28,10 @@ class UpdateChargeLines
         }
 
         DB::transaction(function () use ($charge, $lines): void {
+            $property = Property::query()->whereKey($charge->property_id)->lockForUpdate()->firstOrFail();
+            $charge = Charge::query()->whereKey($charge->id)->lockForUpdate()->firstOrFail();
+            $charge->assertMayBeEdited();
+
             $keptIds = [];
 
             foreach ($lines as $lineData) {
@@ -78,6 +84,8 @@ class UpdateChargeLines
                     fn ($query) => $query,
                 )
                 ->delete();
+
+            $this->applyPrepaidToProperty->handle($property);
         });
 
         return $charge->refresh()->load('lines');

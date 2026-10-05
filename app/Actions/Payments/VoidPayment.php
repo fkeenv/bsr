@@ -14,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class VoidPayment
 {
+    public function __construct(private ApplyPrepaidToProperty $applyPrepaidToProperty) {}
+
     public function handle(Payment $payment, User $officer, string $reason): Payment
     {
         if (! $payment->status->isConfirmed()) {
@@ -23,8 +25,8 @@ class VoidPayment
         }
 
         return DB::transaction(function () use ($payment, $officer, $reason): Payment {
-            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
             $property = Property::query()->lockForUpdate()->findOrFail($payment->property_id);
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
 
             if (! $payment->status->isConfirmed()) {
                 throw ValidationException::withMessages([
@@ -59,6 +61,8 @@ class VoidPayment
                 'voided_at' => now(),
                 'prepaid_amount' => '0.00',
             ])->save();
+
+            $this->applyPrepaidToProperty->handle($property);
 
             foreach ($chargeIds as $chargeId) {
                 $stillAllocated = PaymentAllocation::query()
