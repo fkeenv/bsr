@@ -7,37 +7,15 @@ use App\Data\StatementPropertyOptionData;
 use App\Models\Membership;
 use App\Models\Property;
 use App\Models\User;
-use App\Support\PropertyBalances;
 
 class BuildMemberStatementOfAccountPage
 {
     public function __construct(
         private BuildStatementOfAccountPage $buildStatementOfAccountPage,
-        private PropertyBalances $propertyBalances,
+        private LoadPropertyFinancials $loadPropertyFinancials,
     ) {}
 
     public function handle(User $member, Property $property, ?int $selectedChargeId = null): StatementOfAccountPageData
-    {
-        $hasLiveMembership = $member->memberships()
-            ->live()
-            ->where('property_id', $property->id)
-            ->exists();
-
-        if (! $hasLiveMembership) {
-            abort(403);
-        }
-
-        return $this->buildStatementOfAccountPage->handle(
-            $property,
-            $selectedChargeId,
-            $this->switcherFor($member),
-        );
-    }
-
-    /**
-     * @return list<StatementPropertyOptionData>
-     */
-    private function switcherFor(User $member): array
     {
         $memberships = Membership::query()
             ->live()
@@ -46,10 +24,17 @@ class BuildMemberStatementOfAccountPage
             ->orderBy('property_id')
             ->get();
 
-        return array_values($memberships
-            ->map(function (Membership $membership): StatementPropertyOptionData {
+        if (! $memberships->contains('property_id', $property->id)) {
+            abort(403);
+        }
+
+        $properties = $memberships->map(fn (Membership $membership): Property => $membership->property);
+        $financials = $this->loadPropertyFinancials->handle($properties);
+
+        $switcher = array_values($memberships
+            ->map(function (Membership $membership) use ($financials): StatementPropertyOptionData {
                 $property = $membership->property;
-                $balances = $this->propertyBalances->forProperty($property);
+                $balances = $financials->get($property->id)->balances;
 
                 return new StatementPropertyOptionData(
                     property_id: $property->id,
@@ -58,5 +43,12 @@ class BuildMemberStatementOfAccountPage
                 );
             })
             ->all());
+
+        return $this->buildStatementOfAccountPage->handle(
+            $property,
+            $selectedChargeId,
+            $switcher,
+            $financials->get($property->id),
+        );
     }
 }
