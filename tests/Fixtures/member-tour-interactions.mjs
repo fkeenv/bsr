@@ -10,7 +10,7 @@ const flush = async () => {
     await vue.nextTick();
 };
 
-async function dashboard(context, acknowledged = false) {
+async function dashboard(context, acknowledged = false, isMobile = true) {
     const requests = [];
     const drivers = [];
     const listeners = new Map();
@@ -35,7 +35,7 @@ async function dashboard(context, acknowledged = false) {
                 return () => vue.h(name, attrs, slots.default?.());
             },
         });
-    const open = vue.ref(true);
+    const open = vue.ref(false);
     const ui = mount(
         'resources/js/pages/Dashboard.vue',
         {
@@ -76,7 +76,7 @@ async function dashboard(context, acknowledged = false) {
             },
             '@/components/ui/sidebar': {
                 useSidebar: () => ({
-                    isMobile: vue.ref(true),
+                    isMobile: vue.ref(isMobile),
                     open,
                     setOpen: (value) => {
                         open.value = value;
@@ -88,10 +88,13 @@ async function dashboard(context, acknowledged = false) {
                     const instance = {
                         config,
                         active: false,
+                        moves: [],
                         drive() {
                             this.active = true;
                         },
-                        moveTo() {},
+                        moveTo(index) {
+                            this.moves.push(index);
+                        },
                         destroy() {
                             if (this.active) {
                                 this.active = false;
@@ -117,6 +120,7 @@ async function dashboard(context, acknowledged = false) {
         requests,
         drivers,
         listeners,
+        sidebarOpen: open,
         help: () =>
             ui
                 .all('Button')
@@ -126,6 +130,31 @@ async function dashboard(context, acknowledged = false) {
             requests[index].resolve({ status: 204, data: '', headers: {} }),
     };
 }
+
+void test('dashboard navigation cancels a waiting menu transition without acknowledging, and Help replays', async (context) => {
+    context.mock.timers.enable({ apis: ['setTimeout'] });
+    const ui = await dashboard(context, false, false);
+    ui.drivers[0].config.steps[0].popover.onNextClick();
+    await flush();
+    ui.drivers[0].config.steps[1].popover.onNextClick();
+    await flush();
+    assert.equal(ui.sidebarOpen.value, true);
+    assert.equal(ui.all('Button')[0].props.disabled, true);
+
+    ui.listeners.get('start')();
+    context.mock.timers.tick(250);
+    await flush();
+
+    assert.deepEqual(ui.drivers[0].moves, [1]);
+    assert.equal(ui.drivers[0].active, false);
+    assert.equal(ui.sidebarOpen.value, false);
+    assert.equal(ui.requests.length, 0);
+    assert.equal(ui.listeners.size, 0);
+    ui.help();
+    await flush();
+    assert.equal(ui.drivers[1].active, true);
+    assert.equal(ui.requests.length, 0);
+});
 
 void test('Help after saved acknowledgement does not submit or reset the checklist', async (context) => {
     const ui = await dashboard(context, true);
