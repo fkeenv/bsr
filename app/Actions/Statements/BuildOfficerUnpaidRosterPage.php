@@ -5,15 +5,13 @@ namespace App\Actions\Statements;
 use App\Data\UnpaidRosterPageData;
 use App\Data\UnpaidRosterRowData;
 use App\Enums\PeriodStatus;
-use App\Models\Charge;
 use App\Models\Property;
-use App\Support\PropertyBalances;
 use Illuminate\Support\Carbon;
 
 class BuildOfficerUnpaidRosterPage
 {
     public function __construct(
-        private PropertyBalances $propertyBalances,
+        private LoadPropertyFinancials $loadPropertyFinancials,
         private BuildStatementOfAccountPage $buildStatementOfAccountPage,
     ) {}
 
@@ -37,24 +35,18 @@ class BuildOfficerUnpaidRosterPage
             ->get();
 
         $rosterCount = $properties->count();
+        $financials = $this->loadPropertyFinancials->handle($properties);
 
         /** @var list<array{property: Property, balances: array{outstanding_balance: string, remaining_opening_balance: string, prepaid_balance: string}, this_period_status: string, oldest_open_label: string|null, open_period_keys: list<string>, open_period_labels: array<string, string>}> $unpaid */
         $unpaid = [];
 
         foreach ($properties as $property) {
-            $balances = $this->propertyBalances->forProperty($property);
+            $view = $financials->get($property->id);
+            $balances = $view->balances;
 
             if ((float) $balances['outstanding_balance'] <= 0) {
                 continue;
             }
-
-            $charges = Charge::query()
-                ->where('property_id', $property->id)
-                ->with('lines')
-                ->orderBy('year')
-                ->orderBy('month')
-                ->orderBy('id')
-                ->get();
 
             $thisPeriodStatus = PeriodStatus::Paid->value;
             $openPeriodKeys = [];
@@ -65,15 +57,10 @@ class BuildOfficerUnpaidRosterPage
                 $oldestOpenLabel = 'Opening Balance';
             }
 
-            foreach ($charges as $charge) {
-                $chargeTotal = number_format(
-                    (float) $charge->lines->sum(fn ($line): float => (float) $line->amount),
-                    2,
-                    '.',
-                    '',
-                );
-                $remaining = $this->propertyBalances->remainingChargeAmount($charge);
-                $periodStatus = $this->statusFor($chargeTotal, $remaining);
+            foreach ($view->charges as $period) {
+                $charge = $period->charge;
+                $remaining = $period->remaining;
+                $periodStatus = $period->status;
                 $key = sprintf('%04d-%02d', $charge->year, $charge->month);
 
                 if ($charge->year === $periodYear && $charge->month === $periodMonth) {
@@ -186,6 +173,7 @@ class BuildOfficerUnpaidRosterPage
                     $row['property'],
                     $selectedChargeId,
                     [],
+                    $financials->get($row['property']->id),
                 );
                 break;
             }
@@ -266,18 +254,5 @@ class BuildOfficerUnpaidRosterPage
             'blocks' => $blocks,
             'owes_for' => $owesFor,
         ];
-    }
-
-    private function statusFor(string $chargeTotal, string $remaining): PeriodStatus
-    {
-        if ((float) $remaining <= 0) {
-            return PeriodStatus::Paid;
-        }
-
-        if ((float) $remaining === (float) $chargeTotal) {
-            return PeriodStatus::Unpaid;
-        }
-
-        return PeriodStatus::Partial;
     }
 }
