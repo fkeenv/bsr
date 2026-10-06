@@ -2,15 +2,16 @@
 
 namespace App\Actions\PrintedBills;
 
-use App\Models\Charge;
+use App\Actions\Statements\LoadPropertyFinancials;
 use App\Models\Property;
 use App\Support\BillingPeriod;
-use App\Support\PropertyBalances;
+use App\Support\ChargeFinancialView;
+use App\Support\PropertyFinancialView;
 use Illuminate\Support\Carbon;
 
 class BuildPrintedBill
 {
-    public function __construct(private PropertyBalances $propertyBalances) {}
+    public function __construct(private LoadPropertyFinancials $loadPropertyFinancials) {}
 
     /**
      * @return array{
@@ -26,54 +27,43 @@ class BuildPrintedBill
      *     outstanding_balance: string
      * }
      */
-    public function handle(Property $property, BillingPeriod $period): array
+    public function handle(Property $property, BillingPeriod $period, ?PropertyFinancialView $financials = null): array
     {
-        $balances = $this->propertyBalances->forProperty($property);
+        $financials ??= $this->loadPropertyFinancials->handle(collect([$property]))->get($property->id);
+        $balances = $financials->balances;
 
-        $charges = Charge::query()
-            ->where('property_id', $property->id)
-            ->with('lines')
-            ->orderBy('year')
-            ->orderBy('month')
-            ->orderBy('id')
-            ->get();
-
-        $thisPeriod = $charges->first(
-            fn (Charge $charge): bool => $charge->year === $period->year && $charge->month === $period->month,
+        $thisPeriod = collect($financials->charges)->first(
+            fn (ChargeFinancialView $view): bool => $view->charge->year === $period->year && $view->charge->month === $period->month,
         );
 
         /** @var list<array{name: string, amount: string}> $lines */
         $lines = [];
         $periodTotal = '0.00';
 
-        if ($thisPeriod instanceof Charge) {
-            $lines = array_values($thisPeriod->lines
+        if ($thisPeriod instanceof ChargeFinancialView) {
+            $lines = array_values($thisPeriod->charge->lines
                 ->map(fn ($line): array => [
                     'name' => (string) $line->fee_type_name,
                     'amount' => number_format((float) $line->amount, 2, '.', ''),
                 ])
                 ->all());
 
-            $periodTotal = number_format(
-                (float) $thisPeriod->lines->sum(fn ($line): float => (float) $line->amount),
-                2,
-                '.',
-                '',
-            );
+            $periodTotal = $thisPeriod->total;
         }
 
         $openingRemaining = $balances['remaining_opening_balance'];
         $olderUnpaidLabels = [];
         $olderRemaining = '0.00';
 
-        foreach ($charges as $charge) {
+        foreach ($financials->charges as $view) {
+            $charge = $view->charge;
             $chargePeriod = new BillingPeriod($charge->year, $charge->month);
 
             if (! $chargePeriod->isBefore($period)) {
                 continue;
             }
 
-            $remaining = $this->propertyBalances->remainingChargeAmount($charge);
+            $remaining = $view->remaining;
 
             if ((float) $remaining <= 0) {
                 continue;

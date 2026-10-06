@@ -2,11 +2,10 @@
 
 namespace App\Actions\PrintedBills;
 
+use App\Actions\Statements\LoadPropertyFinancials;
 use App\Models\AssociationSetting;
 use App\Models\Property;
 use App\Support\BillingPeriod;
-use App\Support\PropertyBalances;
-use Illuminate\Support\Collection;
 use Spatie\LaravelPdf\PdfBuilder;
 
 use function Spatie\LaravelPdf\Support\pdf;
@@ -15,7 +14,7 @@ class RenderPrintedBillsPdf
 {
     public function __construct(
         private BuildPrintedBill $buildPrintedBill,
-        private PropertyBalances $propertyBalances,
+        private LoadPropertyFinancials $loadPropertyFinancials,
     ) {}
 
     public function forProperty(Property $property, BillingPeriod $period): PdfBuilder
@@ -28,9 +27,17 @@ class RenderPrintedBillsPdf
 
     public function forUnpaidProperties(BillingPeriod $period): PdfBuilder
     {
+        $properties = Property::query()
+            ->orderBy('block')
+            ->orderBy('lot')
+            ->orderBy('id')
+            ->get();
+        $financials = $this->loadPropertyFinancials->handle($properties);
+
         /** @var list<array<string, mixed>> $bills */
-        $bills = array_values($this->unpaidProperties()
-            ->map(fn (Property $property): array => $this->buildPrintedBill->handle($property, $period))
+        $bills = array_values($properties
+            ->filter(fn (Property $property): bool => (float) $financials->get($property->id)->balances['outstanding_balance'] > 0)
+            ->map(fn (Property $property): array => $this->buildPrintedBill->handle($property, $period, $financials->get($property->id)))
             ->all());
 
         return $this->pdf($bills, $this->batchFilename($period));
@@ -59,24 +66,6 @@ class RenderPrintedBillsPdf
             ->format('a4')
             ->name($filename)
             ->download();
-    }
-
-    /**
-     * @return Collection<int, Property>
-     */
-    private function unpaidProperties(): Collection
-    {
-        return Property::query()
-            ->orderBy('block')
-            ->orderBy('lot')
-            ->orderBy('id')
-            ->get()
-            ->filter(function (Property $property): bool {
-                $balances = $this->propertyBalances->forProperty($property);
-
-                return (float) $balances['outstanding_balance'] > 0;
-            })
-            ->values();
     }
 
     private function singleFilename(Property $property, BillingPeriod $period): string
