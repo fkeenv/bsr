@@ -11,16 +11,17 @@ use App\Data\StatementPropertyOptionData;
 use App\Enums\PaymentAllocationTarget;
 use App\Enums\PaymentStatus;
 use App\Enums\PeriodStatus;
-use App\Models\Charge;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Property;
-use App\Support\PropertyBalances;
+use App\Support\ChargeFinancialView;
+use App\Support\PropertyFinancialView;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class BuildStatementOfAccountPage
 {
-    public function __construct(private PropertyBalances $propertyBalances) {}
+    public function __construct(private LoadPropertyFinancials $loadPropertyFinancials) {}
 
     /**
      * @param  list<StatementPropertyOptionData>  $switcher
@@ -29,8 +30,10 @@ class BuildStatementOfAccountPage
         Property $property,
         ?int $selectedChargeId = null,
         array $switcher = [],
+        ?PropertyFinancialView $financials = null,
     ): StatementOfAccountPageData {
-        $balances = $this->propertyBalances->forProperty($property);
+        $financials ??= $this->loadPropertyFinancials->handle(collect([$property]))->get($property->id);
+        $balances = $financials->balances;
 
         $pendingDeclarations = array_values(Payment::query()
             ->pending()
@@ -41,17 +44,18 @@ class BuildStatementOfAccountPage
             ->map(fn (Payment $payment): PaymentData => PaymentData::fromModel($payment))
             ->all());
 
-        $charges = Charge::query()
-            ->where('property_id', $property->id)
-            ->with(['lines', 'property'])
-            ->orderByDesc('year')
-            ->orderByDesc('month')
-            ->orderByDesc('id')
-            ->get();
+        $allocations = PaymentAllocation::query()
+            ->whereIn('charge_id', array_map(fn (ChargeFinancialView $period): int => $period->charge->id, $financials->charges))
+            ->where('target', PaymentAllocationTarget::Charge)
+            ->whereHas('payment', fn ($query) => $query->where('status', PaymentStatus::Confirmed))
+            ->with('payment')->orderBy('id')->get()->groupBy('charge_id');
 
-        $periods = array_values($charges
-            ->map(fn (Charge $charge): StatementPeriodData => $this->periodFromCharge($charge))
-            ->all());
+        $periods = array_map(
+            fn (ChargeFinancialView $period): StatementPeriodData => $this->periodFromCharge(
+                $period, $allocations->get($period->charge->id, collect()),
+            ),
+            array_reverse($financials->charges),
+        );
 
         $selectedChargeId = $this->resolveSelectedChargeId($periods, $selectedChargeId);
         $selectedPeriod = collect($periods)->firstWhere('charge_id', $selectedChargeId);
@@ -98,18 +102,12 @@ class BuildStatementOfAccountPage
         return $periods[0]->charge_id;
     }
 
-    private function periodFromCharge(Charge $charge): StatementPeriodData
+    /**
+     * @param  Collection<int, PaymentAllocation>  $allocations
+     */
+    private function periodFromCharge(ChargeFinancialView $period, Collection $allocations): StatementPeriodData
     {
-        $charge->loadMissing('lines');
-
-        $chargeTotal = number_format(
-            (float) $charge->lines->sum(fn ($line): float => (float) $line->amount),
-            2,
-            '.',
-            '',
-        );
-        $remaining = $this->propertyBalances->remainingChargeAmount($charge);
-        $status = $this->statusFor($chargeTotal, $remaining);
+        $charge = $period->charge;
 
         $lines = array_values(
             $charge->lines
@@ -117,13 +115,7 @@ class BuildStatementOfAccountPage
                 ->all(),
         );
 
-        $payments = array_values(PaymentAllocation::query()
-            ->where('charge_id', $charge->id)
-            ->where('target', PaymentAllocationTarget::Charge)
-            ->whereHas('payment', fn ($query) => $query->where('status', PaymentStatus::Confirmed))
-            ->with('payment')
-            ->orderBy('id')
-            ->get()
+        $payments = array_values($allocations
             ->map(function (PaymentAllocation $allocation): StatementPeriodPaymentData {
                 $payment = $allocation->payment;
 
@@ -143,24 +135,11 @@ class BuildStatementOfAccountPage
             year: $charge->year,
             month: $charge->month,
             label: Carbon::create($charge->year, $charge->month, 1)->format('F Y'),
-            status: $status->value,
-            remaining: $remaining,
-            charge_total: $chargeTotal,
+            status: $period->status->value,
+            remaining: $period->remaining,
+            charge_total: $period->total,
             lines: $lines,
             payments: $payments,
         );
-    }
-
-    private function statusFor(string $chargeTotal, string $remaining): PeriodStatus
-    {
-        if ((float) $remaining <= 0) {
-            return PeriodStatus::Paid;
-        }
-
-        if ((float) $remaining === (float) $chargeTotal) {
-            return PeriodStatus::Unpaid;
-        }
-
-        return PeriodStatus::Partial;
     }
 }
