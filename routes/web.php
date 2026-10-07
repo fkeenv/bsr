@@ -31,10 +31,11 @@ use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
+use App\Http\Controllers\WelcomeController;
 use App\Http\Middleware\EnsureRoleSurfaceAccess;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', WelcomeController::class)->name('home');
 
 Route::get('terms-of-service', [LegalDocumentController::class, 'termsOfService'])
     ->name('terms-of-service.show');
