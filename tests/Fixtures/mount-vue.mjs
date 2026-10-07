@@ -37,6 +37,7 @@ export function mount(
             source = compileScript(descriptor, {
                 id: filename,
                 inlineTemplate: true,
+                templateOptions: { compilerOptions: { hoistStatic: false } },
             }).content;
         }
         const code = ts.transpileModule(source, {
