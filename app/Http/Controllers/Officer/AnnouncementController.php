@@ -8,18 +8,15 @@ use App\Actions\Announcements\PublishAnnouncement;
 use App\Actions\Announcements\UnpinAnnouncement;
 use App\Actions\Announcements\UnpublishAnnouncement;
 use App\Actions\Announcements\UpdateAnnouncementDraft;
-use App\Actions\Settings\UpdateAnnouncementsPageVisibility;
 use App\Data\AnnouncementData;
-use App\Enums\AnnouncementsPageVisibility;
+use App\Enums\AnnouncementVisibility;
 use App\Http\Requests\Officer\PinAnnouncementRequest;
 use App\Http\Requests\Officer\PublishAnnouncementRequest;
 use App\Http\Requests\Officer\StoreAnnouncementRequest;
 use App\Http\Requests\Officer\UnpinAnnouncementRequest;
 use App\Http\Requests\Officer\UnpublishAnnouncementRequest;
 use App\Http\Requests\Officer\UpdateAnnouncementRequest;
-use App\Http\Requests\Officer\UpdateAnnouncementsPageVisibilityRequest;
 use App\Models\Announcement;
-use App\Models\AssociationSetting;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,25 +37,14 @@ class AnnouncementController
             ->values()
             ->all();
 
-        $visibility = AssociationSetting::current()->announcements_page_visibility;
-
         return Inertia::render('officer/announcements/Index', [
             'announcements' => $announcements,
-            'pageVisibility' => $visibility->value,
-            'pageVisibilityOptions' => collect(AnnouncementsPageVisibility::ordered())
-                ->map(fn (AnnouncementsPageVisibility $option): array => [
-                    'value' => $option->value,
-                    'label' => $option->label(),
-                    'description' => $option->description(),
-                ])
-                ->values()
-                ->all(),
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('officer/announcements/Create');
+        return Inertia::render('officer/announcements/Create', ['visibilityOptions' => $this->visibilityOptions()]);
     }
 
     public function store(
@@ -78,6 +64,7 @@ class AnnouncementController
 
         return Inertia::render('officer/announcements/Edit', [
             'announcement' => AnnouncementData::fromModel($announcement),
+            'visibilityOptions' => $this->visibilityOptions(),
         ]);
     }
 
@@ -141,18 +128,13 @@ class AnnouncementController
             ->with('success', 'Announcement unpinned.');
     }
 
-    public function updatePageVisibility(
-        UpdateAnnouncementsPageVisibilityRequest $request,
-        UpdateAnnouncementsPageVisibility $updateAnnouncementsPageVisibility,
-    ): RedirectResponse {
-        $visibility = AnnouncementsPageVisibility::from(
-            $request->validated('announcements_page_visibility'),
-        );
-
-        $updateAnnouncementsPageVisibility->handle($visibility);
-
-        return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcements page visibility updated.');
+    /** @return list<array{value: string, label: string, description: string}> */
+    private function visibilityOptions(): array
+    {
+        return array_map(fn (AnnouncementVisibility $option): array => [
+            'value' => $option->value,
+            'label' => $option->label(),
+            'description' => $option->description(),
+        ], AnnouncementVisibility::ordered());
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Officer;
 
+use App\Enums\AnnouncementVisibility;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAnnouncementRequest extends FormRequest
 {
@@ -19,6 +21,7 @@ class StoreAnnouncementRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
+            'visibility' => ['sometimes', 'required', Rule::enum(AnnouncementVisibility::class)],
         ];
     }
 }
