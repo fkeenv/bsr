@@ -461,27 +461,3 @@ onUnmounted(() => {
         <slot />
     </Sidebar>
 </template>
-
-<style>
-.association-navigation {
-    --sidebar: #efefe8;
-    --sidebar-foreground: #252c29;
-    --sidebar-primary: #365847;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #dee5da;
-    --sidebar-accent-foreground: #365847;
-    --sidebar-border: #ddded5;
-    --sidebar-ring: #365847;
-}
-
-.dark .association-navigation {
-    --sidebar: #202824;
-    --sidebar-foreground: #e6eae3;
-    --sidebar-primary: #c1d5c3;
-    --sidebar-primary-foreground: #202824;
-    --sidebar-accent: #34443a;
-    --sidebar-accent-foreground: #d8e4d8;
-    --sidebar-border: #405047;
-    --sidebar-ring: #a3c6ad;
-}
-</style>

@@ -185,7 +185,7 @@ defineOptions({
                     Your community space
                 </p>
                 <h1
-                    class="community-heading text-4xl leading-tight [overflow-wrap:anywhere] lg:text-[44px]"
+                    class="font-serif text-4xl leading-tight font-normal [overflow-wrap:anywhere] lg:text-[44px]"
                 >
                     Welcome back<span v-if="residentName"
                         >, {{ residentName }}</span
@@ -265,7 +265,7 @@ defineOptions({
                             </p>
                             <h3
                                 :id="`property-${membership.id}-heading`"
-                                class="community-heading text-[28px] leading-tight [overflow-wrap:anywhere] md:text-[32px]"
+                                class="font-serif text-[28px] leading-tight font-normal [overflow-wrap:anywhere] md:text-[32px]"
                             >
                                 {{
                                     membership.property_label ||
@@ -327,7 +327,7 @@ defineOptions({
             </div>
 
             <div v-else class="bg-card space-y-4 rounded-xl border p-6 md:p-8">
-                <h3 class="community-heading text-2xl">
+                <h3 class="font-serif text-2xl font-normal">
                     A place for your Properties
                 </h3>
                 <template v-if="canJoinProperty">
@@ -391,7 +391,7 @@ defineOptions({
         </details>
 
         <section v-if="canJoinProperty && hasMemberships" class="space-y-3">
-            <h2 class="community-heading text-[26px]">
+            <h2 class="font-serif text-[26px] font-normal">
                 Joining another Property?
             </h2>
             <p class="text-muted-foreground max-w-xl leading-7">
@@ -403,42 +403,7 @@ defineOptions({
 </template>
 
 <style scoped>
-.resident-overview {
-    --background: #f7f6f2;
-    --foreground: #252c29;
-    --card: #ffffff;
-    --card-foreground: #252c29;
-    --primary: #365847;
-    --primary-foreground: #ffffff;
-    --muted-foreground: #626a62;
-    --accent: #e8ece4;
-    --accent-foreground: #365847;
-    --border: #ddded5;
-    --ring: #365847;
-    background: var(--background);
-    color: var(--foreground);
-}
-
-.dark .resident-overview {
-    --background: #202824;
-    --foreground: #e6eae3;
-    --card: #28322c;
-    --card-foreground: #e6eae3;
-    --primary: #c1d5c3;
-    --primary-foreground: #202824;
-    --muted-foreground: #bac5bc;
-    --accent: #34443a;
-    --accent-foreground: #d8e4d8;
-    --border: #405047;
-    --ring: #a3c6ad;
-}
-
 summary::-webkit-details-marker {
     display: none;
-}
-
-.community-heading {
-    font-family: Georgia, serif;
-    font-weight: 400;
 }
 </style>

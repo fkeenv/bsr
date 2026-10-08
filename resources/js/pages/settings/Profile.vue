@@ -66,7 +66,7 @@ const user = computed(() => {
                         :alt="user.name"
                     />
                     <AvatarFallback
-                        class="bg-neutral-200 text-lg font-semibold text-black dark:bg-neutral-700 dark:text-white"
+                        class="bg-accent text-accent-foreground text-lg font-semibold"
                     >
                         {{ getInitials(user.name) }}
                     </AvatarFallback>
