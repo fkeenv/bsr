@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
     CalendarClock,
     ClipboardList,
-    FolderGit2,
     HousePlus,
     KeyRound,
     LayoutGrid,
@@ -18,9 +17,7 @@ import {
     Users,
 } from '@lucide/vue';
 import { AccordionRoot } from 'reka-ui';
-import { computed, watch } from 'vue';
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -31,10 +28,12 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useNavigationSection } from '@/composables/useNavigationSection';
 import { dashboard, home, joinProperty } from '@/routes';
+import { edit as propertyProfile } from '@/routes/property-profile';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as officersIndex } from '@/routes/administrator/officers';
 import { index as announcementsIndex } from '@/routes/announcements';
@@ -171,56 +170,67 @@ const officerNavItems = computed((): NavItem[] => {
         },
         {
             title: 'Unpaid',
+            group: 'collection',
             href: unpaidIndex(),
             icon: Receipt,
         },
         {
             title: 'Memberships',
+            group: 'people',
             href: membershipsIndex(),
             icon: Users,
         },
         {
             title: 'Invitations',
+            group: 'people',
             href: propertyInvitationsIndex(),
             icon: MailPlus,
         },
         {
             title: 'Payments',
+            group: 'collection',
             href: paymentsIndex(),
             icon: Receipt,
         },
         {
             title: 'Properties',
+            group: 'people',
             href: propertiesIndex(),
             icon: ClipboardList,
         },
         {
             title: 'Fee Types',
+            group: 'settings',
             href: feeTypesIndex(),
             icon: Receipt,
         },
         {
             title: 'Suspends',
+            group: 'people',
             href: suspendsIndex(),
             icon: Pause,
         },
         {
             title: 'Charges',
+            group: 'collection',
             href: chargesIndex(),
             icon: ClipboardList,
         },
         {
             title: 'Generate Charges',
+            group: 'collection',
             href: generateCharges(),
             icon: CalendarClock,
         },
         {
             title: 'Levy day',
+            group: 'settings',
             href: levySettingsEdit(),
             icon: Settings2,
         },
         {
             title: 'Printed Bill',
+            group: 'settings',
             href: billSettingsEdit(),
             icon: Receipt,
         },
@@ -280,7 +290,7 @@ const navSections = computed<NavSection[]>(() => {
     return [
         {
             id: 'platform',
-            title: 'Platform',
+            title: 'Getting around',
             icon: LayoutGrid,
             items: platformNavItems.value,
         },
@@ -295,6 +305,7 @@ const navSections = computed<NavSection[]>(() => {
             title: 'Officer',
             icon: Shield,
             items: officerNavItems.value,
+            activeRoutePatterns: [propertyProfile.definition.url],
         },
         {
             id: 'administrator',
@@ -304,10 +315,15 @@ const navSections = computed<NavSection[]>(() => {
         },
         {
             id: 'membership',
-            title: 'Membership',
+            title: 'My community',
             icon: Users,
             items: membershipNavItems.value,
-            activeRoutePatterns: [statementOfAccountShow.definition.url],
+            activeRoutePatterns: [
+                statementOfAccountShow.definition.url,
+                ...(!capabilities.value?.canAccessOfficer
+                    ? [propertyProfile.definition.url]
+                    : []),
+            ],
         },
     ].filter((section) => section.items.length > 0);
 });
@@ -366,28 +382,60 @@ watch(
     { immediate: true },
 );
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const { isMobile, setOpenMobile } = useSidebar();
+const removeNavigationListeners: (() => void)[] = [];
+
+onMounted(() => {
+    const closeMobileNavigation = () => {
+        if (isMobile.value) {
+            setOpenMobile(false);
+        }
+    };
+
+    removeNavigationListeners.push(
+        router.on('start', closeMobileNavigation),
+        router.on('navigate', closeMobileNavigation),
+    );
+});
+
+onUnmounted(() => {
+    removeNavigationListeners.forEach((removeListener) => removeListener());
+});
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
+    <Sidebar collapsible="icon" variant="inset" class="association-navigation">
+        <SidebarHeader
+            class="px-4 pt-7 pb-5 group-data-[collapsible=icon]:px-2"
+        >
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
-                        <Link :href="homeHref">
-                            <AppLogo />
+                    <SidebarMenuButton
+                        size="lg"
+                        as-child
+                        class="h-auto px-0 py-2 hover:bg-transparent [&>span:last-child]:whitespace-normal"
+                    >
+                        <Link
+                            :href="homeHref"
+                            aria-label="Blessed Sacrament Residences home"
+                        >
+                            <span
+                                class="border-sidebar-border text-sidebar-primary flex hidden size-8 shrink-0 items-center justify-center rounded-lg border font-serif text-sm group-data-[collapsible=icon]:flex"
+                                aria-hidden="true"
+                                >BSR</span
+                            >
+                            <span
+                                class="flex flex-col gap-2 group-data-[collapsible=icon]:hidden"
+                            >
+                                <span
+                                    class="text-sidebar-primary [font-family:Georgia,serif] text-[25px] leading-[30px]"
+                                    >Blessed Sacrament<br />Residences</span
+                                >
+                                <span
+                                    class="text-sidebar-foreground text-xs font-normal tracking-wide"
+                                    >Homeowners Association</span
+                                >
+                            </span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -395,7 +443,7 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <AccordionRoot v-model="openSection" type="single" as-child>
-            <SidebarContent>
+            <SidebarContent class="gap-3 px-2">
                 <NavMain
                     v-for="section in navSections"
                     :key="section.id"
@@ -405,10 +453,35 @@ const footerNavItems: NavItem[] = [
             </SidebarContent>
         </AccordionRoot>
 
-        <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
+        <SidebarFooter
+            class="border-sidebar-border mx-4 border-t px-0 py-4 group-data-[collapsible=icon]:mx-2"
+        >
             <NavUser />
         </SidebarFooter>
+        <slot />
     </Sidebar>
-    <slot />
 </template>
+
+<style>
+.association-navigation {
+    --sidebar: #efefe8;
+    --sidebar-foreground: #252c29;
+    --sidebar-primary: #365847;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #dee5da;
+    --sidebar-accent-foreground: #365847;
+    --sidebar-border: #ddded5;
+    --sidebar-ring: #365847;
+}
+
+.dark .association-navigation {
+    --sidebar: #202824;
+    --sidebar-foreground: #e6eae3;
+    --sidebar-primary: #c1d5c3;
+    --sidebar-primary-foreground: #202824;
+    --sidebar-accent: #34443a;
+    --sidebar-accent-foreground: #d8e4d8;
+    --sidebar-border: #405047;
+    --sidebar-ring: #a3c6ad;
+}
+</style>

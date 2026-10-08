@@ -15,5 +15,6 @@ export const [useSidebar, provideSidebarContext] = createContext<{
   isMobile: Ref<boolean>
   openMobile: Ref<boolean>
   setOpenMobile: (value: boolean) => void
+  restoreMobileFocus: (event: Event) => void
   toggleSidebar: () => void
 }>("Sidebar")
