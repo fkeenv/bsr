@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AnnouncementVisibility;
 use Database\Factories\AnnouncementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $title
+ * @property AnnouncementVisibility $visibility
  * @property string $body
  * @property Carbon|null $published_at
  * @property Carbon|null $pinned_at
@@ -26,6 +28,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'title',
     'body',
+    'visibility',
     'published_at',
     'pinned_at',
     'created_by_user_id',
@@ -42,6 +45,7 @@ class Announcement extends Model
     protected function casts(): array
     {
         return [
+            'visibility' => AnnouncementVisibility::class,
             'published_at' => 'datetime',
             'pinned_at' => 'datetime',
         ];

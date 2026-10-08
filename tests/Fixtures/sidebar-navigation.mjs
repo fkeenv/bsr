@@ -22,7 +22,6 @@ function setup(context, capabilities, url = '/dashboard', mobile = false) {
         url,
         props: {
             auth: { capabilities },
-            announcementsPageVisibility: 'private',
             announcementsPageListed: true,
         },
     });
@@ -84,15 +83,12 @@ void test('members keep statement and listed announcements without privileged li
     assert.match(ui.text(), /Homeowners Association/);
 });
 
-void test('guests and non-members see public announcements only', async (context) => {
+void test('guests and non-members can reach the feed filtered for public notices', (context) => {
     for (const capabilities of [
         null,
         { ...member, isMembershipHolder: false },
     ]) {
         const ui = setup(context, capabilities);
-        assert.equal(ui.destinations().includes('/announcements'), false);
-        ui.page.props.announcementsPageVisibility = 'public';
-        await vue.nextTick();
         assert.ok(ui.destinations().includes('/announcements'));
         assert.equal(
             ui.destinations().includes('/statement-of-account'),

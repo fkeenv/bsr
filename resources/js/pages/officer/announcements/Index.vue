@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Paperclip, Pin } from '@lucide/vue';
-import { Form, Head, Link } from '@inertiajs/vue3';
-import AnnouncementController from '@/actions/App/Http/Controllers/Officer/AnnouncementController';
+import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
 import AnnouncementActions from './AnnouncementActions.vue';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import {
     create as createAnnouncement,
@@ -16,16 +13,8 @@ import {
 } from '@/routes/officer/announcements';
 import type { Announcement } from '@/types/announcement';
 
-type VisibilityOption = {
-    value: string;
-    label: string;
-    description: string;
-};
-
 const props = defineProps<{
     announcements: Announcement[];
-    pageVisibility: string;
-    pageVisibilityOptions: VisibilityOption[];
 }>();
 
 const views = ['All', 'Published', 'Drafts', 'Pinned'] as const;
@@ -52,13 +41,6 @@ const dateFormatter = new Intl.DateTimeFormat('en-PH', {
     timeZone: 'Asia/Manila',
 });
 const formatDate = (date: string) => dateFormatter.format(new Date(date));
-const visibilityLabel = computed(
-    () =>
-        props.pageVisibilityOptions.find(
-            (option) => option.value === props.pageVisibility,
-        )?.label,
-);
-
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -101,62 +83,6 @@ defineOptions({
                 <Link :href="createAnnouncement()">New draft</Link>
             </Button>
         </header>
-        <details class="bg-muted/60 rounded-lg border">
-            <summary
-                class="focus-visible:outline-ring flex min-h-14 cursor-pointer flex-wrap items-center justify-between gap-2 rounded-lg px-5 py-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-4 sm:px-6"
-            >
-                <span
-                    >Feed visibility
-                    <span class="text-muted-foreground"
-                        >· {{ visibilityLabel }}</span
-                    ></span
-                >
-                <span class="text-primary font-medium">Manage visibility</span>
-            </summary>
-            <Form
-                v-bind="AnnouncementController.updatePageVisibility.form()"
-                class="space-y-4 border-t p-5 sm:p-6"
-                :options="{ preserveScroll: true }"
-                v-slot="{ errors, processing }"
-            >
-                <fieldset class="space-y-3" :disabled="processing">
-                    <legend class="sr-only">
-                        Announcements page visibility
-                    </legend>
-                    <div
-                        v-for="option in pageVisibilityOptions"
-                        :key="option.value"
-                        class="flex items-start gap-3"
-                    >
-                        <input
-                            :id="`visibility-${option.value}`"
-                            type="radio"
-                            name="announcements_page_visibility"
-                            :value="option.value"
-                            :checked="pageVisibility === option.value"
-                            class="border-input text-primary mt-1 size-4"
-                        />
-                        <Label
-                            :for="`visibility-${option.value}`"
-                            class="grid gap-1 font-normal"
-                        >
-                            <span class="font-medium">{{ option.label }}</span>
-                            <span class="text-muted-foreground text-sm">
-                                {{ option.description }}
-                            </span>
-                        </Label>
-                    </div>
-                </fieldset>
-                <div v-if="errors.announcements_page_visibility" role="alert">
-                    <InputError
-                        :message="errors.announcements_page_visibility"
-                    />
-                </div>
-                <Button type="submit" :disabled="processing">
-                    {{ processing ? 'Saving visibility…' : 'Save visibility' }}
-                </Button>
-            </Form>
-        </details>
         <section aria-label="Announcement workspace">
             <div
                 class="flex flex-col gap-2 border-b sm:flex-row sm:items-center sm:justify-between"
@@ -230,6 +156,9 @@ defineOptions({
                                         : 'Draft'
                                 }}</span
                             >
+                            <span class="text-muted-foreground">{{
+                                announcement.visibility_label
+                            }}</span>
                             <span
                                 v-if="announcement.is_pinned"
                                 class="text-primary inline-flex items-center gap-1"

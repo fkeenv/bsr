@@ -8,11 +8,19 @@ export type AnnouncementAttachment = {
     url: string;
 };
 
+export type AnnouncementVisibilityOption = {
+    value: 'public' | 'private' | 'hidden';
+    label: string;
+    description: string;
+};
+
 export type Announcement = {
     id: number;
     title: string;
     body: string;
     excerpt: string;
+    visibility: 'public' | 'private' | 'hidden';
+    visibility_label: string;
     is_published: boolean;
     is_pinned: boolean;
     published_at: string | null;

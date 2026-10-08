@@ -17,6 +17,8 @@ const notice = (id, published = false, pinned = false) => ({
     title: `Notice ${id}`,
     body: '<p>Rich text</p>',
     excerpt: 'Readable notice & details.',
+    visibility: 'private',
+    visibility_label: 'Private',
     is_published: published,
     is_pinned: pinned,
     published_at: published ? '2026-10-07T23:30:00+00:00' : null,
@@ -41,32 +43,10 @@ function workspace(
     context,
     announcements = [notice(1), notice(2, true), notice(3, true, true)],
 ) {
-    const previousFormData = globalThis.FormData;
-    globalThis.FormData = class extends previousFormData {
-        constructor(form) {
-            super();
-            if (form) {
-                form.addEventListener = () => {};
-                form.removeEventListener = () => {};
-                const collect = (node) => {
-                    if (node.type === 'input' && node.props.checked) {
-                        this.append(node.props.name, node.props.value);
-                    }
-                    for (const child of node.children ?? []) collect(child);
-                };
-                collect(form);
-            }
-        }
-    };
-    context.after(() => {
-        globalThis.FormData = previousFormData;
-    });
     const ui = mount(
         'resources/js/pages/officer/announcements/Index.vue',
         {
             announcements,
-            pageVisibility: 'private',
-            pageVisibilityOptions: options,
         },
         null,
         '/officer/announcements',
@@ -114,8 +94,7 @@ void test('status views show actual notices, local dates, attachments and clear 
     ui.values.announcements = [];
     await vue.nextTick();
     assert.match(ui.text(), /No Announcements yet/);
-    assert.equal(ui.all('details').length, 1);
-    assert.equal(ui.all('details')[0].props.open, undefined);
+    assert.equal(ui.all('details').length, 0);
 });
 
 function actions(context, announcement) {
@@ -221,56 +200,16 @@ void test('pin limit failure stays readable and a pending action cannot submit t
     assert.equal(ui.all('InputError').length, 0);
 });
 
-void test('visibility disclosure preserves server choices and Save feedback', async (context) => {
-    const requests = [];
-    context.mock.method(router, 'post', (url, data, callbacks) => {
-        callbacks.onStart?.({});
-        requests.push({ url, data, callbacks });
-    });
-    const ui = workspace(context, []);
-    for (const option of options) {
-        assert.match(ui.text(), new RegExp(option.label));
-        assert.match(ui.text(), new RegExp(option.description));
-    }
-    assert.equal(
-        ui.all('input').find((node) => node.props.checked).props.value,
-        'private',
-    );
-    for (const input of ui.all('input'))
-        input.props.checked = input.props.value === 'public';
-    ui.all('form')[0].props.onSubmit({ preventDefault() {} });
-    await vue.nextTick();
-    assert.equal(
-        requests[0].url,
-        '/officer/announcements-page-visibility?_method=PUT',
-    );
-    assert.equal(requests[0].data.announcements_page_visibility, 'public');
-    assert.equal(requests[0].callbacks.preserveScroll, true);
-    assert.ok(
-        ui
-            .all('Button')
-            .some(
-                (node) => node.props.type === 'submit' && node.props.disabled,
-            ),
-    );
-    assert.match(ui.text(), /Saving visibility/);
-    requests[0].callbacks.onError({
-        announcements_page_visibility: 'Choose a valid visibility.',
-    });
-    requests[0].callbacks.onFinish({});
-    await vue.nextTick();
-    assert.ok(ui.all('div').some((node) => node.props.role === 'alert'));
-    assert.equal(
-        ui.all('InputError')[0].props.message,
-        'Choose a valid visibility.',
-    );
-    assert.ok(
-        ui
-            .all('Button')
-            .some(
-                (node) => node.props.type === 'submit' && !node.props.disabled,
-            ),
-    );
+void test('each notice displays its own audience without global visibility controls', (context) => {
+    const publicNotice = {
+        ...notice(9, true),
+        visibility: 'public',
+        visibility_label: 'Public',
+    };
+    const ui = workspace(context, [notice(1), publicNotice]);
+    assert.match(ui.text(), /Private/);
+    assert.match(ui.text(), /Public/);
+    assert.doesNotMatch(ui.text(), /Manage visibility|Save visibility/);
 });
 
 void test('excerpts remain text and attachment counts are based on each notice', (context) => {
@@ -282,4 +221,45 @@ void test('excerpts remain text and attachment counts are based on each notice',
     assert.match(ui.text(), /<img src=x onerror=alert\(1\)> is literal text/);
     assert.match(ui.text(), /1 attachment/);
     assert.ok(ui.all('p').every((node) => !node.props.innerHTML));
+});
+
+void test('the editor offers per-notice visibility, defaults to Private and exposes validation errors', async (context) => {
+    const ui = mount(
+        'resources/js/pages/officer/announcements/AnnouncementFormFields.vue',
+        {
+            body: '<p>Notice</p>',
+            visibilityOptions: options,
+            errors: {},
+        },
+    );
+    context.after(ui.unmount);
+    const radios = () =>
+        ui.all('input').filter((node) => node.props.type === 'radio');
+    assert.equal(radios().length, 3);
+    assert.equal(
+        radios().find((node) => node.props.checked).props.value,
+        'private',
+    );
+    assert.ok(
+        radios().every(
+            (node) =>
+                node.props.name === 'visibility' &&
+                node.props.required !== undefined,
+        ),
+    );
+    for (const option of options)
+        assert.match(ui.text(), new RegExp(option.description));
+    ui.values.visibility = 'hidden';
+    ui.values.errors = { visibility: 'Choose a valid audience.' };
+    await vue.nextTick();
+    assert.equal(
+        radios().find((node) => node.props.checked).props.value,
+        'hidden',
+    );
+    assert.ok(ui.all('div').some((node) => node.props.role === 'alert'));
+    assert.ok(
+        ui
+            .all('InputError')
+            .some((node) => node.props.message === 'Choose a valid audience.'),
+    );
 });

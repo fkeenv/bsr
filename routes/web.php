@@ -107,8 +107,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('announcements.unpin');
         Route::post('announcements/{announcement}/attachments', [OfficerAnnouncementAttachmentController::class, 'store'])
             ->name('announcements.attachments.store');
-        Route::put('announcements-page-visibility', [OfficerAnnouncementController::class, 'updatePageVisibility'])
-            ->name('announcements.page-visibility.update');
 
         Route::get('memberships', [OfficerMembershipController::class, 'index'])
             ->name('memberships.index');
