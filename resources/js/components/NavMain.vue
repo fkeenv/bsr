@@ -101,7 +101,11 @@ function isActiveItem(item: NavItem): boolean {
                 </span>
             </AccordionTrigger>
             <AccordionContent class="pb-2">
-                <div v-for="group in itemGroups" :key="group.id ?? 'main'">
+                <div
+                    v-for="group in itemGroups"
+                    :key="group.id ?? 'main'"
+                    class="border-sidebar-border/40 border-t first:border-t-0"
+                >
                     <SidebarGroupLabel v-if="group.title">{{
                         group.title
                     }}</SidebarGroupLabel>
