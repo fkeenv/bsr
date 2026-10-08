@@ -24,13 +24,15 @@ defineProps<{
                             class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
                         >
                             <AppLogoIcon
-                                class="size-9 fill-current text-[var(--foreground)] dark:text-white"
+                                class="text-primary size-9 fill-current"
                             />
                         </div>
                         <span class="sr-only">{{ title }}</span>
                     </Link>
                     <div class="space-y-2 text-center">
-                        <h1 class="text-xl font-medium">{{ title }}</h1>
+                        <h1 class="font-serif text-3xl font-normal">
+                            {{ title }}
+                        </h1>
                         <p class="text-muted-foreground text-center text-sm">
                             {{ description }}
                         </p>

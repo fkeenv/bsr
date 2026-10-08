@@ -9,20 +9,23 @@ const props = defineProps<{
   class?: HTMLAttributes["class"]
 }>()
 
-const { isMobile, state, toggleSidebar } = useSidebar()
+const { isMobile, state, openMobile, toggleSidebar } = useSidebar()
 </script>
 
 <template>
   <Button
     data-sidebar="trigger"
     data-slot="sidebar-trigger"
+    :aria-expanded="isMobile ? openMobile : state === 'expanded'"
+    :aria-controls="isMobile ? 'association-mobile-navigation' : undefined"
     variant="ghost"
     size="icon"
-    :class="cn('h-7 w-7', props.class)"
+    :class="cn('h-10 w-10', isMobile ? 'w-auto px-2' : '', props.class)"
     @click="toggleSidebar"
   >
     <PanelLeftOpen v-if="isMobile || state === 'collapsed'" />
     <PanelLeftClose v-else />
-    <span class="sr-only">Toggle sidebar</span>
+    <span v-if="isMobile" class="ml-1 text-sm">Menu</span>
+    <span class="sr-only">Toggle association navigation</span>
   </Button>
 </template>

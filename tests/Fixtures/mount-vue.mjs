@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,6 +36,11 @@ export function mount(
             const { descriptor } = parse(source, { filename });
             source = compileScript(descriptor, {
                 id: filename,
+                fs: {
+                    fileExists: (path) =>
+                        existsSync(path) && statSync(path).isFile(),
+                    readFile: (path) => readFileSync(path, 'utf8'),
+                },
                 inlineTemplate: true,
                 templateOptions: { compilerOptions: { hoistStatic: false } },
             }).content;

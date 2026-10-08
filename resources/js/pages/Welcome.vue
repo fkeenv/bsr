@@ -419,35 +419,26 @@ const essentials = [
 @reference '../../css/app.css';
 
 .landing {
-    --landing-background: #f7f6f2;
-    --landing-ink: #252c29;
-    --landing-muted: #626a62;
-    --landing-green: #365847;
-    --landing-surface: #e8ece4;
-    --landing-border: #ddded5;
-    --landing-button: #365847;
-    --landing-button-hover: #294536;
-    --landing-button-text: #ffffff;
+    --landing-background: var(--background);
+    --landing-ink: var(--foreground);
+    --landing-muted: var(--muted-foreground);
+    --landing-green: var(--primary);
+    --landing-surface: var(--accent);
+    --landing-border: var(--border);
+    --landing-button: var(--primary);
+    --landing-button-hover: color-mix(
+        in srgb,
+        var(--primary),
+        var(--foreground) 15%
+    );
+    --landing-button-text: var(--primary-foreground);
 
     background: var(--landing-background);
     color: var(--landing-ink);
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
-
-:global(.dark) .landing {
-    --landing-background: #191f1b;
-    --landing-ink: #f0f2eb;
-    --landing-muted: #bac4b8;
-    --landing-green: #b4d1ba;
-    --landing-surface: #28352c;
-    --landing-border: #435147;
-    --landing-button: #b4d1ba;
-    --landing-button-hover: #c8e0cc;
-    --landing-button-text: #1b2c20;
 }
 
 .landing-heading {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-serif);
     font-weight: 400;
 }
 
