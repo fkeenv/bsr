@@ -463,13 +463,19 @@ test('feed search cannot expose private notices to guests or accounts without li
         ->assertInertia(fn ($page) => $page->has('announcements', 1)->where('announcements.0.visibility', 'public'));
 });
 
-test('upgraded notices retain the legacy feed audience', function (string $visibility) {
+test('upgraded notices retain the legacy feed audience', function (string $visibility, int $settingsId) {
     $officer = User::factory()->officer()->create();
     $announcement = Announcement::factory()->published()->create();
     $migration = require database_path('migrations/2026_10_08_173725_add_visibility_to_announcements_table.php');
     $migration->down();
-    AssociationSetting::current()->update(['announcements_page_visibility' => $visibility]);
+    $settings = AssociationSetting::current();
+    $settings->update(['announcements_page_visibility' => $visibility]);
+    AssociationSetting::query()->whereKey($settings->id)->update(['id' => $settingsId]);
     $migration->up();
     $this->actingAs($officer)->get(route('officer.announcements.index'))->assertInertia(fn ($page) => $page
         ->where('announcements.0.id', $announcement->id)->where('announcements.0.visibility', $visibility));
-})->with(['public', 'private', 'hidden']);
+})->with([
+    'Public with original settings ID' => ['public', 1],
+    'Private with another settings ID' => ['private', 8],
+    'Hidden with another settings ID' => ['hidden', 9],
+]);

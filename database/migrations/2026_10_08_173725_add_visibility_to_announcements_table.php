@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('visibility')->default('private');
         });
 
-        $visibility = DB::table('association_settings')->where('id', 1)->value('announcements_page_visibility') ?? 'private';
+        $visibility = DB::table('association_settings')->value('announcements_page_visibility') ?? 'private';
         DB::table('announcements')->update(['visibility' => $visibility]);
     }
 
