@@ -52,8 +52,7 @@ const toastOptions = computed(() => ({
             props.toastOptions?.classes?.info,
         ),
         default: cn(
-            '!border-zinc-200 !bg-zinc-50 !text-zinc-900',
-            'dark:!border-zinc-700 dark:!bg-zinc-900 dark:!text-zinc-50',
+            '!border-border !bg-popover !text-popover-foreground',
             props.toastOptions?.classes?.default,
         ),
     },

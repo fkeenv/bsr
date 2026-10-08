@@ -345,7 +345,7 @@ function clearFilters(): void {
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-md border">
+        <div class="bg-card overflow-hidden rounded-xl border">
             <Table>
                 <TableHeader>
                     <TableRow
