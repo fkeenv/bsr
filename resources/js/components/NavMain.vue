@@ -84,7 +84,7 @@ function isActiveItem(item: NavItem): boolean {
         :is="showAccordion ? AccordionItem : SidebarMenu"
         :value="showAccordion ? section.id : undefined"
         :data-tour="`nav-${section.id}`"
-        class="border-0"
+        class="border-sidebar-border/40"
     >
         <template v-if="showAccordion">
             <AccordionTrigger
