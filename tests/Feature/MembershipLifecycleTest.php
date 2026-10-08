@@ -185,3 +185,14 @@ test('changing the last owner Membership to resident revokes Officer', function 
         ->and($user->hasRole(PlatformRole::Officer))->toBeFalse()
         ->and($user->hasRole(PlatformRole::Member))->toBeTrue();
 });
+
+test('Member cannot end another accounts Membership from the personal overview', function () {
+    $user = User::factory()->member()->create();
+    $otherMembership = Membership::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('memberships.end', $otherMembership))
+        ->assertForbidden();
+
+    expect($otherMembership->fresh()->ended_at)->toBeNull();
+});
