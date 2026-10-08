@@ -63,9 +63,6 @@ import type { NavItem, NavSection } from '@/types';
 const page = usePage();
 const { currentUrl, isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
 const capabilities = computed(() => page.props.auth.capabilities);
-const announcementsPageVisibility = computed(
-    () => page.props.announcementsPageVisibility ?? 'private',
-);
 const announcementsPageListed = computed(
     () => page.props.announcementsPageListed !== false,
 );
@@ -80,10 +77,6 @@ const homeHref = computed(() => {
 
 const platformNavItems = computed((): NavItem[] => {
     if (!capabilities.value) {
-        if (announcementsPageVisibility.value !== 'public') {
-            return [];
-        }
-
         return [
             {
                 title: 'Announcements',
@@ -109,10 +102,7 @@ const platformNavItems = computed((): NavItem[] => {
         });
     }
 
-    if (
-        !capabilities.value.isMembershipHolder &&
-        announcementsPageVisibility.value === 'public'
-    ) {
+    if (!capabilities.value.isMembershipHolder) {
         items.push({
             title: 'Announcements',
             href: announcementsIndex(),

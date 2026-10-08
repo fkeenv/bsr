@@ -13,10 +13,14 @@ import { Label } from '@/components/ui/label';
 import AnnouncementFormFields from '@/pages/officer/announcements/AnnouncementFormFields.vue';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as announcementsIndex } from '@/routes/officer/announcements';
-import type { Announcement } from '@/types/announcement';
+import type {
+    Announcement,
+    AnnouncementVisibilityOption,
+} from '@/types/announcement';
 
 const props = defineProps<{
     announcement: Announcement;
+    visibilityOptions: AnnouncementVisibilityOption[];
 }>();
 
 const body = ref(props.announcement.body);
@@ -42,9 +46,8 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="`Edit ${announcement.title}`" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head :title="`Edit ${announcement.title}`" />
         <div class="flex flex-wrap items-center gap-2">
             <Heading
                 :title="announcement.title"
@@ -65,6 +68,8 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <AnnouncementFormFields
+                :visibility="announcement.visibility"
+                :visibility-options="visibilityOptions"
                 :title="announcement.title"
                 v-model:body="body"
                 :errors="errors"

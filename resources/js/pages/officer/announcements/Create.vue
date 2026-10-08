@@ -10,6 +10,9 @@ import {
     create as createAnnouncement,
     index as announcementsIndex,
 } from '@/routes/officer/announcements';
+import type { AnnouncementVisibilityOption } from '@/types/announcement';
+
+defineProps<{ visibilityOptions: AnnouncementVisibilityOption[] }>();
 
 const body = ref('<p></p>');
 
@@ -34,9 +37,8 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="New Announcement draft" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head title="New Announcement draft" />
         <Heading
             title="New draft"
             description="Drafts are shared with every Officer. Write the body in the rich text editor, then publish when ready."
@@ -47,7 +49,11 @@ defineOptions({
             class="max-w-3xl space-y-6"
             v-slot="{ errors, processing }"
         >
-            <AnnouncementFormFields v-model:body="body" :errors="errors" />
+            <AnnouncementFormFields
+                v-model:body="body"
+                :errors="errors"
+                :visibility-options="visibilityOptions"
+            />
 
             <div class="flex gap-2">
                 <Button type="submit" :disabled="processing">

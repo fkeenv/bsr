@@ -2,6 +2,7 @@
 
 namespace App\Actions\Announcements;
 
+use App\Enums\AnnouncementVisibility;
 use App\Models\Announcement;
 use App\Models\User;
 use App\Support\SanitizeHtml;
@@ -40,6 +41,7 @@ class CreateAnnouncementDraft
         return Announcement::query()->create([
             'title' => trim($title),
             'body' => $body,
+            'visibility' => $data['visibility'] ?? AnnouncementVisibility::Private->value,
             'created_by_user_id' => $officer->id,
             'updated_by_user_id' => $officer->id,
         ]);

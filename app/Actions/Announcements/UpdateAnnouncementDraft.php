@@ -40,6 +40,7 @@ class UpdateAnnouncementDraft
         $announcement->update([
             'title' => trim($title),
             'body' => $body,
+            'visibility' => $data['visibility'] ?? $announcement->visibility->value,
             'updated_by_user_id' => $officer->id,
         ]);
 

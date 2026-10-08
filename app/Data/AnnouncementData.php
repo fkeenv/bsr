@@ -3,6 +3,8 @@
 namespace App\Data;
 
 use App\Models\Announcement;
+use App\Support\SanitizeHtml;
+use Illuminate\Support\Str;
 use Spatie\LaravelData\Data;
 
 class AnnouncementData extends Data
@@ -14,6 +16,9 @@ class AnnouncementData extends Data
         public int $id,
         public string $title,
         public string $body,
+        public string $excerpt,
+        public string $visibility,
+        public string $visibility_label,
         public bool $is_published,
         public bool $is_pinned,
         public ?string $published_at,
@@ -30,6 +35,9 @@ class AnnouncementData extends Data
             id: $announcement->id,
             title: $announcement->title,
             body: $announcement->body,
+            excerpt: Str::limit(SanitizeHtml::plainText($announcement->body), 180),
+            visibility: $announcement->visibility->value,
+            visibility_label: $announcement->visibility->label(),
             is_published: $announcement->isPublished(),
             is_pinned: $announcement->isPinned(),
             published_at: $announcement->published_at?->toIso8601String(),
