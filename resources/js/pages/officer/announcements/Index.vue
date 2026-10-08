@@ -172,7 +172,7 @@ defineOptions({
                         type="button"
                         :aria-pressed="selectedView === view"
                         @click="selectedView = view"
-                        class="focus-visible:outline-ring min-h-12 border-b-2 px-1 py-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+                        class="focus-visible:outline-ring min-h-12 min-w-11 border-b-2 px-1 py-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
                         :class="
                             selectedView === view
                                 ? 'border-primary text-primary font-medium'

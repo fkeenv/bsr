@@ -48,7 +48,13 @@ function workspace(
             if (form) {
                 form.addEventListener = () => {};
                 form.removeEventListener = () => {};
-                this.append('announcements_page_visibility', 'public');
+                const collect = (node) => {
+                    if (node.type === 'input' && node.props.checked) {
+                        this.append(node.props.name, node.props.value);
+                    }
+                    for (const child of node.children ?? []) collect(child);
+                };
+                collect(form);
             }
         }
     };
@@ -152,6 +158,8 @@ for (const [published, pinned, labels] of [
             /Notice 7/,
         );
         for (const label of labels) {
+            ui.all('DropdownMenu')[0].props['onUpdate:open'](true);
+            await vue.nextTick();
             ui.all('DropdownMenuItem')
                 .find((node) => ui.text(node).trim() === label)
                 .props.onSelect({ preventDefault() {} });
@@ -167,6 +175,7 @@ for (const [published, pinned, labels] of [
             await ui.requests.at(-1).callbacks.onSuccess?.({ props: {} });
             ui.requests.at(-1).callbacks.onFinish?.({});
             await vue.nextTick();
+            assert.equal(ui.all('DropdownMenu')[0].props.open, false);
             assert.ok(
                 ui
                     .all('DropdownMenuItem')
@@ -177,6 +186,8 @@ for (const [published, pinned, labels] of [
 }
 void test('pin limit failure stays readable and a pending action cannot submit twice', async (context) => {
     const ui = actions(context, notice(7, true));
+    ui.all('DropdownMenu')[0].props['onUpdate:open'](true);
+    await vue.nextTick();
     const select = () =>
         ui
             .all('DropdownMenuItem')
@@ -187,11 +198,18 @@ void test('pin limit failure stays readable and a pending action cannot submit t
     await vue.nextTick();
     assert.equal(ui.requests.length, 1);
     assert.match(ui.text(), /Saving/);
+    assert.ok(
+        ui
+            .all('p', ui.all('DropdownMenuContent')[0])
+            .some((node) => node.props.role === 'status'),
+    );
+    assert.equal(ui.all('DropdownMenu')[0].props.open, true);
     ui.requests[0].callbacks.onError({
         pin: 'At most three published Announcements can be pinned.',
     });
     ui.requests[0].callbacks.onFinish({});
     await vue.nextTick();
+    assert.equal(ui.all('DropdownMenu')[0].props.open, false);
     assert.ok(ui.all('div').some((node) => node.props.role === 'alert'));
     assert.equal(
         ui.all('InputError')[0].props.message,
@@ -218,6 +236,8 @@ void test('visibility disclosure preserves server choices and Save feedback', as
         ui.all('input').find((node) => node.props.checked).props.value,
         'private',
     );
+    for (const input of ui.all('input'))
+        input.props.checked = input.props.value === 'public';
     ui.all('form')[0].props.onSubmit({ preventDefault() {} });
     await vue.nextTick();
     assert.equal(

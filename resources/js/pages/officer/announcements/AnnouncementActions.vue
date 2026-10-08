@@ -23,6 +23,9 @@ function submit(action: Action) {
     form.clearErrors();
     form.post(AnnouncementController[action].url(props.announcement), {
         preserveScroll: true,
+        onError: () => {
+            open.value = false;
+        },
         onSuccess: () => {
             open.value = false;
         },
@@ -53,18 +56,21 @@ function submit(action: Action) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" class="min-w-44">
                     <DropdownMenuItem
+                        class="min-h-11"
                         v-if="!announcement.is_published"
                         :disabled="form.processing"
                         @select.prevent="submit('publish')"
                         >Publish</DropdownMenuItem
                     >
                     <DropdownMenuItem
+                        class="min-h-11"
                         v-else
                         :disabled="form.processing"
                         @select.prevent="submit('unpublish')"
                         >Unpublish</DropdownMenuItem
                     >
                     <DropdownMenuItem
+                        class="min-h-11"
                         v-if="
                             announcement.is_published && !announcement.is_pinned
                         "
@@ -73,16 +79,24 @@ function submit(action: Action) {
                         >Pin</DropdownMenuItem
                     >
                     <DropdownMenuItem
+                        class="min-h-11"
                         v-if="announcement.is_pinned"
                         :disabled="form.processing"
                         @select.prevent="submit('unpin')"
                         >Unpin</DropdownMenuItem
                     >
+                    <p
+                        v-if="form.processing"
+                        role="status"
+                        class="text-muted-foreground px-2 py-2 text-xs"
+                    >
+                        Saving…
+                    </p>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
         <p
-            v-if="form.processing"
+            v-if="form.processing && !open"
             role="status"
             class="text-muted-foreground text-xs"
         >
