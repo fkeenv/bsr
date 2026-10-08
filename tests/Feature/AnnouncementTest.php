@@ -10,6 +10,27 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+test('Officer workspace exposes readable excerpts and the actual notice dates', function () {
+    $officer = User::factory()->officer()->create();
+    $body = '<h2>Gate hours</h2><p>Open &amp; welcoming&nbsp;daily.</p><script>alert("bad")</script><style>hidden</style><p>Bring your pass.</p>';
+    $announcement = Announcement::factory()->published()->create([
+        'body' => $body,
+        'published_at' => '2026-10-07 23:30:00',
+        'updated_at' => '2026-10-08 02:00:00',
+    ]);
+
+    $this->actingAs($officer)->get(route('officer.announcements.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/announcements/Index')
+            ->where('announcements.0.id', $announcement->id)
+            ->where('announcements.0.excerpt', 'Gate hours Open & welcoming daily. Bring your pass.')
+            ->where('announcements.0.body', $body)
+            ->where('announcements.0.published_at', '2026-10-07T23:30:00+00:00')
+            ->where('announcements.0.updated_at', '2026-10-08T02:00:00+00:00')
+        );
+});
+
 test('Officer can create a shared Announcement draft', function () {
     $officer = User::factory()->officer()->create();
 
@@ -334,4 +355,51 @@ test('members cannot read the feed when Announcements page visibility is hidden'
     $this->actingAs($member)
         ->get(route('announcements.index'))
         ->assertNotFound();
+});
+
+test('Officer excerpts keep encoded text and shorten long notices', function () {
+    $officer = User::factory()->officer()->create();
+    Announcement::factory()->draft()->create([
+        'body' => '<p>&lt;Gate&gt; &quot;Pass&quot; &#39;Resident&#39;</p>',
+    ]);
+
+    $this->actingAs($officer)->get(route('officer.announcements.index'))
+        ->assertInertia(fn ($page) => $page->where('announcements.0.excerpt', '<Gate> "Pass" \'Resident\''));
+
+    Announcement::query()->delete();
+    Announcement::factory()->draft()->create(['body' => '<p>'.str_repeat('á', 200).'</p>']);
+
+    $this->get(route('officer.announcements.index'))
+        ->assertInertia(fn ($page) => $page->where('announcements.0.excerpt', str_repeat('á', 180).'...'));
+});
+
+test('invalid feed visibility returns errors without changing access', function () {
+    $officer = User::factory()->officer()->create();
+    AssociationSetting::current()->update(['announcements_page_visibility' => AnnouncementsPageVisibility::Private]);
+
+    $this->actingAs($officer)->from(route('officer.announcements.index'))
+        ->put(route('officer.announcements.page-visibility.update'), ['announcements_page_visibility' => 'invalid'])
+        ->assertRedirect(route('officer.announcements.index'))
+        ->assertSessionHasErrors('announcements_page_visibility');
+
+    $this->get(route('officer.announcements.index'))
+        ->assertInertia(fn ($page) => $page->where('pageVisibility', 'private'));
+});
+
+test('Officer can pin and unpin a published shared notice and cannot pin a draft', function () {
+    $officer = User::factory()->officer()->create();
+    $announcement = Announcement::factory()->published()->create();
+
+    $this->actingAs($officer)->post(route('officer.announcements.pin', $announcement))->assertRedirect();
+    $this->get(route('officer.announcements.index'))
+        ->assertInertia(fn ($page) => $page->where('announcements.0.is_pinned', true));
+
+    $this->post(route('officer.announcements.unpin', $announcement))->assertRedirect();
+    $this->get(route('officer.announcements.index'))
+        ->assertInertia(fn ($page) => $page->where('announcements.0.is_pinned', false));
+
+    $this->post(route('officer.announcements.unpublish', $announcement))->assertRedirect();
+    $this->post(route('officer.announcements.pin', $announcement))->assertSessionHasErrors('pin');
+    $this->get(route('officer.announcements.index'))
+        ->assertInertia(fn ($page) => $page->where('announcements.0.is_published', false)->where('announcements.0.is_pinned', false));
 });

@@ -12,6 +12,7 @@ export type Announcement = {
     id: number;
     title: string;
     body: string;
+    excerpt: string;
     is_published: boolean;
     is_pinned: boolean;
     published_at: string | null;
