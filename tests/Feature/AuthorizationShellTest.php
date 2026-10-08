@@ -2,20 +2,26 @@
 
 use App\Models\User;
 
-test('Super Admin can reach the Officer stub surface', function () {
+test('Super Admin can reach the Officer workspace', function () {
     $user = User::factory()->superAdmin()->create();
 
     $this->actingAs($user)
         ->get(route('officer.dashboard'))
-        ->assertOk();
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/Dashboard')
+            ->where('auth.capabilities.canAccessOfficer', true)
+            ->where('onboarding', null));
 });
 
-test('Officer can reach the Officer stub surface', function () {
+test('Officer can reach the Officer workspace', function () {
     $user = User::factory()->officer()->create();
 
     $this->actingAs($user)
         ->get(route('officer.dashboard'))
-        ->assertOk();
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/Dashboard')
+            ->where('auth.capabilities.canAccessOfficer', true)
+            ->where('onboarding', null));
 });
 
 test('Super Admin can reach the Administrator stub surface', function () {
@@ -26,7 +32,7 @@ test('Super Admin can reach the Administrator stub surface', function () {
         ->assertOk();
 });
 
-test('plain User Account cannot reach the Officer stub surface', function () {
+test('plain User Account cannot reach the Officer workspace', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)

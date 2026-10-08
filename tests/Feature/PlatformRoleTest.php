@@ -36,7 +36,9 @@ test('Administrator inherits Officer surfaces', function () {
 
     $this->actingAs($user)
         ->get(route('officer.dashboard'))
-        ->assertOk();
+        ->assertInertia(fn ($page) => $page
+            ->component('officer/Dashboard')
+            ->where('auth.capabilities.canAccessOfficer', true));
 
     $this->actingAs($user)
         ->get(route('administrator.dashboard'))
