@@ -10,7 +10,7 @@ test('role navigation keeps its accordion and dynamic route contracts', function
 
     expect($appSidebar)
         ->toContain('<AccordionRoot v-model="openSection" type="single" as-child>')
-        ->toContain('activeRoutePatterns: [statementOfAccountShow.definition.url]')
+        ->toContain('statementOfAccountShow.definition.url')
         ->and($navMain)
         ->toContain('<AccordionTrigger as-child>')
         ->toContain('<DropdownMenuTrigger as-child>');

@@ -2,7 +2,7 @@
 import type { HTMLAttributes, Ref } from "vue"
 import { defaultDocument, useEventListener, useMediaQuery, useVModel } from "@vueuse/core"
 import { TooltipProvider } from "reka-ui"
-import { computed, ref } from "vue"
+import { computed, ref, shallowRef, watch } from "vue"
 import { cn } from "@/lib/utils"
 import { provideSidebarContext, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_COOKIE_NAME, SIDEBAR_KEYBOARD_SHORTCUT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./utils"
 
@@ -19,8 +19,9 @@ const emits = defineEmits<{
   "update:open": [open: boolean]
 }>()
 
-const isMobile = useMediaQuery("(max-width: 768px)")
+const isMobile = useMediaQuery("(max-width: 767px)")
 const openMobile = ref(false)
+const mobileOpener = shallowRef<HTMLElement>()
 
 const open = useVModel(props, "open", emits, {
   defaultValue: props.defaultOpen ?? false,
@@ -35,8 +36,22 @@ function setOpen(value: boolean) {
 }
 
 function setOpenMobile(value: boolean) {
+  if (value && !openMobile.value) {
+    mobileOpener.value = defaultDocument?.activeElement as HTMLElement | undefined
+  }
   openMobile.value = value
 }
+
+function restoreMobileFocus(event: Event) {
+  event.preventDefault()
+  if (mobileOpener.value?.isConnected) {
+    mobileOpener.value.focus()
+  }
+}
+
+watch(isMobile, (mobile) => {
+  if (!mobile) setOpenMobile(false)
+})
 
 // Helper to toggle the sidebar.
 function toggleSidebar() {
@@ -62,6 +77,7 @@ provideSidebarContext({
   openMobile,
   setOpenMobile,
   toggleSidebar,
+  restoreMobileFocus,
 })
 </script>
 
