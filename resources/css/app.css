@@ -117,14 +117,14 @@
     --chart-4: hsl(43 74% 66%);
     --chart-5: hsl(27 87% 67%);
     --radius: 0.75rem;
-    --sidebar-background: #efefe8;
-    --sidebar-foreground: var(--foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: #dee5da;
-    --sidebar-accent-foreground: var(--accent-foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
+    --sidebar-background: #eaf0e9;
+    --sidebar-foreground: #263d30;
+    --sidebar-primary: #2e4c3b;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #cbdcc9;
+    --sidebar-accent-foreground: #263d30;
+    --sidebar-border: #c7d3c6;
+    --sidebar-ring: #53755b;
     --sidebar: var(--sidebar-background);
 }
 
@@ -154,14 +154,14 @@
     --chart-3: hsl(30 80% 55%);
     --chart-4: hsl(280 65% 60%);
     --chart-5: hsl(340 75% 55%);
-    --sidebar-background: #202824;
-    --sidebar-foreground: var(--foreground);
-    --sidebar-primary: var(--primary);
-    --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: var(--accent);
-    --sidebar-accent-foreground: var(--accent-foreground);
-    --sidebar-border: var(--border);
-    --sidebar-ring: var(--ring);
+    --sidebar-background: #18231e;
+    --sidebar-foreground: #e0e9df;
+    --sidebar-primary: #b7ceb9;
+    --sidebar-primary-foreground: #18231e;
+    --sidebar-accent: #334c3d;
+    --sidebar-accent-foreground: #e0e9df;
+    --sidebar-border: #34473a;
+    --sidebar-ring: #9cbda2;
     --sidebar: var(--sidebar-background);
 }
 

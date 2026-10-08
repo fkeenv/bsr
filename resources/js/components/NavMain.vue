@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ChevronDown } from '@lucide/vue';
 import {
     AccordionContent,
-    AccordionHeader,
     AccordionItem,
     AccordionTrigger,
-} from 'reka-ui';
+} from '@/components/ui/accordion';
 import { computed } from 'vue';
 import {
     DropdownMenu,
@@ -16,7 +14,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    SidebarGroup,
+    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -56,7 +54,6 @@ const itemGroups = computed(() => {
     return Array.from(groups, ([id, items]) => ({
         id,
         title: id ? groupLabels[id] : '',
-        isDisclosure: id === 'settings',
         items,
     }));
 });
@@ -83,56 +80,32 @@ function isActiveItem(item: NavItem): boolean {
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-1" :data-tour="`nav-${section.id}`">
-        <AccordionItem
-            v-if="showAccordion"
-            :value="section.id"
-            class="group/nav-section"
-        >
-            <AccordionHeader>
-                <AccordionTrigger as-child>
-                    <SidebarMenuButton
-                        :is-active="isActive"
-                        class="h-10 px-3 text-xs font-medium tracking-wide data-[active=true]:bg-transparent"
-                    >
-                        <component :is="section.icon" />
-                        <span>{{ section.title }}</span>
-                        <ChevronDown
-                            class="ml-auto transition-transform group-data-[state=open]/nav-section:rotate-180"
-                        />
-                    </SidebarMenuButton>
-                </AccordionTrigger>
-            </AccordionHeader>
-
-            <AccordionContent class="overflow-hidden">
-                <component
-                    :is="group.isDisclosure ? 'details' : 'div'"
-                    v-for="group in itemGroups"
-                    :key="group.id ?? 'main'"
-                    :open="
-                        group.isDisclosure
-                            ? group.items.some(isActiveItem)
-                            : undefined
-                    "
-                    class="group/settings mt-2"
-                >
+    <component
+        :is="showAccordion ? AccordionItem : SidebarMenu"
+        :value="showAccordion ? section.id : undefined"
+        :data-tour="`nav-${section.id}`"
+        class="border-sidebar-border/40"
+    >
+        <template v-if="showAccordion">
+            <AccordionTrigger
+                :data-active="isActive"
+                class="hover:bg-sidebar-accent/40 data-[active=true]:bg-sidebar-accent/40 items-center px-2 py-2 hover:no-underline"
+            >
+                <span class="flex items-center gap-2">
                     <component
-                        :is="group.isDisclosure ? 'summary' : 'p'"
-                        v-if="group.title"
-                        class="border-sidebar-border text-sidebar-foreground mx-3 border-t pt-4 pb-2 text-xs font-medium"
-                        :class="
-                            group.isDisclosure
-                                ? 'focus-visible:outline-sidebar-ring flex cursor-pointer list-none items-center justify-between rounded-sm focus-visible:outline-2'
-                                : ''
-                        "
-                    >
-                        {{ group.title }}
-                        <ChevronDown
-                            v-if="group.isDisclosure"
-                            class="size-4 transition-transform group-open/settings:rotate-180"
-                        />
-                    </component>
-                    <SidebarMenuSub class="mx-0 gap-1 border-0 px-0 py-1">
+                        :is="section.icon"
+                        class="size-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    {{ section.title }}
+                </span>
+            </AccordionTrigger>
+            <AccordionContent class="pb-2">
+                <div v-for="group in itemGroups" :key="group.id ?? 'main'">
+                    <SidebarGroupLabel v-if="group.title">{{
+                        group.title
+                    }}</SidebarGroupLabel>
+                    <SidebarMenuSub class="border-sidebar-border/40">
                         <SidebarMenuSubItem
                             v-for="item in group.items"
                             :key="item.title"
@@ -140,66 +113,65 @@ function isActiveItem(item: NavItem): boolean {
                             <SidebarMenuSubButton
                                 as-child
                                 :is-active="isActiveItem(item)"
-                                class="h-auto min-h-10 px-3 py-2 text-[15px] leading-5 [&>span:last-child]:whitespace-normal"
                             >
                                 <Link
                                     :href="item.href"
                                     :aria-current="
                                         isActiveItem(item) ? 'page' : undefined
                                     "
+                                    :title="item.title"
                                 >
                                     <span>{{ item.title }}</span>
                                 </Link>
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     </SidebarMenuSub>
-                </component>
+                </div>
             </AccordionContent>
-        </AccordionItem>
-
-        <SidebarMenu v-else>
-            <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <SidebarMenuButton
-                            :is-active="isActive"
-                            class="h-10 px-3 text-xs font-medium tracking-wide data-[active=true]:bg-transparent"
-                        >
-                            <component :is="section.icon" />
-                            <span>{{ section.title }}</span>
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        side="right"
-                        align="start"
-                        :side-offset="4"
-                        class="min-w-56"
+        </template>
+        <SidebarMenuItem v-else>
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <SidebarMenuButton
+                        :is-active="isActive"
+                        :tooltip="section.title"
+                        class="data-[active=true]:bg-sidebar-accent/40"
                     >
-                        <DropdownMenuLabel>
-                            {{ section.title }}
-                        </DropdownMenuLabel>
-                        <DropdownMenuItem
-                            v-for="item in section.items"
-                            :key="item.title"
-                            as-child
+                        <component :is="section.icon" aria-hidden="true" />
+                        <span>{{ section.title }}</span>
+                    </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    side="right"
+                    align="start"
+                    :side-offset="4"
+                >
+                    <DropdownMenuLabel>{{ section.title }}</DropdownMenuLabel>
+                    <DropdownMenuItem
+                        v-for="item in section.items"
+                        :key="item.title"
+                        as-child
+                    >
+                        <Link
+                            :href="item.href"
+                            :aria-current="
+                                isActiveItem(item) ? 'page' : undefined
+                            "
+                            :class="{
+                                'bg-sidebar-accent text-sidebar-accent-foreground':
+                                    isActiveItem(item),
+                            }"
                         >
-                            <Link
-                                :href="item.href"
-                                :aria-current="
-                                    isActiveItem(item) ? 'page' : undefined
-                                "
-                                :class="{
-                                    'bg-accent text-accent-foreground':
-                                        isActiveItem(item),
-                                }"
-                            >
-                                <component :is="item.icon" v-if="item.icon" />
-                                <span>{{ item.title }}</span>
-                            </Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </SidebarMenuItem>
-        </SidebarMenu>
-    </SidebarGroup>
+                            <component
+                                :is="item.icon"
+                                v-if="item.icon"
+                                aria-hidden="true"
+                            />
+                            <span>{{ item.title }}</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </SidebarMenuItem>
+    </component>
 </template>

@@ -17,7 +17,13 @@ const primitive = (name) =>
             () =>
                 vue.h(name, attrs, slots.default?.()),
     });
-function setup(context, capabilities, url = '/dashboard', mobile = false) {
+function setup(
+    context,
+    capabilities,
+    url = '/dashboard',
+    mobile = false,
+    collapsed = false,
+) {
     const page = vue.reactive({
         url,
         props: {
@@ -31,7 +37,7 @@ function setup(context, capabilities, url = '/dashboard', mobile = false) {
         {
             useSidebar: () => ({
                 isMobile: vue.ref(mobile),
-                state: vue.ref('expanded'),
+                state: vue.ref(collapsed ? 'collapsed' : 'expanded'),
                 setOpenMobile: (value) => {
                     openMobile.value = value;
                 },
@@ -157,7 +163,7 @@ void test('platform roles inherit all permitted workspaces and association setti
         assert.equal(ui.all('NavUser').length, 1);
         assert.ok(
             ui
-                .all('SidebarGroup')
+                .all('AccordionItem')
                 .some((node) => node.props['data-tour'] === 'nav-officer'),
         );
     }
@@ -176,18 +182,24 @@ void test('mobile navigation closes for visits and history navigation and unregi
 
 void test('statement detail routes reveal the member section while settings highlight their destination', (context) => {
     const ui = setup(context, member, '/statement-of-account/4?year=2026');
-    assert.equal(ui.all('AccordionRoot')[0].props.modelValue, 'membership');
+    assert.equal(ui.all('Accordion')[0].props.modelValue, 'membership');
     const officer = setup(
         context,
         { ...member, canAccessOfficer: true },
         '/officer/levy-settings',
     );
     const details = officer.all('details');
-    assert.ok(details.some((node) => node.props.open));
+    assert.equal(details.length, 0);
+    assert.equal(officer.all('Accordion')[0].props.modelValue, 'officer');
     const active = officer
         .all('Link')
         .find((node) => node.props['aria-current'] === 'page');
     assert.equal(active.props.href.url, '/officer/levy-settings');
+    const activeSections = officer
+        .all('AccordionTrigger')
+        .filter((node) => node.props['data-active'] === true);
+    assert.equal(activeSections.length, 1);
+    assert.match(officer.text(activeSections[0]), /Officer/);
 });
 
 void test('mobile drawer exposes a close control and restores focus to its opener', (context) => {
@@ -288,7 +300,7 @@ void test('property profiles reveal the relevant workspace and detail pages high
             '/properties/4/profile',
         );
         assert.equal(
-            ui.all('AccordionRoot')[0].props.modelValue,
+            ui.all('Accordion')[0].props.modelValue,
             officer ? 'officer' : 'membership',
         );
     }
@@ -302,4 +314,52 @@ void test('property profiles reveal the relevant workspace and detail pages high
         .filter((node) => node.props['aria-current'] === 'page');
     assert.equal(active.length, 1);
     assert.equal(active[0].props.href.url, '/officer/charges');
+});
+
+void test('collapsed navigation keeps role destinations and the selected link reachable', (context) => {
+    const ui = setup(
+        context,
+        { ...member, canAccessOfficer: true },
+        '/officer/charges/4',
+        false,
+        true,
+    );
+    assert.equal(ui.all('AccordionTrigger').length, 0);
+    assert.ok(ui.all('DropdownMenuTrigger').length > 0);
+    for (const path of [
+        '/officer/announcements',
+        '/officer/levy-settings',
+        '/officer/charges',
+    ])
+        assert.ok(ui.destinations().includes(path));
+    assert.equal(
+        ui.all('Link').find((node) => node.props['aria-current'] === 'page')
+            .props.href.url,
+        '/officer/charges',
+    );
+});
+
+void test('role sections can close and reopen while visits select the current workspace', async (context) => {
+    const ui = setup(
+        context,
+        { ...member, canAccessOfficer: true, isSuperAdmin: true },
+        '/officer/announcements',
+    );
+    const accordion = () => ui.all('Accordion')[0];
+    assert.notEqual(accordion().props.collapsible, undefined);
+    assert.equal(accordion().props.modelValue, 'officer');
+    accordion().props['onUpdate:modelValue'](undefined);
+    await vue.nextTick();
+    assert.equal(accordion().props.modelValue, undefined);
+    accordion().props['onUpdate:modelValue']('super-admin');
+    await vue.nextTick();
+    assert.equal(accordion().props.modelValue, 'super-admin');
+    ui.page.url = '/officer/charges/4';
+    await vue.nextTick();
+    assert.equal(accordion().props.modelValue, 'officer');
+    assert.equal(
+        ui.all('Link').find((node) => node.props['aria-current'] === 'page')
+            .props.href.url,
+        '/officer/charges',
+    );
 });

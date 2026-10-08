@@ -16,7 +16,7 @@ import {
     ShieldCheck,
     Users,
 } from '@lucide/vue';
-import { AccordionRoot } from 'reka-ui';
+import { Accordion } from '@/components/ui/accordion';
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -25,6 +25,7 @@ import {
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
+    SidebarGroup,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -394,58 +395,50 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset" class="association-navigation">
-        <SidebarHeader
-            class="px-4 pt-7 pb-5 group-data-[collapsible=icon]:px-2"
-        >
+    <Sidebar collapsible="icon">
+        <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton
-                        size="lg"
-                        as-child
-                        class="h-auto px-0 py-2 hover:bg-transparent [&>span:last-child]:whitespace-normal"
-                    >
+                    <SidebarMenuButton size="lg" as-child>
                         <Link
                             :href="homeHref"
                             aria-label="Blessed Sacrament Residences home"
+                            title="Blessed Sacrament Residences Homeowners Association"
                         >
-                            <span
-                                class="border-sidebar-border text-sidebar-primary flex hidden size-8 shrink-0 items-center justify-center rounded-lg border font-serif text-sm group-data-[collapsible=icon]:flex"
+                            <div
+                                class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg text-xs font-semibold"
                                 aria-hidden="true"
-                                >BSR</span
                             >
-                            <span
-                                class="flex flex-col gap-2 group-data-[collapsible=icon]:hidden"
+                                BSR
+                            </div>
+                            <div
+                                class="grid flex-1 text-left text-sm leading-tight"
                             >
-                                <span
-                                    class="text-sidebar-primary [font-family:Georgia,serif] text-[25px] leading-[30px]"
-                                    >Blessed Sacrament<br />Residences</span
+                                <span class="truncate font-semibold"
+                                    >Blessed Sacrament Residences</span
                                 >
-                                <span
-                                    class="text-sidebar-foreground text-xs font-normal tracking-wide"
+                                <span class="truncate text-xs"
                                     >Homeowners Association</span
                                 >
-                            </span>
+                            </div>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarHeader>
-
-        <AccordionRoot v-model="openSection" type="single" as-child>
-            <SidebarContent class="gap-3 px-2">
-                <NavMain
-                    v-for="section in navSections"
-                    :key="section.id"
-                    :section="section"
-                    :is-active="activeSectionId === section.id"
-                />
-            </SidebarContent>
-        </AccordionRoot>
-
-        <SidebarFooter
-            class="border-sidebar-border mx-4 border-t px-0 py-4 group-data-[collapsible=icon]:mx-2"
-        >
+        <SidebarContent>
+            <SidebarGroup>
+                <Accordion v-model="openSection" type="single" collapsible>
+                    <NavMain
+                        v-for="section in navSections"
+                        :key="section.id"
+                        :section="section"
+                        :is-active="activeSectionId === section.id"
+                    />
+                </Accordion>
+            </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
             <NavUser />
         </SidebarFooter>
         <slot />
