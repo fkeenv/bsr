@@ -3,13 +3,14 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compileFunction } from 'node:vm';
-import { compileScript, parse } from '@vue/compiler-sfc';
+import { compileScript, parse, registerTS } from '@vue/compiler-sfc';
 import ts from 'typescript';
 import * as vue from 'vue';
 import * as vueUse from '@vueuse/core';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(import.meta.url);
+registerTS(() => ts);
 
 export function mount(
     file,

@@ -1,17 +1,14 @@
 <?php
 
-test('role navigation keeps its accordion and dynamic route contracts', function () {
-    $appSidebar = file_get_contents(
-        dirname(__DIR__, 2).'/resources/js/components/AppSidebar.vue',
-    );
-    $navMain = file_get_contents(
-        dirname(__DIR__, 2).'/resources/js/components/NavMain.vue',
+use Symfony\Component\Process\Process;
+
+test('stock Accordion preserves controlled navigation and accessibility props', function () {
+    $process = new Process(
+        ['node', '--test', 'tests/Fixtures/stock-accordion.mjs'],
+        dirname(__DIR__, 2),
     );
 
-    expect($appSidebar)
-        ->toContain('<AccordionRoot v-model="openSection" type="single" as-child>')
-        ->toContain('statementOfAccountShow.definition.url')
-        ->and($navMain)
-        ->toContain('<AccordionTrigger as-child>')
-        ->toContain('<DropdownMenuTrigger as-child>');
+    $process->mustRun();
+
+    expect($process->getOutput())->toContain('# fail 0');
 });

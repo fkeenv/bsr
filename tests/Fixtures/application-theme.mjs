@@ -79,7 +79,7 @@ for (const dark of [false, true]) {
             );
         }
         assert.equal(color('--popover'), color('--card'));
-        assert.equal(color('--sidebar-primary'), color('--primary'));
+        assert.notEqual(color('--sidebar-primary'), color('--primary'));
         assert.equal(color('color-scheme'), dark ? 'dark' : 'light');
     });
 }
