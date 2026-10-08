@@ -195,6 +195,11 @@ void test('statement detail routes reveal the member section while settings high
         .all('Link')
         .find((node) => node.props['aria-current'] === 'page');
     assert.equal(active.props.href.url, '/officer/levy-settings');
+    const activeSections = officer
+        .all('AccordionTrigger')
+        .filter((node) => node.props['data-active'] === true);
+    assert.equal(activeSections.length, 1);
+    assert.match(officer.text(activeSections[0]), /Officer/);
 });
 
 void test('mobile drawer exposes a close control and restores focus to its opener', (context) => {

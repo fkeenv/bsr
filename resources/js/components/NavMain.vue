@@ -84,9 +84,13 @@ function isActiveItem(item: NavItem): boolean {
         :is="showAccordion ? AccordionItem : SidebarMenu"
         :value="showAccordion ? section.id : undefined"
         :data-tour="`nav-${section.id}`"
+        class="border-0"
     >
         <template v-if="showAccordion">
-            <AccordionTrigger>
+            <AccordionTrigger
+                :data-active="isActive"
+                class="hover:bg-sidebar-accent/40 data-[active=true]:bg-sidebar-accent/40 items-center px-2 py-2 hover:no-underline"
+            >
                 <span class="flex items-center gap-2">
                     <component
                         :is="section.icon"
@@ -96,12 +100,12 @@ function isActiveItem(item: NavItem): boolean {
                     {{ section.title }}
                 </span>
             </AccordionTrigger>
-            <AccordionContent>
+            <AccordionContent class="pb-2">
                 <div v-for="group in itemGroups" :key="group.id ?? 'main'">
                     <SidebarGroupLabel v-if="group.title">{{
                         group.title
                     }}</SidebarGroupLabel>
-                    <SidebarMenuSub>
+                    <SidebarMenuSub class="border-0">
                         <SidebarMenuSubItem
                             v-for="item in group.items"
                             :key="item.title"
@@ -131,6 +135,7 @@ function isActiveItem(item: NavItem): boolean {
                     <SidebarMenuButton
                         :is-active="isActive"
                         :tooltip="section.title"
+                        class="data-[active=true]:bg-sidebar-accent/40"
                     >
                         <component :is="section.icon" aria-hidden="true" />
                         <span>{{ section.title }}</span>
