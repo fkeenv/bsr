@@ -17,11 +17,14 @@ class PropertyInvitationData extends Data
         public string $expires_at,
         public string $status,
         public bool $can_revoke,
+        public bool $can_share,
+        public ?string $sharing_unavailable_reason,
     ) {}
 
     public static function fromModel(PropertyInvitation $invitation): self
     {
         $invitation->loadMissing(['property', 'creator']);
+        $sharingUnavailableReason = $invitation->sharingUnavailableReason();
 
         return new self(
             id: $invitation->id,
@@ -33,6 +36,8 @@ class PropertyInvitationData extends Data
             expires_at: $invitation->expires_at->toIso8601String(),
             status: $invitation->status()->value,
             can_revoke: $invitation->canBeRevoked(),
+            can_share: $sharingUnavailableReason === null,
+            sharing_unavailable_reason: $sharingUnavailableReason,
         );
     }
 }

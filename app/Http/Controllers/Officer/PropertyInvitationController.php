@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Officer;
 
 use App\Actions\PropertyInvitations\CreatePropertyInvitation;
+use App\Actions\PropertyInvitations\GetPropertyInvitationCredentials;
 use App\Actions\PropertyInvitations\ListOfficerPropertyInvitationsPage;
 use App\Actions\PropertyInvitations\RevokePropertyInvitation;
 use App\Enums\MembershipRole;
 use App\Http\Requests\Officer\RevokePropertyInvitationRequest;
+use App\Http\Requests\Officer\SharePropertyInvitationRequest;
 use App\Http\Requests\Officer\StorePropertyInvitationRequest;
 use App\Models\Property;
 use App\Models\PropertyInvitation;
@@ -46,6 +48,26 @@ class PropertyInvitationController
             'url' => route('property-invitations.show', $issued->token),
             'code' => $issued->code,
         ], HttpResponse::HTTP_CREATED, ['Cache-Control' => 'private, no-store']);
+    }
+
+    public function share(
+        SharePropertyInvitationRequest $request,
+        PropertyInvitation $propertyInvitation,
+        GetPropertyInvitationCredentials $getCredentials,
+    ): JsonResponse {
+        try {
+            $issued = $getCredentials->handle($propertyInvitation);
+        } catch (InvalidArgumentException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['invitation' => [$exception->getMessage()]],
+            ], HttpResponse::HTTP_UNPROCESSABLE_ENTITY, ['Cache-Control' => 'private, no-store']);
+        }
+
+        return response()->json([
+            'url' => route('property-invitations.show', $issued->token),
+            'code' => $issued->code,
+        ], HttpResponse::HTTP_OK, ['Cache-Control' => 'private, no-store']);
     }
 
     public function destroy(
