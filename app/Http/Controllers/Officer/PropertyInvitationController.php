@@ -40,11 +40,12 @@ class PropertyInvitationController
 
         $property = Property::query()->findOrFail($request->integer('property_id'));
         $role = MembershipRole::from($request->validated('role'));
-        $token = $createPropertyInvitation->handle($property, $role, $creator);
+        $issued = $createPropertyInvitation->handle($property, $role, $creator);
 
         return response()->json([
-            'url' => url('/property-invitations/'.$token),
-        ], HttpResponse::HTTP_CREATED);
+            'url' => route('property-invitations.show', $issued->token),
+            'code' => $issued->code,
+        ], HttpResponse::HTTP_CREATED, ['Cache-Control' => 'private, no-store']);
     }
 
     public function destroy(

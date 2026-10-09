@@ -36,7 +36,7 @@ class RedeemPropertyInvitation
         ): Membership {
             $lockedRecipient = User::query()->lockForUpdate()->findOrFail($recipient->id);
             $invitation = PropertyInvitation::query()
-                ->where('token_hash', hash('sha256', $token))
+                ->forCredential($token)
                 ->lockForUpdate()
                 ->first();
 
