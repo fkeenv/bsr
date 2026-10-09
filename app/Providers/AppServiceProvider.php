@@ -32,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
 
     protected function configureRateLimiting(): void
     {
+        RateLimiter::for('property-invitation-lookup', fn (Request $request): array => [
+            Limit::perMinute(15)->by('account:'.$request->user()?->getAuthIdentifier()),
+            Limit::perMinute(30)->by('network:'.$request->ip()),
+        ]);
+
         RateLimiter::for('property-invitation-redemption', fn (Request $request): array => [
             Limit::perMinute(5)->by('account:'.$request->user()?->getAuthIdentifier()),
             Limit::perMinute(10)->by('network:'.$request->ip()),

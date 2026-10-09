@@ -7,17 +7,33 @@ use App\Actions\PropertyInvitations\ShowPropertyInvitationRedemptionPage;
 use App\Http\Requests\RedeemPropertyInvitationRequest;
 use App\Support\FlashToast;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class PropertyInvitationRedemptionController extends Controller
 {
-    public function show(string $token, ShowPropertyInvitationRedemptionPage $showPage): Response
+    public function show(Request $request, string $token, ShowPropertyInvitationRedemptionPage $showPage): Response
     {
-        return Inertia::render('property-invitations/Show', [
-            'token' => $token,
-            'invitation' => $showPage->handle($token),
-        ]);
+        try {
+            $page = Inertia::render('property-invitations/Show', [
+                'token' => $token,
+                'invitation' => $showPage->handle($token),
+            ]);
+            $status = Response::HTTP_OK;
+        } catch (NotFoundHttpException|ServiceUnavailableHttpException $exception) {
+            $page = Inertia::render('property-invitations/Unavailable', ['message' => $exception->getMessage()]);
+            $status = $exception->getStatusCode();
+        }
+
+        $response = $page->toResponse($request);
+        $response->setStatusCode($status);
+        $response->headers->set('Cache-Control', 'private, no-store');
+        $response->headers->set('Referrer-Policy', 'no-referrer');
+
+        return $response;
     }
 
     public function store(

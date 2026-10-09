@@ -11,6 +11,7 @@ class PropertyInvitationRedemptionData extends Data
     public function __construct(
         public string $property_label,
         public string $role,
+        public string $issuer_name,
         public string $expires_at,
         public int $terms_of_service_version_id,
         public int $privacy_policy_version_id,
@@ -24,6 +25,7 @@ class PropertyInvitationRedemptionData extends Data
         return new self(
             property_label: 'Block '.$invitation->property->block.' · Lot '.$invitation->property->lot,
             role: $invitation->role->value,
+            issuer_name: $invitation->creator->name,
             expires_at: $invitation->expires_at->toIso8601String(),
             terms_of_service_version_id: $terms->id,
             privacy_policy_version_id: $privacy->id,

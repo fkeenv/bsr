@@ -25,6 +25,7 @@ use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\Officer\UnpaidRosterController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PropertyInvitationCodeController;
 use App\Http\Controllers\PropertyInvitationRedemptionController;
 use App\Http\Controllers\PropertyProfileController;
 use App\Http\Controllers\StatementOfAccountController;
@@ -51,12 +52,17 @@ Route::get('announcement-attachments/{attachment}', [AnnouncementAttachmentContr
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('property-invitations/{token}', [PropertyInvitationRedemptionController::class, 'show'])
-        ->where('token', '[A-Za-z0-9]{64}')
+        ->where('token', '[A-Za-z0-9]{64}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}')
+        ->middleware('throttle:property-invitation-lookup')
         ->name('property-invitations.show');
     Route::post('property-invitations/{token}', [PropertyInvitationRedemptionController::class, 'store'])
-        ->where('token', '[A-Za-z0-9]{64}')
+        ->where('token', '[A-Za-z0-9]{64}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}')
         ->middleware('throttle:property-invitation-redemption')
         ->name('property-invitations.store');
+
+    Route::post('property-invitation-codes', [PropertyInvitationCodeController::class, 'store'])
+        ->middleware('throttle:property-invitation-lookup')
+        ->name('property-invitation-codes.store');
 
     Route::inertia('join-property', 'join-property/Show')
         ->name('join-property');

@@ -20,6 +20,7 @@ import { show as showTermsOfService } from '@/routes/terms-of-service';
 type Invitation = {
     property_label: string;
     role: 'owner' | 'resident';
+    issuer_name: string;
     expires_at: string;
     terms_of_service_version_id: number;
     privacy_policy_version_id: number;
@@ -89,6 +90,7 @@ const formatDateTime = (value: string): string =>
                                     invitation.property_label
                                 }}</CardTitle>
                                 <CardDescription>
+                                    Invited by {{ invitation.issuer_name }}.
                                     This invitation grants an immediate
                                     Membership.
                                 </CardDescription>

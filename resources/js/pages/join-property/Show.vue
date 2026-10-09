@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { ArrowRight, Home, Link2 } from '@lucide/vue';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { store as lookupInvitationCode } from '@/routes/property-invitation-codes';
 import { joinProperty } from '@/routes';
 import { show as showPropertyInvitation } from '@/routes/property-invitations';
 
@@ -27,6 +29,26 @@ defineOptions({
         ],
     },
 });
+
+const codeForm = useForm({ code: '' });
+const openCode = () => {
+    codeForm.code = codeForm.code.trim().toLowerCase();
+    if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+            codeForm.code,
+        )
+    ) {
+        codeForm.setError(
+            'code',
+            'Enter the full invitation code you received.',
+        );
+        return;
+    }
+    codeForm.clearErrors();
+    codeForm.post(lookupInvitationCode.url(), {
+        onSuccess: () => codeForm.reset(),
+    });
+};
 
 const invitationLink = ref('');
 const invitationLinkError = ref<string | null>(null);
@@ -67,9 +89,9 @@ const openInvitation = () => {
                             <Home class="size-5" />
                         </div>
                         <div>
-                            <CardTitle>Have an invitation link?</CardTitle>
+                            <CardTitle>Have an invitation?</CardTitle>
                             <CardDescription>
-                                Open it, or paste it below, to review the
+                                Open a link or enter a code below to review the
                                 Property and accept the invitation. If you do
                                 not have one, ask an Officer to invite you.
                             </CardDescription>
@@ -107,6 +129,32 @@ const openInvitation = () => {
                             Open invitation
                             <ArrowRight class="size-4" />
                         </Button>
+                    </form>
+                    <Separator class="my-6" />
+                    <form
+                        class="flex flex-col gap-3"
+                        @submit.prevent="openCode"
+                    >
+                        <div class="grid gap-2">
+                            <Label for="invitation_code">Invitation code</Label>
+                            <Input
+                                id="invitation_code"
+                                v-model="codeForm.code"
+                                autocomplete="off"
+                                autocapitalize="none"
+                                spellcheck="false"
+                                placeholder="xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx"
+                                class="font-mono text-sm"
+                                :aria-invalid="!!codeForm.errors.code"
+                            />
+                            <InputError :message="codeForm.errors.code" />
+                        </div>
+                        <Button
+                            type="submit"
+                            class="w-full sm:w-auto sm:self-start"
+                            :disabled="codeForm.processing"
+                            >Review invitation code <ArrowRight class="size-4"
+                        /></Button>
                     </form>
                 </CardContent>
             </Card>
