@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, useHttp } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import OfficerPropertyInvitationController from '@/actions/App/Http/Controllers/Officer/PropertyInvitationController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,6 +63,11 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
                             typeof errors.invitation === 'string'
                                 ? errors.invitation
                                 : 'Unable to retrieve this invitation. Refresh the table and try again.';
+                        toast.error('Invitation could not be copied', {
+                            description: feedback.value,
+                            duration: 10000,
+                            closeButton: true,
+                        });
                     }
                 },
             },
@@ -70,17 +76,38 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
         credentials.value = response;
         try {
             await navigator.clipboard.writeText(response[key]);
-            if (generation === currentGeneration) feedback.value = 'Copied';
+            if (generation === currentGeneration) {
+                const label = key === 'url' ? 'link' : 'code';
+                feedback.value = `Copied invitation ${label}. You can now paste it into a message.`;
+                toast.success(`Invitation ${label} copied`, {
+                    description:
+                        'You can now paste it into a message to share the invitation.',
+                    duration: 10000,
+                    closeButton: true,
+                });
+            }
         } catch {
-            if (generation === currentGeneration)
+            if (generation === currentGeneration) {
                 feedback.value =
                     'Copy failed — select and copy the shown value.';
+                toast.error('Invitation could not be copied', {
+                    description:
+                        'Please select and copy the value shown in the invitation field.',
+                    duration: 10000,
+                    closeButton: true,
+                });
+            }
         }
     } catch {
         if (generation === currentGeneration) credentials.value = null;
         if (generation === currentGeneration && !feedback.value) {
             feedback.value =
                 'Unable to retrieve this invitation. Refresh the table and try again.';
+            toast.error('Invitation could not be copied', {
+                description: feedback.value,
+                duration: 10000,
+                closeButton: true,
+            });
         }
     } finally {
         if (generation === currentGeneration) pending.value = false;

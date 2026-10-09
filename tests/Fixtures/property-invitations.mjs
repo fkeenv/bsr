@@ -224,6 +224,7 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     );
     const requests = [];
     const copied = [];
+    const notifications = [];
     Object.defineProperty(globalThis, 'navigator', {
         configurable: true,
         value: {
@@ -262,7 +263,25 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         },
         null,
         '/officer/property-invitations',
-        { '@inertiajs/vue3': { Form, useHttp } },
+        {
+            '@inertiajs/vue3': { Form, useHttp },
+            'vue-sonner': {
+                toast: {
+                    success: (title, options) =>
+                        notifications.push({
+                            type: 'success',
+                            title,
+                            ...options,
+                        }),
+                    error: (title, options) =>
+                        notifications.push({
+                            type: 'error',
+                            title,
+                            ...options,
+                        }),
+                },
+            },
+        },
     );
     context.after(ui.unmount);
     ui.all('Dialog')[0].props['onUpdate:open'](true);
@@ -309,6 +328,13 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         await vue.nextTick();
         assert.equal(copied.at(-1), credentials[key]);
         assert.match(ui.text(), /Copied/);
+        assert.equal(
+            notifications.at(-1).title,
+            `Invitation ${key === 'url' ? 'link' : 'code'} copied`,
+        );
+        assert.equal(notifications.at(-1).type, 'success');
+        assert.ok(notifications.at(-1).duration >= 8000);
+        assert.match(notifications.at(-1).description, /paste/i);
     }
     globalThis.navigator.clipboard.writeText = async () => {
         throw new Error('Unavailable');
@@ -322,6 +348,8 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await pending;
     await vue.nextTick();
     assert.match(ui.text(), /select and copy/);
+    assert.equal(notifications.at(-1).type, 'error');
+    assert.match(notifications.at(-1).description, /select and copy/i);
     assert.equal(
         ui.all('Input').find((node) => node.props.id === 'share-code-9').props[
             'model-value'
@@ -350,6 +378,7 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     ui.all('Dialog')[0].props['onUpdate:open'](false);
     await vue.nextTick();
     const previousCopies = copied.length;
+    const previousNotifications = notifications.length;
     requests.at(-1).resolve({
         status: 200,
         data: JSON.stringify(credentials),
@@ -358,6 +387,7 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await late;
     await vue.nextTick();
     assert.equal(copied.length, previousCopies);
+    assert.equal(notifications.length, previousNotifications);
     assert.ok(
         ui.all('Input').every((node) => node.props['model-value'] === ''),
     );
