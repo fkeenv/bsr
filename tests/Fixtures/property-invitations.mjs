@@ -433,3 +433,134 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         false,
     );
 });
+
+void test('owners create resident invitations for the displayed Property and get clear copy feedback', async (context) => {
+    const { http } = await import('@inertiajs/core');
+    const { useHttp } = await import('@inertiajs/vue3');
+    const previousClient = http.getClient();
+    const previousNavigator = Object.getOwnPropertyDescriptor(
+        globalThis,
+        'navigator',
+    );
+    const requests = [];
+    const copied = [];
+    const reloads = [];
+    http.setClient({
+        request: (config) =>
+            new Promise((resolve) => requests.push({ config, resolve })),
+    });
+    Object.defineProperty(globalThis, 'navigator', {
+        configurable: true,
+        value: {
+            clipboard: { writeText: async (value) => copied.push(value) },
+        },
+    });
+    context.after(() => {
+        http.setClient(previousClient);
+        if (previousNavigator)
+            Object.defineProperty(globalThis, 'navigator', previousNavigator);
+        else delete globalThis.navigator;
+    });
+    const ui = mount(
+        'resources/js/pages/owner/property-invitations/Index.vue',
+        {
+            property: { id: 12, label: 'Block 13 · Lot 7', is_active: true },
+            invitations: [],
+        },
+        null,
+        '/properties/12/invitations',
+        {
+            '@inertiajs/vue3': {
+                Head: vue.defineComponent({ setup: () => () => null }),
+                useHttp,
+                router: { reload: (options) => reloads.push(options) },
+            },
+        },
+    );
+    context.after(ui.unmount);
+    assert.equal(ui.all('Select').length, 0);
+    assert.match(ui.text(), /Block 13 · Lot 7/);
+    assert.match(ui.text(), /resident Membership/);
+    const pending = ui.all('form')[0].props.onSubmit({ preventDefault() {} });
+    assert.match(requests[0].config.url, /properties\/12\/invitations/);
+    const credentials = {
+        url: 'https://example.test/property-invitations/token',
+        code: '121bd641-2514-46ce-a6dd-b7b8a246a1ff',
+    };
+    requests[0].resolve({
+        status: 201,
+        data: JSON.stringify(credentials),
+        headers: {},
+    });
+    await pending;
+    await vue.nextTick();
+    assert.deepEqual(reloads, [{ only: ['invitations'] }]);
+    for (const [label, expected] of [
+        ['Copy link', credentials.url],
+        ['Copy code', credentials.code],
+    ]) {
+        await ui
+            .all('Button')
+            .find((node) => ui.text(node).trim() === label)
+            .props.onClick();
+        await vue.nextTick();
+        assert.equal(copied.at(-1), expected);
+        assert.match(ui.text(), /You can now paste it into a message/);
+    }
+    globalThis.navigator.clipboard.writeText = async () => {
+        throw new Error('Unavailable');
+    };
+    await ui
+        .all('Button')
+        .find((node) => ui.text(node).trim() === 'Copy code')
+        .props.onClick();
+    await vue.nextTick();
+    assert.match(ui.text(), /select and copy/);
+    assert.equal(
+        ui.all('Input').find((node) => node.props.id === 'owner-issued-code')
+            .props['model-value'],
+        credentials.code,
+    );
+});
+
+void test('owner revocation uses a confirmation dialog and hides Manage after revocation', async (context) => {
+    const Form = vue.defineComponent({
+        setup(_, { attrs, slots }) {
+            return () =>
+                vue.h('Form', attrs, slots.default({ processing: false }));
+        },
+    });
+    const invitation = {
+        id: 18,
+        property_id: 12,
+        property_label: 'Block 13 · Lot 7',
+        role: 'resident',
+        can_revoke: true,
+    };
+    const ui = mount(
+        'resources/js/pages/owner/property-invitations/OwnerInvitationRowActions.vue',
+        { invitation },
+        null,
+        '/properties/12/invitations',
+        { '@inertiajs/vue3': { Form } },
+    );
+    context.after(ui.unmount);
+    assert.match(ui.text(), /Revoke invitation\?/);
+    assert.match(
+        ui.all('Form')[0].props.action,
+        /properties\/12\/invitations\/18/,
+    );
+    assert.equal(ui.all('Form')[0].props.options.preserveScroll, true);
+    ui.all('Dialog')[0].props['onUpdate:open'](true);
+    await vue.nextTick();
+    ui.all('Form')[0].props.onSuccess();
+    await vue.nextTick();
+    assert.equal(ui.all('Dialog')[0].props.open, false);
+    ui.values.invitation = {
+        ...invitation,
+        can_revoke: false,
+        status: 'revoked',
+    };
+    await vue.nextTick();
+    assert.equal(ui.all('Dialog').length, 0);
+});

@@ -53,3 +53,20 @@ role. There is no approval queue and no reject-and-edit loop: an unwanted invita
 and a mistaken Membership is ended. One live Membership per person per Property still holds.
 Plain User Accounts reach the dashboard and use **Join a Property** instead of being sent to
 onboarding. Property-specific Member operations still require a live Membership.
+
+## Amendment: owners may invite residents
+
+A User Account with a live owner Membership may issue resident-only Property Invitations for that
+same active Property. Recognising a renter or another resident is delegated to the current owner;
+granting an owner Membership remains an Officer decision. Owners with several Properties issue
+each invitation for one explicitly identified Property.
+
+Owners may see invitations they issued for Properties they currently own and revoke their own
+unused invitations. They cannot manage another issuer's invitations. Officers see the issuer and
+status and may revoke owner-issued invitations through the existing Officer surface.
+
+Changing the issuer's owner Membership to resident or ending it removes permission to create or
+manage owner-scoped invitations. It does not invalidate invitations already issued: those retain
+the common 30-day expiry, single-use redemption, and revocation rules. Recipients still review
+the Property and resident role and accept the current legal documents before obtaining a live
+resident Membership.

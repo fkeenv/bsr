@@ -10,6 +10,7 @@ import DashboardMembershipRowActions from '@/pages/DashboardMembershipRowActions
 import { dashboard, joinProperty } from '@/routes';
 import { store as completeOnboardingStep } from '@/routes/onboarding/steps';
 import { edit as editPropertyProfile } from '@/routes/property-profile';
+import { index as ownerInvitations } from '@/routes/owner/property-invitations';
 import { show as statementOfAccount } from '@/routes/statement-of-account';
 import type { Membership } from '@/types/membership';
 import type {
@@ -21,9 +22,14 @@ import type {
 type Props = {
     memberships: Membership[];
     onboarding: Onboarding | null;
+    ownerInvitationPropertyIds?: number[];
+    activeOwnerInvitationPropertyIds?: number[];
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    ownerInvitationPropertyIds: () => [],
+    activeOwnerInvitationPropertyIds: () => [],
+});
 
 const page = usePage();
 const checklistOpen = ref(false);
@@ -286,6 +292,27 @@ defineOptions({
                     <div
                         class="mt-6 flex flex-col items-stretch gap-3 border-t pt-5 sm:flex-row sm:flex-wrap sm:items-center"
                     >
+                        <Button
+                            v-if="
+                                ownerInvitationPropertyIds.includes(
+                                    membership.property_id,
+                                )
+                            "
+                            as-child
+                            variant="outline"
+                            class="h-auto min-h-11 whitespace-normal"
+                        >
+                            <Link
+                                :href="ownerInvitations(membership.property_id)"
+                                >{{
+                                    activeOwnerInvitationPropertyIds.includes(
+                                        membership.property_id,
+                                    )
+                                        ? 'Invite a resident'
+                                        : 'View invitations'
+                                }}</Link
+                            >
+                        </Button>
                         <Button
                             v-if="canViewStatement"
                             as-child

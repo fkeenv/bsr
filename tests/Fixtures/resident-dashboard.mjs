@@ -440,3 +440,45 @@ void test('dashboard styles do not override application appearance at the root',
         }
     }
 });
+
+void test('owner invitation links identify each owned Property and exclude resident Properties', async (context) => {
+    const ui = setup(context, [
+        membership(1, 7, 'Block 3 · Lot 12'),
+        membership(2, 8, 'Block 8 · Lot 4'),
+        membership(3, 9, 'Block 4 · Lot 2', 'resident'),
+    ]);
+    ui.values.ownerInvitationPropertyIds = [7, 8];
+    ui.values.activeOwnerInvitationPropertyIds = [7];
+    await vue.nextTick();
+    const links = ui
+        .all('Link')
+        .filter(
+            (node) =>
+                ui.text(node).includes('Invite a resident') ||
+                ui.text(node).includes('View invitations'),
+        );
+    assert.equal(links.length, 2);
+    assert.match(
+        JSON.stringify(links[0].props.href),
+        /properties\/7\/invitations/,
+    );
+    assert.match(ui.text(links[0]), /Invite a resident/);
+    assert.match(
+        JSON.stringify(links[1].props.href),
+        /properties\/8\/invitations/,
+    );
+    assert.match(ui.text(links[1]), /View invitations/);
+    ui.values.ownerInvitationPropertyIds = [];
+    ui.values.activeOwnerInvitationPropertyIds = [];
+    await vue.nextTick();
+    assert.equal(
+        ui
+            .all('Link')
+            .filter(
+                (node) =>
+                    ui.text(node).includes('Invite a resident') ||
+                    ui.text(node).includes('View invitations'),
+            ).length,
+        0,
+    );
+});
