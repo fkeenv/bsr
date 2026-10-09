@@ -50,7 +50,6 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
     if (pending.value || !open.value || !props.invitation.can_share) return;
     const currentGeneration = generation;
     pending.value = true;
-    credentials.value = null;
     feedback.value = '';
     try {
         const response = await request.get(
@@ -58,6 +57,7 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
             {
                 onError: (errors) => {
                     if (generation === currentGeneration) {
+                        credentials.value = null;
                         feedback.value =
                             typeof errors.invitation === 'string'
                                 ? errors.invitation
@@ -77,6 +77,7 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
                     'Copy failed — select and copy the shown value.';
         }
     } catch {
+        if (generation === currentGeneration) credentials.value = null;
         if (generation === currentGeneration && !feedback.value) {
             feedback.value =
                 'Unable to retrieve this invitation. Refresh the table and try again.';
@@ -112,15 +113,14 @@ function closeDialog(): void {
                         :key="option.key"
                         class="space-y-2"
                     >
-                        <Label
-                            v-if="credentials"
-                            :for="`share-${option.key}-${invitation.id}`"
-                            >{{ option.label }}</Label
-                        >
+                        <Label :for="`share-${option.key}-${invitation.id}`">{{
+                            option.label
+                        }}</Label>
                         <Input
-                            v-if="credentials"
                             :id="`share-${option.key}-${invitation.id}`"
-                            :model-value="credentials[option.key]"
+                            :model-value="credentials?.[option.key] ?? ''"
+                            placeholder="Use Copy to retrieve this value"
+                            :disabled="pending || !credentials"
                             readonly
                             @focus="
                                 ($event.target as HTMLInputElement).select()
@@ -141,7 +141,7 @@ function closeDialog(): void {
                 <p v-else class="text-muted-foreground text-sm">
                     {{ invitation.sharing_unavailable_reason }}
                 </p>
-                <p v-if="feedback" role="status" class="text-sm">
+                <p role="status" class="min-h-10 text-sm">
                     {{ feedback }}
                 </p>
 

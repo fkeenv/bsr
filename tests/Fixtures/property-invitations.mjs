@@ -277,11 +277,25 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         url: 'https://example.test/property-invitations/original',
         code: '121bd641-2514-46ce-a6dd-b7b8a246a1ff',
     };
+    const originalInputs = ui.all('Input');
+    assert.equal(
+        originalInputs.length,
+        2,
+        'Sharing fields keep the dialog height stable before copying',
+    );
     for (const [label, key] of [
         ['Copy link', 'url'],
         ['Copy code', 'code'],
     ]) {
         const pending = click(label);
+        await vue.nextTick();
+        const pendingInputs = ui.all('Input');
+        assert.equal(pendingInputs.length, 2);
+        assert.deepEqual(
+            pendingInputs.map((node) => node.props.id),
+            originalInputs.map((node) => node.props.id),
+            'Copying must keep both fields in place',
+        );
         assert.match(
             requests.at(-1).config.url,
             /property-invitations\/9\/share/,
@@ -329,7 +343,9 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await denied;
     await vue.nextTick();
     assert.match(ui.text(), /revoked and can no longer be shared/);
-    assert.equal(ui.all('Input').length, 0);
+    assert.ok(
+        ui.all('Input').every((node) => node.props['model-value'] === ''),
+    );
     const late = click('Copy link');
     ui.all('Dialog')[0].props['onUpdate:open'](false);
     await vue.nextTick();
@@ -342,13 +358,17 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await late;
     await vue.nextTick();
     assert.equal(copied.length, previousCopies);
-    assert.equal(ui.all('Input').length, 0);
+    assert.ok(
+        ui.all('Input').every((node) => node.props['model-value'] === ''),
+    );
     ui.all('Dialog')[0].props['onUpdate:open'](true);
     await vue.nextTick();
     ui.all('Form')[0].props.onSuccess();
     await vue.nextTick();
     assert.equal(ui.all('Dialog')[0].props.open, false);
-    assert.equal(ui.all('Input').length, 0);
+    assert.ok(
+        ui.all('Input').every((node) => node.props['model-value'] === ''),
+    );
     ui.values.invitation = {
         ...ui.values.invitation,
         can_share: false,
