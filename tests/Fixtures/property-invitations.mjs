@@ -297,6 +297,11 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         code: '121bd641-2514-46ce-a6dd-b7b8a246a1ff',
     };
     const originalInputs = ui.all('Input');
+    assert.equal(ui.all('Alert').length, 0);
+    assert.ok(
+        !ui.all('div').some((node) => node.props.class?.includes('min-h-20')),
+        'No empty notification space before copying',
+    );
     assert.equal(
         originalInputs.length,
         2,
@@ -308,6 +313,12 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     ]) {
         const pending = click(label);
         await vue.nextTick();
+        if (key === 'code')
+            assert.equal(
+                ui.all('Alert').length,
+                1,
+                'Keep the previous confirmation visible during another copy',
+            );
         const pendingInputs = ui.all('Input');
         assert.equal(pendingInputs.length, 2);
         assert.deepEqual(

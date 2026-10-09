@@ -53,8 +53,6 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
     if (pending.value || !open.value || !props.invitation.can_share) return;
     const currentGeneration = generation;
     pending.value = true;
-    feedback.value = '';
-    copySucceeded.value = false;
     try {
         const response = await request.get(
             OfficerPropertyInvitationController.share.url(props.invitation.id),
@@ -62,6 +60,7 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
                 onError: (errors) => {
                     if (generation === currentGeneration) {
                         credentials.value = null;
+                        copySucceeded.value = false;
                         feedback.value =
                             typeof errors.invitation === 'string'
                                 ? errors.invitation
@@ -81,13 +80,15 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
             }
         } catch {
             if (generation === currentGeneration) {
+                copySucceeded.value = false;
                 feedback.value =
                     'Copy failed — select and copy the shown value.';
             }
         }
     } catch {
-        if (generation === currentGeneration) credentials.value = null;
-        if (generation === currentGeneration && !feedback.value) {
+        if (generation === currentGeneration) {
+            credentials.value = null;
+            copySucceeded.value = false;
             feedback.value =
                 'Unable to retrieve this invitation. Refresh the table and try again.';
         }
@@ -116,23 +117,21 @@ function closeDialog(): void {
                     </DialogDescription>
                 </DialogHeader>
 
-                <div class="min-h-20">
-                    <Alert
-                        v-if="feedback"
-                        role="status"
-                        :class="
-                            copySucceeded
-                                ? 'border-green-200 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950 dark:text-green-100'
-                                : 'border-red-200 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-100'
-                        "
+                <Alert
+                    v-if="feedback"
+                    role="status"
+                    :class="
+                        copySucceeded
+                            ? 'border-green-200 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950 dark:text-green-100'
+                            : 'border-red-200 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-100'
+                    "
+                >
+                    <AlertDescription
+                        class="text-base font-medium text-current"
                     >
-                        <AlertDescription
-                            class="text-base font-medium text-current"
-                        >
-                            {{ feedback }}
-                        </AlertDescription>
-                    </Alert>
-                </div>
+                        {{ feedback }}
+                    </AlertDescription>
+                </Alert>
 
                 <div v-if="invitation.can_share" class="space-y-3">
                     <div
