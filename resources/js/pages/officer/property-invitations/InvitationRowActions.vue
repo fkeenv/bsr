@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Form } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Form, useHttp } from '@inertiajs/vue3';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import OfficerPropertyInvitationController from '@/actions/App/Http/Controllers/Officer/PropertyInvitationController';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogClose,
@@ -15,11 +17,74 @@ import {
 } from '@/components/ui/dialog';
 import type { PropertyInvitation } from '@/types/property-invitation';
 
-defineProps<{
+const props = defineProps<{
     invitation: PropertyInvitation;
 }>();
 
 const open = ref(false);
+type Credentials = { url: string; code: string };
+const request = useHttp<Record<string, never>, Credentials>({});
+const credentials = ref<Credentials | null>(null);
+const feedback = ref('');
+const pending = ref(false);
+let generation = 0;
+const shareOptions = [
+    { key: 'url', label: 'Invitation link', button: 'Copy link' },
+    { key: 'code', label: 'Invitation code', button: 'Copy code' },
+] as const;
+
+function clearSharing(): void {
+    generation++;
+    request.cancel();
+    request.response = null;
+    credentials.value = null;
+    feedback.value = '';
+    pending.value = false;
+}
+
+watch(open, clearSharing);
+watch(() => props.invitation, clearSharing);
+onBeforeUnmount(clearSharing);
+
+async function copyCredential(key: 'url' | 'code'): Promise<void> {
+    if (pending.value || !open.value || !props.invitation.can_share) return;
+    const currentGeneration = generation;
+    pending.value = true;
+    credentials.value = null;
+    feedback.value = '';
+    try {
+        const response = await request.get(
+            OfficerPropertyInvitationController.share.url(props.invitation.id),
+            {
+                onError: (errors) => {
+                    if (generation === currentGeneration) {
+                        feedback.value =
+                            typeof errors.invitation === 'string'
+                                ? errors.invitation
+                                : 'Unable to retrieve this invitation. Refresh the table and try again.';
+                    }
+                },
+            },
+        );
+        if (generation !== currentGeneration || !response) return;
+        credentials.value = response;
+        try {
+            await navigator.clipboard.writeText(response[key]);
+            if (generation === currentGeneration) feedback.value = 'Copied';
+        } catch {
+            if (generation === currentGeneration)
+                feedback.value =
+                    'Copy failed — select and copy the shown value.';
+        }
+    } catch {
+        if (generation === currentGeneration && !feedback.value) {
+            feedback.value =
+                'Unable to retrieve this invitation. Refresh the table and try again.';
+        }
+    } finally {
+        if (generation === currentGeneration) pending.value = false;
+    }
+}
 
 function closeDialog(): void {
     open.value = false;
@@ -41,8 +106,48 @@ function closeDialog(): void {
                     </DialogDescription>
                 </DialogHeader>
 
+                <div v-if="invitation.can_share" class="space-y-3">
+                    <div
+                        v-for="option in shareOptions"
+                        :key="option.key"
+                        class="space-y-2"
+                    >
+                        <Label
+                            v-if="credentials"
+                            :for="`share-${option.key}-${invitation.id}`"
+                            >{{ option.label }}</Label
+                        >
+                        <Input
+                            v-if="credentials"
+                            :id="`share-${option.key}-${invitation.id}`"
+                            :model-value="credentials[option.key]"
+                            readonly
+                            @focus="
+                                ($event.target as HTMLInputElement).select()
+                            "
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="pending"
+                            @click="copyCredential(option.key)"
+                            >{{ option.button }}</Button
+                        >
+                    </div>
+                    <p class="text-muted-foreground text-sm">
+                        Accepting the link or code uses up both.
+                    </p>
+                </div>
+                <p v-else class="text-muted-foreground text-sm">
+                    {{ invitation.sharing_unavailable_reason }}
+                </p>
+                <p v-if="feedback" role="status" class="text-sm">
+                    {{ feedback }}
+                </p>
+
                 <p class="text-muted-foreground text-sm">
-                    Revoking this invitation permanently disables its link.
+                    Revoking this invitation permanently disables its link and
+                    code.
                 </p>
 
                 <Form
@@ -64,7 +169,7 @@ function closeDialog(): void {
                         <Button
                             type="submit"
                             variant="destructive"
-                            :disabled="processing"
+                            :disabled="processing || pending"
                         >
                             Revoke invitation
                         </Button>

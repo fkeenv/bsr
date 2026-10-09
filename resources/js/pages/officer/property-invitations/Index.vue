@@ -123,7 +123,7 @@ defineOptions({
             <AlertDescription class="space-y-3">
                 <p>
                     Share either the link or the code. Accepting one uses up
-                    both. Copy these details before leaving this page.
+                    both. You can copy these details again from Manage.
                 </p>
                 <div
                     v-for="option in shareOptions"

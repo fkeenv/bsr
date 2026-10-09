@@ -124,4 +124,21 @@ class PropertyInvitation extends Model
     {
         return $this->status() === PropertyInvitationStatus::Unused;
     }
+
+    public function sharingUnavailableReason(): ?string
+    {
+        if ($this->status() !== PropertyInvitationStatus::Unused) {
+            return 'This invitation is '.$this->status()->value.' and can no longer be shared.';
+        }
+
+        if (! $this->property->is_active) {
+            return 'This Property is inactive. Its invitations cannot be shared.';
+        }
+
+        if ($this->getRawOriginal('share_token') === null || $this->getRawOriginal('share_code') === null) {
+            return 'The original link cannot be recovered for this older invitation. Revoke it and create a replacement to share a link or code.';
+        }
+
+        return null;
+    }
 }

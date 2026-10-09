@@ -127,6 +127,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('property-invitations.store');
         Route::delete('property-invitations/{propertyInvitation}', [PropertyInvitationController::class, 'destroy'])
             ->name('property-invitations.destroy');
+        Route::get('property-invitations/{propertyInvitation}/share', [PropertyInvitationController::class, 'share'])
+            ->name('property-invitations.share');
 
         Route::get('payments', [OfficerPaymentController::class, 'index'])
             ->name('payments.index');

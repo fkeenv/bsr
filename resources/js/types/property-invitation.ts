@@ -14,6 +14,8 @@ export type PropertyInvitation = {
     expires_at: string;
     status: PropertyInvitationStatus;
     can_revoke: boolean;
+    can_share: boolean;
+    sharing_unavailable_reason: string | null;
 };
 
 export type PropertyInvitationPropertyOption = {

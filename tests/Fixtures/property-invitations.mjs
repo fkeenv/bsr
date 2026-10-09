@@ -213,3 +213,152 @@ void test('Join a Property validates and normalizes a code while keeping invitat
     ui.all('form')[0].props.onSubmit({ preventDefault() {} });
     assert.equal(visits[0].url, `/property-invitations/${token}`);
 });
+
+void test('Manage retrieves credentials on demand, supports manual copying, and closes after revocation', async (context) => {
+    const { http } = await import('@inertiajs/core');
+    const { useHttp } = await import('@inertiajs/vue3');
+    const previousClient = http.getClient();
+    const previousNavigator = Object.getOwnPropertyDescriptor(
+        globalThis,
+        'navigator',
+    );
+    const requests = [];
+    const copied = [];
+    Object.defineProperty(globalThis, 'navigator', {
+        configurable: true,
+        value: {
+            clipboard: { writeText: async (value) => copied.push(value) },
+        },
+    });
+    http.setClient({
+        request: (config) =>
+            new Promise((resolve, reject) =>
+                requests.push({ config, resolve, reject }),
+            ),
+    });
+    context.after(() => {
+        http.setClient(previousClient);
+        if (previousNavigator)
+            Object.defineProperty(globalThis, 'navigator', previousNavigator);
+        else delete globalThis.navigator;
+    });
+    const Form = vue.defineComponent({
+        setup(_, { attrs, slots }) {
+            return () =>
+                vue.h('Form', attrs, slots.default({ processing: false }));
+        },
+    });
+    const ui = mount(
+        'resources/js/pages/officer/property-invitations/InvitationRowActions.vue',
+        {
+            invitation: {
+                id: 9,
+                property_label: 'Block 1 · Lot 2',
+                role: 'owner',
+                can_revoke: true,
+                can_share: true,
+                sharing_unavailable_reason: null,
+            },
+        },
+        null,
+        '/officer/property-invitations',
+        { '@inertiajs/vue3': { Form, useHttp } },
+    );
+    context.after(ui.unmount);
+    ui.all('Dialog')[0].props['onUpdate:open'](true);
+    await vue.nextTick();
+    assert.equal(requests.length, 0);
+    const click = (label) =>
+        ui
+            .all('Button')
+            .find((node) => ui.text(node).trim() === label)
+            .props.onClick();
+    const credentials = {
+        url: 'https://example.test/property-invitations/original',
+        code: '121bd641-2514-46ce-a6dd-b7b8a246a1ff',
+    };
+    for (const [label, key] of [
+        ['Copy link', 'url'],
+        ['Copy code', 'code'],
+    ]) {
+        const pending = click(label);
+        assert.match(
+            requests.at(-1).config.url,
+            /property-invitations\/9\/share/,
+        );
+        requests.at(-1).resolve({
+            status: 200,
+            data: JSON.stringify(credentials),
+            headers: {},
+        });
+        await pending;
+        await vue.nextTick();
+        assert.equal(copied.at(-1), credentials[key]);
+        assert.match(ui.text(), /Copied/);
+    }
+    globalThis.navigator.clipboard.writeText = async () => {
+        throw new Error('Unavailable');
+    };
+    const pending = click('Copy code');
+    requests.at(-1).resolve({
+        status: 200,
+        data: JSON.stringify(credentials),
+        headers: {},
+    });
+    await pending;
+    await vue.nextTick();
+    assert.match(ui.text(), /select and copy/);
+    assert.equal(
+        ui.all('Input').find((node) => node.props.id === 'share-code-9').props[
+            'model-value'
+        ],
+        credentials.code,
+    );
+    const denied = click('Copy link');
+    requests.at(-1).resolve({
+        status: 422,
+        headers: {},
+        data: JSON.stringify({
+            errors: {
+                invitation: [
+                    'This invitation is revoked and can no longer be shared.',
+                ],
+            },
+        }),
+    });
+    await denied;
+    await vue.nextTick();
+    assert.match(ui.text(), /revoked and can no longer be shared/);
+    assert.equal(ui.all('Input').length, 0);
+    const late = click('Copy link');
+    ui.all('Dialog')[0].props['onUpdate:open'](false);
+    await vue.nextTick();
+    const previousCopies = copied.length;
+    requests.at(-1).resolve({
+        status: 200,
+        data: JSON.stringify(credentials),
+        headers: {},
+    });
+    await late;
+    await vue.nextTick();
+    assert.equal(copied.length, previousCopies);
+    assert.equal(ui.all('Input').length, 0);
+    ui.all('Dialog')[0].props['onUpdate:open'](true);
+    await vue.nextTick();
+    ui.all('Form')[0].props.onSuccess();
+    await vue.nextTick();
+    assert.equal(ui.all('Dialog')[0].props.open, false);
+    assert.equal(ui.all('Input').length, 0);
+    ui.values.invitation = {
+        ...ui.values.invitation,
+        can_share: false,
+        sharing_unavailable_reason:
+            'The original link cannot be recovered. Revoke it and create a replacement.',
+    };
+    await vue.nextTick();
+    assert.match(ui.text(), /original link cannot be recovered/);
+    assert.equal(
+        ui.all('Button').some((node) => ui.text(node).includes('Copy')),
+        false,
+    );
+});
