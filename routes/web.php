@@ -24,6 +24,7 @@ use App\Http\Controllers\Officer\PropertyInvitationController;
 use App\Http\Controllers\Officer\SuspendController;
 use App\Http\Controllers\Officer\UnpaidRosterController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Owner\PropertyInvitationController as OwnerPropertyInvitationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PropertyInvitationCodeController;
 use App\Http\Controllers\PropertyInvitationRedemptionController;
@@ -69,6 +70,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('properties/{property}/profile', [PropertyProfileController::class, 'edit'])
         ->name('property-profile.edit');
+    Route::get('properties/{property}/invitations', [OwnerPropertyInvitationController::class, 'index'])
+        ->name('owner.property-invitations.index');
+    Route::post('properties/{property}/invitations', [OwnerPropertyInvitationController::class, 'store'])
+        ->name('owner.property-invitations.store');
+    Route::delete('properties/{property}/invitations/{propertyInvitation}', [OwnerPropertyInvitationController::class, 'destroy'])
+        ->name('owner.property-invitations.destroy');
     Route::put('properties/{property}/profile', [PropertyProfileController::class, 'update'])
         ->name('property-profile.update');
 

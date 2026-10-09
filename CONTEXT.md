@@ -22,8 +22,11 @@ role.
 _Avoid_: Member, member record, subscription
 
 **Property Invitation**:
-A single-use link an Officer issues for one Property and one role — owner or resident. It expires
-after 30 days and may be revoked while unused. A signed-in User Account that accepts the current
+A single-use link or code issued for one Property and one role — owner or resident. An Officer may
+issue either role; a User Account with a live owner Membership may invite residents to that same
+active Property. Owners may view and revoke their own unused invitations for Properties they
+currently own, and Officers retain oversight of all invitations. It expires after 30 days and may
+be revoked while unused. A signed-in User Account that accepts the current
 Terms of Service and Privacy Policy redeems it into a live Membership straight away, with no
 Officer approval step. Following one from **Join a Property** is how a person gains a Membership.
 _Avoid_: Membership Application (retired before launch), registration form, onboarding form
