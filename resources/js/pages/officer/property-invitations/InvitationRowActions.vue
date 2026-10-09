@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Form, useHttp } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref, watch } from 'vue';
-import { toast } from 'vue-sonner';
 import OfficerPropertyInvitationController from '@/actions/App/Http/Controllers/Officer/PropertyInvitationController';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ type Credentials = { url: string; code: string };
 const request = useHttp<Record<string, never>, Credentials>({});
 const credentials = ref<Credentials | null>(null);
 const feedback = ref('');
+const copySucceeded = ref(false);
 const pending = ref(false);
 let generation = 0;
 const shareOptions = [
@@ -40,6 +41,7 @@ function clearSharing(): void {
     request.response = null;
     credentials.value = null;
     feedback.value = '';
+    copySucceeded.value = false;
     pending.value = false;
 }
 
@@ -52,6 +54,7 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
     const currentGeneration = generation;
     pending.value = true;
     feedback.value = '';
+    copySucceeded.value = false;
     try {
         const response = await request.get(
             OfficerPropertyInvitationController.share.url(props.invitation.id),
@@ -63,11 +66,6 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
                             typeof errors.invitation === 'string'
                                 ? errors.invitation
                                 : 'Unable to retrieve this invitation. Refresh the table and try again.';
-                        toast.error('Invitation could not be copied', {
-                            description: feedback.value,
-                            duration: 10000,
-                            closeButton: true,
-                        });
                     }
                 },
             },
@@ -79,23 +77,12 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
             if (generation === currentGeneration) {
                 const label = key === 'url' ? 'link' : 'code';
                 feedback.value = `Copied invitation ${label}. You can now paste it into a message.`;
-                toast.success(`Invitation ${label} copied`, {
-                    description:
-                        'You can now paste it into a message to share the invitation.',
-                    duration: 10000,
-                    closeButton: true,
-                });
+                copySucceeded.value = true;
             }
         } catch {
             if (generation === currentGeneration) {
                 feedback.value =
                     'Copy failed — select and copy the shown value.';
-                toast.error('Invitation could not be copied', {
-                    description:
-                        'Please select and copy the value shown in the invitation field.',
-                    duration: 10000,
-                    closeButton: true,
-                });
             }
         }
     } catch {
@@ -103,11 +90,6 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
         if (generation === currentGeneration && !feedback.value) {
             feedback.value =
                 'Unable to retrieve this invitation. Refresh the table and try again.';
-            toast.error('Invitation could not be copied', {
-                description: feedback.value,
-                duration: 10000,
-                closeButton: true,
-            });
         }
     } finally {
         if (generation === currentGeneration) pending.value = false;
@@ -133,6 +115,24 @@ function closeDialog(): void {
                         <span class="capitalize">{{ invitation.role }}</span>
                     </DialogDescription>
                 </DialogHeader>
+
+                <div class="min-h-20">
+                    <Alert
+                        v-if="feedback"
+                        role="status"
+                        :class="
+                            copySucceeded
+                                ? 'border-green-200 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950 dark:text-green-100'
+                                : 'border-red-200 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-100'
+                        "
+                    >
+                        <AlertDescription
+                            class="text-base font-medium text-current"
+                        >
+                            {{ feedback }}
+                        </AlertDescription>
+                    </Alert>
+                </div>
 
                 <div v-if="invitation.can_share" class="space-y-3">
                     <div
@@ -167,9 +167,6 @@ function closeDialog(): void {
                 </div>
                 <p v-else class="text-muted-foreground text-sm">
                     {{ invitation.sharing_unavailable_reason }}
-                </p>
-                <p role="status" class="min-h-10 text-sm">
-                    {{ feedback }}
                 </p>
 
                 <p class="text-muted-foreground text-sm">

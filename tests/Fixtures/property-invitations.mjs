@@ -329,12 +329,22 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         assert.equal(copied.at(-1), credentials[key]);
         assert.match(ui.text(), /Copied/);
         assert.equal(
-            notifications.at(-1).title,
-            `Invitation ${key === 'url' ? 'link' : 'code'} copied`,
+            notifications.length,
+            0,
+            'Copy feedback stays inside Manage without a toast',
         );
-        assert.equal(notifications.at(-1).type, 'success');
-        assert.ok(notifications.at(-1).duration >= 8000);
-        assert.match(notifications.at(-1).description, /paste/i);
+        const message = ui.all('Alert')[0];
+        assert.equal(message.props.role, 'status');
+        assert.match(ui.text(message), /You can now paste it into a message/);
+        assert.match(message.props.class, /bg-green-50/);
+        assert.match(message.props.class, /dark:bg-green-950/);
+        assert.match(message.props.class, /text-green-950/);
+        assert.match(message.props.class, /dark:text-green-100/);
+        const content = ui.all('DialogContent')[0];
+        assert.ok(
+            ui.text(content).indexOf('Copied invitation') <
+                ui.text(content).indexOf('Invitation link'),
+        );
     }
     globalThis.navigator.clipboard.writeText = async () => {
         throw new Error('Unavailable');
@@ -348,8 +358,8 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await pending;
     await vue.nextTick();
     assert.match(ui.text(), /select and copy/);
-    assert.equal(notifications.at(-1).type, 'error');
-    assert.match(notifications.at(-1).description, /select and copy/i);
+    assert.equal(notifications.length, 0);
+    assert.match(ui.all('Alert')[0].props.class, /bg-red-50/);
     assert.equal(
         ui.all('Input').find((node) => node.props.id === 'share-code-9').props[
             'model-value'
