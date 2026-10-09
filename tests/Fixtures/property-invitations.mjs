@@ -224,6 +224,7 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     );
     const requests = [];
     const copied = [];
+    const notifications = [];
     Object.defineProperty(globalThis, 'navigator', {
         configurable: true,
         value: {
@@ -262,7 +263,25 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         },
         null,
         '/officer/property-invitations',
-        { '@inertiajs/vue3': { Form, useHttp } },
+        {
+            '@inertiajs/vue3': { Form, useHttp },
+            'vue-sonner': {
+                toast: {
+                    success: (title, options) =>
+                        notifications.push({
+                            type: 'success',
+                            title,
+                            ...options,
+                        }),
+                    error: (title, options) =>
+                        notifications.push({
+                            type: 'error',
+                            title,
+                            ...options,
+                        }),
+                },
+            },
+        },
     );
     context.after(ui.unmount);
     ui.all('Dialog')[0].props['onUpdate:open'](true);
@@ -277,11 +296,36 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         url: 'https://example.test/property-invitations/original',
         code: '121bd641-2514-46ce-a6dd-b7b8a246a1ff',
     };
+    const originalInputs = ui.all('Input');
+    assert.equal(ui.all('Alert').length, 0);
+    assert.ok(
+        !ui.all('div').some((node) => node.props.class?.includes('min-h-20')),
+        'No empty notification space before copying',
+    );
+    assert.equal(
+        originalInputs.length,
+        2,
+        'Sharing fields keep the dialog height stable before copying',
+    );
     for (const [label, key] of [
         ['Copy link', 'url'],
         ['Copy code', 'code'],
     ]) {
         const pending = click(label);
+        await vue.nextTick();
+        if (key === 'code')
+            assert.equal(
+                ui.all('Alert').length,
+                1,
+                'Keep the previous confirmation visible during another copy',
+            );
+        const pendingInputs = ui.all('Input');
+        assert.equal(pendingInputs.length, 2);
+        assert.deepEqual(
+            pendingInputs.map((node) => node.props.id),
+            originalInputs.map((node) => node.props.id),
+            'Copying must keep both fields in place',
+        );
         assert.match(
             requests.at(-1).config.url,
             /property-invitations\/9\/share/,
@@ -295,6 +339,23 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
         await vue.nextTick();
         assert.equal(copied.at(-1), credentials[key]);
         assert.match(ui.text(), /Copied/);
+        assert.equal(
+            notifications.length,
+            0,
+            'Copy feedback stays inside Manage without a toast',
+        );
+        const message = ui.all('Alert')[0];
+        assert.equal(message.props.role, 'status');
+        assert.match(ui.text(message), /You can now paste it into a message/);
+        assert.match(message.props.class, /bg-green-50/);
+        assert.match(message.props.class, /dark:bg-green-950/);
+        assert.match(message.props.class, /text-green-950/);
+        assert.match(message.props.class, /dark:text-green-100/);
+        const content = ui.all('DialogContent')[0];
+        assert.ok(
+            ui.text(content).indexOf('Copied invitation') <
+                ui.text(content).indexOf('Invitation link'),
+        );
     }
     globalThis.navigator.clipboard.writeText = async () => {
         throw new Error('Unavailable');
@@ -308,6 +369,8 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await pending;
     await vue.nextTick();
     assert.match(ui.text(), /select and copy/);
+    assert.equal(notifications.length, 0);
+    assert.match(ui.all('Alert')[0].props.class, /bg-red-50/);
     assert.equal(
         ui.all('Input').find((node) => node.props.id === 'share-code-9').props[
             'model-value'
@@ -329,11 +392,14 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await denied;
     await vue.nextTick();
     assert.match(ui.text(), /revoked and can no longer be shared/);
-    assert.equal(ui.all('Input').length, 0);
+    assert.ok(
+        ui.all('Input').every((node) => node.props['model-value'] === ''),
+    );
     const late = click('Copy link');
     ui.all('Dialog')[0].props['onUpdate:open'](false);
     await vue.nextTick();
     const previousCopies = copied.length;
+    const previousNotifications = notifications.length;
     requests.at(-1).resolve({
         status: 200,
         data: JSON.stringify(credentials),
@@ -342,13 +408,18 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
     await late;
     await vue.nextTick();
     assert.equal(copied.length, previousCopies);
-    assert.equal(ui.all('Input').length, 0);
+    assert.equal(notifications.length, previousNotifications);
+    assert.ok(
+        ui.all('Input').every((node) => node.props['model-value'] === ''),
+    );
     ui.all('Dialog')[0].props['onUpdate:open'](true);
     await vue.nextTick();
     ui.all('Form')[0].props.onSuccess();
     await vue.nextTick();
     assert.equal(ui.all('Dialog')[0].props.open, false);
-    assert.equal(ui.all('Input').length, 0);
+    assert.ok(
+        ui.all('Input').every((node) => node.props['model-value'] === ''),
+    );
     ui.values.invitation = {
         ...ui.values.invitation,
         can_share: false,

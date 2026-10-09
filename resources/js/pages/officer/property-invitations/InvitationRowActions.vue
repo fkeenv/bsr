@@ -2,6 +2,7 @@
 import { Form, useHttp } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref, watch } from 'vue';
 import OfficerPropertyInvitationController from '@/actions/App/Http/Controllers/Officer/PropertyInvitationController';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,7 @@ type Credentials = { url: string; code: string };
 const request = useHttp<Record<string, never>, Credentials>({});
 const credentials = ref<Credentials | null>(null);
 const feedback = ref('');
+const copySucceeded = ref(false);
 const pending = ref(false);
 let generation = 0;
 const shareOptions = [
@@ -39,6 +41,7 @@ function clearSharing(): void {
     request.response = null;
     credentials.value = null;
     feedback.value = '';
+    copySucceeded.value = false;
     pending.value = false;
 }
 
@@ -50,14 +53,14 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
     if (pending.value || !open.value || !props.invitation.can_share) return;
     const currentGeneration = generation;
     pending.value = true;
-    credentials.value = null;
-    feedback.value = '';
     try {
         const response = await request.get(
             OfficerPropertyInvitationController.share.url(props.invitation.id),
             {
                 onError: (errors) => {
                     if (generation === currentGeneration) {
+                        credentials.value = null;
+                        copySucceeded.value = false;
                         feedback.value =
                             typeof errors.invitation === 'string'
                                 ? errors.invitation
@@ -70,14 +73,22 @@ async function copyCredential(key: 'url' | 'code'): Promise<void> {
         credentials.value = response;
         try {
             await navigator.clipboard.writeText(response[key]);
-            if (generation === currentGeneration) feedback.value = 'Copied';
+            if (generation === currentGeneration) {
+                const label = key === 'url' ? 'link' : 'code';
+                feedback.value = `Copied invitation ${label}. You can now paste it into a message.`;
+                copySucceeded.value = true;
+            }
         } catch {
-            if (generation === currentGeneration)
+            if (generation === currentGeneration) {
+                copySucceeded.value = false;
                 feedback.value =
                     'Copy failed — select and copy the shown value.';
+            }
         }
     } catch {
-        if (generation === currentGeneration && !feedback.value) {
+        if (generation === currentGeneration) {
+            credentials.value = null;
+            copySucceeded.value = false;
             feedback.value =
                 'Unable to retrieve this invitation. Refresh the table and try again.';
         }
@@ -106,21 +117,36 @@ function closeDialog(): void {
                     </DialogDescription>
                 </DialogHeader>
 
+                <Alert
+                    v-if="feedback"
+                    role="status"
+                    :class="
+                        copySucceeded
+                            ? 'border-green-200 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950 dark:text-green-100'
+                            : 'border-red-200 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950 dark:text-red-100'
+                    "
+                >
+                    <AlertDescription
+                        class="text-base font-medium text-current"
+                    >
+                        {{ feedback }}
+                    </AlertDescription>
+                </Alert>
+
                 <div v-if="invitation.can_share" class="space-y-3">
                     <div
                         v-for="option in shareOptions"
                         :key="option.key"
                         class="space-y-2"
                     >
-                        <Label
-                            v-if="credentials"
-                            :for="`share-${option.key}-${invitation.id}`"
-                            >{{ option.label }}</Label
-                        >
+                        <Label :for="`share-${option.key}-${invitation.id}`">{{
+                            option.label
+                        }}</Label>
                         <Input
-                            v-if="credentials"
                             :id="`share-${option.key}-${invitation.id}`"
-                            :model-value="credentials[option.key]"
+                            :model-value="credentials?.[option.key] ?? ''"
+                            placeholder="Use Copy to retrieve this value"
+                            :disabled="pending || !credentials"
                             readonly
                             @focus="
                                 ($event.target as HTMLInputElement).select()
@@ -140,9 +166,6 @@ function closeDialog(): void {
                 </div>
                 <p v-else class="text-muted-foreground text-sm">
                     {{ invitation.sharing_unavailable_reason }}
-                </p>
-                <p v-if="feedback" role="status" class="text-sm">
-                    {{ feedback }}
                 </p>
 
                 <p class="text-muted-foreground text-sm">
