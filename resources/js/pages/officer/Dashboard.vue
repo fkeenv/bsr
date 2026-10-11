@@ -4,6 +4,7 @@ import { ArrowRight, ChevronDown, CircleHelp } from '@lucide/vue';
 import { computed, nextTick, ref } from 'vue';
 import OnboardingChecklist from '@/components/OnboardingChecklist.vue';
 import { Button } from '@/components/ui/button';
+import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import { useOnboardingTour } from '@/composables/useOnboardingTour';
 import type { TourStep } from '@/composables/useTour';
 import { dashboard as officerDashboard } from '@/routes/officer';
@@ -29,6 +30,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const { allows } = useAnnouncementPermissions();
 const orientationOpen = ref(false);
 const officerName = computed(() => page.props.auth.user?.name?.trim() ?? '');
 const workspaceGroups = [
@@ -95,16 +97,22 @@ const checklistItems = computed((): OnboardingChecklistItem[] => {
         return [];
     }
 
-    return (onboarding.steps as OfficerOnboardingStepKey[]).map((step) => ({
-        key: step,
-        ...checklistCopy[step],
-        isComplete: onboarding.completed_steps.includes(step),
-        link: {
-            href: completeOnboardingStep('officer'),
-            data: { step },
-            as: 'button',
-        },
-    }));
+    return (onboarding.steps as OfficerOnboardingStepKey[])
+        .filter(
+            (step) =>
+                step !== 'officer-announcements' ||
+                allows('announcements.read'),
+        )
+        .map((step) => ({
+            key: step,
+            ...checklistCopy[step],
+            isComplete: onboarding.completed_steps.includes(step),
+            link: {
+                href: completeOnboardingStep('officer'),
+                data: { step },
+                as: 'button',
+            },
+        }));
 });
 
 const onboardingTour = useOnboardingTour({
@@ -237,6 +245,9 @@ defineOptions({
         </div>
 
         <section
+            v-if="
+                allows('announcements.read') || allows('announcements.create')
+            "
             aria-labelledby="announcements-heading"
             class="bg-accent flex flex-col items-start justify-between gap-6 rounded-xl p-6 md:p-8 xl:flex-row xl:items-center"
         >
@@ -258,6 +269,7 @@ defineOptions({
                 class="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:items-center"
             >
                 <Button
+                    v-if="allows('announcements.create')"
                     as-child
                     class="h-auto min-h-11 px-6 py-3 whitespace-normal"
                 >
@@ -267,6 +279,7 @@ defineOptions({
                     /></Link>
                 </Button>
                 <Button
+                    v-if="allows('announcements.read')"
                     as-child
                     variant="link"
                     class="h-auto min-h-11 whitespace-normal"

@@ -12,6 +12,14 @@ const primitive = (name) =>
             () =>
                 vue.h(name, attrs, slots.default?.()),
     });
+const allGrants = [
+    'announcements.read',
+    'announcements.create',
+    'announcements.edit',
+    'announcements.publish',
+    'announcements.pin',
+    'announcements.attachments',
+];
 const notice = (id, published = false, pinned = false) => ({
     id,
     title: `Notice ${id}`,
@@ -42,7 +50,11 @@ const options = [
 function workspace(
     context,
     announcements = [notice(1), notice(2, true), notice(3, true, true)],
+    grants = allGrants,
 ) {
+    const page = vue.reactive({
+        props: { auth: { announcementPermissions: [...grants] } },
+    });
     const ui = mount(
         'resources/js/pages/officer/announcements/Index.vue',
         {
@@ -55,11 +67,12 @@ function workspace(
                 Head: primitive('Head'),
                 Link: primitive('Link'),
                 Form,
+                usePage: () => page,
             },
         },
     );
     context.after(ui.unmount);
-    return ui;
+    return { ...ui, page };
 }
 void test('status views show actual notices, local dates, attachments and clear empty results', async (context) => {
     const ui = workspace(context);
@@ -97,11 +110,14 @@ void test('status views show actual notices, local dates, attachments and clear 
     assert.equal(ui.all('details').length, 0);
 });
 
-function actions(context, announcement) {
+function actions(context, announcement, grants = allGrants) {
     const requests = [];
     context.mock.method(router, 'post', (url, data, callbacks) => {
         callbacks.onStart?.({});
         requests.push({ url, data, callbacks });
+    });
+    const page = vue.reactive({
+        props: { auth: { announcementPermissions: [...grants] } },
     });
     const ui = mount(
         'resources/js/pages/officer/announcements/AnnouncementActions.vue',
@@ -109,11 +125,15 @@ function actions(context, announcement) {
         null,
         '',
         {
-            '@inertiajs/vue3': { useForm, Link: primitive('Link') },
+            '@inertiajs/vue3': {
+                useForm,
+                Link: primitive('Link'),
+                usePage: () => page,
+            },
         },
     );
     context.after(ui.unmount);
-    return { ...ui, requests };
+    return { ...ui, requests, page };
 }
 for (const [published, pinned, labels] of [
     [false, false, ['Publish']],
@@ -262,4 +282,165 @@ void test('the editor offers per-notice visibility, defaults to Private and expo
             .all('InputError')
             .some((node) => node.props.message === 'Choose a valid audience.'),
     );
+});
+
+void test('reading alone hides creation and mutation controls, including after grants change', async (context) => {
+    const ui = workspace(context, [notice(1)], ['announcements.read']);
+    assert.equal(
+        ui
+            .all('Link')
+            .some(
+                (link) =>
+                    link.props.href.url === '/officer/announcements/create',
+            ),
+        false,
+    );
+    const row = actions(context, notice(2, true), [
+        'announcements.read',
+        'announcements.edit',
+        'announcements.publish',
+    ]);
+    assert.equal(row.all('Link').length, 1);
+    assert.deepEqual(
+        row.all('DropdownMenuItem').map((item) => row.text(item).trim()),
+        ['Unpublish'],
+    );
+    row.page.props.auth.announcementPermissions = ['announcements.read'];
+    await vue.nextTick();
+    assert.equal(row.all('Link').length, 0);
+    assert.equal(row.all('DropdownMenu').length, 0);
+});
+
+void test('pin permission does not display an empty action menu for a draft', (context) => {
+    const ui = actions(context, notice(1), [
+        'announcements.read',
+        'announcements.pin',
+    ]);
+    assert.equal(ui.all('DropdownMenu').length, 0);
+});
+
+function roleEditor(context) {
+    const requests = [];
+    context.mock.method(router, 'put', (url, data, callbacks) => {
+        callbacks.onStart?.({});
+        requests.push({ url, data, callbacks });
+    });
+    const ui = mount(
+        'resources/js/pages/super-admin/role-permissions/RolePermissionEditor.vue',
+        {
+            role: {
+                name: 'officer',
+                label: 'Officer',
+                grants: ['announcements.read'],
+            },
+            permissions: [
+                {
+                    value: 'announcements.read',
+                    label: 'Read staff Announcements',
+                    description: 'Read the staff workspace.',
+                },
+                {
+                    value: 'announcements.create',
+                    label: 'Create drafts',
+                    description: 'Write new drafts.',
+                },
+            ],
+        },
+        null,
+        '',
+        { '@inertiajs/vue3': { useForm } },
+    );
+    context.after(ui.unmount);
+    return { ...ui, requests };
+}
+
+void test('the shadcn editor submits selected grants, disables pending saves and exposes validation errors', async (context) => {
+    const ui = roleEditor(context);
+    assert.equal(ui.all('Button')[0].props.disabled, true);
+    ui.all('Checkbox')[1].props['onUpdate:modelValue'](true);
+    await vue.nextTick();
+    assert.equal(ui.all('Button')[0].props.disabled, false);
+    ui.all('form')[0].props.onSubmit({ preventDefault() {} });
+    await vue.nextTick();
+    assert.equal(ui.requests[0].url, '/super-admin/role-permissions/officer');
+    assert.deepEqual(ui.requests[0].data.grants, [
+        'announcements.read',
+        'announcements.create',
+    ]);
+    assert.equal(ui.all('Button')[0].props.disabled, true);
+    assert.ok(ui.all('Checkbox').every((checkbox) => checkbox.props.disabled));
+    ui.requests[0].callbacks.onError({
+        grants: 'Choose an available permission.',
+    });
+    ui.requests[0].callbacks.onFinish({});
+    await vue.nextTick();
+    assert.equal(
+        ui.all('InputError')[0].props.message,
+        'Choose an available permission.',
+    );
+    assert.equal(ui.all('Button')[0].props.disabled, false);
+});
+
+void test('unchanged server grants do not discard unsaved edits when another role is saved', async (context) => {
+    const ui = roleEditor(context);
+    ui.all('Checkbox')[1].props['onUpdate:modelValue'](true);
+    await vue.nextTick();
+    ui.values.role = { ...ui.values.role, grants: ['announcements.read'] };
+    await vue.nextTick();
+    assert.equal(ui.all('Checkbox')[1].props['model-value'], true);
+    assert.equal(ui.all('Button')[0].props.disabled, false);
+});
+
+void test('reading, editing and uploading expose their own page controls', (context) => {
+    for (const [grants, contentForms, uploadForms] of [
+        [['announcements.read'], 0, 0],
+        [['announcements.read', 'announcements.edit'], 1, 0],
+        [['announcements.read', 'announcements.attachments'], 0, 1],
+    ]) {
+        const page = vue.reactive({
+            props: { auth: { announcementPermissions: grants } },
+        });
+        const formBoundary = vue.defineComponent({
+            inheritAttrs: false,
+            setup:
+                (_, { attrs, slots }) =>
+                () =>
+                    vue.h(
+                        'Form',
+                        attrs,
+                        slots.default?.({ errors: {}, processing: false }),
+                    ),
+        });
+        const ui = mount(
+            'resources/js/pages/officer/announcements/Edit.vue',
+            {
+                announcement: notice(7),
+                visibilityOptions: options,
+            },
+            null,
+            '',
+            {
+                '@inertiajs/vue3': {
+                    usePage: () => page,
+                    setLayoutProps: () => {},
+                    Form: formBoundary,
+                    Head: primitive('Head'),
+                    Link: primitive('Link'),
+                },
+            },
+        );
+        context.after(ui.unmount);
+        assert.equal(ui.all('AnnouncementFormFields').length, contentForms);
+        assert.equal(
+            ui.all('Input').filter((input) => input.props.type === 'file')
+                .length,
+            uploadForms,
+        );
+        assert.equal(ui.all('Form').length, contentForms + uploadForms);
+        if (!contentForms)
+            assert.equal(
+                ui.all('RichTextContent')[0].props.html,
+                '<p>Rich text</p>',
+            );
+    }
 });

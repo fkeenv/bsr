@@ -10,7 +10,19 @@ const flush = async () => {
     await vue.nextTick();
 };
 
-async function dashboard(context, onboarding = null, isMobile = true) {
+async function dashboard(
+    context,
+    onboarding = null,
+    isMobile = true,
+    grants = [
+        'announcements.read',
+        'announcements.create',
+        'announcements.edit',
+        'announcements.publish',
+        'announcements.pin',
+        'announcements.attachments',
+    ],
+) {
     const requests = [];
     const drivers = [];
     const listeners = new Map();
@@ -51,6 +63,7 @@ async function dashboard(context, onboarding = null, isMobile = true) {
                         auth: {
                             user: { name: 'Ana Cruz' },
                             capabilities: { canAccessOfficer: true },
+                            announcementPermissions: grants,
                         },
                     },
                 }),
@@ -299,4 +312,29 @@ void test('desktop navigation cancels a waiting menu transition without recordin
     ui.help();
     await flush();
     assert.equal(ui.drivers[1].active, true);
+});
+
+void test('read-only staff keep Announcement viewing but cannot start a draft', async (context) => {
+    const ui = await dashboard(context, orientation(), false, [
+        'announcements.read',
+    ]);
+    const destinations = ui.all('Link').map((link) => link.props.href.url);
+    assert.ok(destinations.includes('/officer/announcements'));
+    assert.equal(destinations.includes('/officer/announcements/create'), false);
+});
+
+void test('creation-only staff can start a draft without denied reading or onboarding links', async (context) => {
+    const ui = await dashboard(context, orientation(), false, [
+        'announcements.create',
+    ]);
+    const destinations = ui.all('Link').map((link) => link.props.href.url);
+    assert.ok(destinations.includes('/officer/announcements/create'));
+    assert.equal(destinations.includes('/officer/announcements'), false);
+    assert.ok(destinations.includes('/officer/properties'));
+    const checklist = ui.all('OnboardingChecklist')[0].props.items;
+    assert.equal(
+        checklist.some((item) => item.key === 'officer-announcements'),
+        false,
+    );
+    assert.equal(checklist.length, 5);
 });

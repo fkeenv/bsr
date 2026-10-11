@@ -4,6 +4,7 @@ import { Ellipsis } from '@lucide/vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AnnouncementController from '@/actions/App/Http/Controllers/Officer/AnnouncementController';
 import InputError from '@/components/InputError.vue';
+import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -16,6 +17,7 @@ import type { Announcement } from '@/types/announcement';
 
 const props = defineProps<{ announcement: Announcement }>();
 const open = ref(false);
+const { allows } = useAnnouncementPermissions();
 const form = useForm({});
 type Action = 'publish' | 'unpublish' | 'pin' | 'unpin';
 function submit(action: Action) {
@@ -36,14 +38,30 @@ function submit(action: Action) {
 <template>
     <div class="w-full shrink-0 space-y-2 sm:w-32">
         <div class="flex items-center gap-3">
-            <Button variant="outline" as-child class="min-h-11">
+            <Button
+                v-if="
+                    allows('announcements.edit') ||
+                    allows('announcements.attachments')
+                "
+                variant="outline"
+                as-child
+                class="min-h-11"
+            >
                 <Link
                     :href="edit(announcement)"
-                    :aria-label="`Edit ${announcement.title}`"
-                    >Edit</Link
+                    :aria-label="`${allows('announcements.edit') ? 'Edit' : 'Manage attachments for'} ${announcement.title}`"
+                    >{{
+                        allows('announcements.edit') ? 'Edit' : 'Attachments'
+                    }}</Link
                 >
             </Button>
-            <DropdownMenu v-model:open="open">
+            <DropdownMenu
+                v-if="
+                    allows('announcements.publish') ||
+                    (allows('announcements.pin') && announcement.is_published)
+                "
+                v-model:open="open"
+            >
                 <DropdownMenuTrigger as-child>
                     <Button
                         variant="ghost"
@@ -57,14 +75,20 @@ function submit(action: Action) {
                 <DropdownMenuContent align="end" class="min-w-44">
                     <DropdownMenuItem
                         class="min-h-11"
-                        v-if="!announcement.is_published"
+                        v-if="
+                            allows('announcements.publish') &&
+                            !announcement.is_published
+                        "
                         :disabled="form.processing"
                         @select.prevent="submit('publish')"
                         >Publish</DropdownMenuItem
                     >
                     <DropdownMenuItem
                         class="min-h-11"
-                        v-else
+                        v-if="
+                            allows('announcements.publish') &&
+                            announcement.is_published
+                        "
                         :disabled="form.processing"
                         @select.prevent="submit('unpublish')"
                         >Unpublish</DropdownMenuItem
@@ -72,7 +96,9 @@ function submit(action: Action) {
                     <DropdownMenuItem
                         class="min-h-11"
                         v-if="
-                            announcement.is_published && !announcement.is_pinned
+                            allows('announcements.pin') &&
+                            announcement.is_published &&
+                            !announcement.is_pinned
                         "
                         :disabled="form.processing"
                         @select.prevent="submit('pin')"
@@ -80,7 +106,10 @@ function submit(action: Action) {
                     >
                     <DropdownMenuItem
                         class="min-h-11"
-                        v-if="announcement.is_pinned"
+                        v-if="
+                            allows('announcements.pin') &&
+                            announcement.is_pinned
+                        "
                         :disabled="form.processing"
                         @select.prevent="submit('unpin')"
                         >Unpin</DropdownMenuItem

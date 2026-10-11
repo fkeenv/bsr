@@ -19,7 +19,10 @@ export function mount(
     url = '/dashboard',
     adapters = {},
 ) {
-    const page = vue.reactive({ url, props: { auth: { capabilities } } });
+    const page = vue.reactive({
+        url,
+        props: { auth: { capabilities, announcementPermissions: [] } },
+    });
     const visits = [];
     const cache = new Map();
     const primitive = (name) =>

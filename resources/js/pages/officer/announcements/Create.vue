@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AnnouncementController from '@/actions/App/Http/Controllers/Officer/AnnouncementController';
 import Heading from '@/components/Heading.vue';
+import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
+import { dashboard } from '@/routes';
 import { Button } from '@/components/ui/button';
 import AnnouncementFormFields from '@/pages/officer/announcements/AnnouncementFormFields.vue';
-import { dashboard as officerDashboard } from '@/routes/officer';
 import {
     create as createAnnouncement,
     index as announcementsIndex,
@@ -14,25 +15,17 @@ import type { AnnouncementVisibilityOption } from '@/types/announcement';
 
 defineProps<{ visibilityOptions: AnnouncementVisibilityOption[] }>();
 
+const { allows } = useAnnouncementPermissions();
 const body = ref('<p></p>');
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Announcements',
-                href: announcementsIndex(),
-            },
-            {
-                title: 'New draft',
-                href: createAnnouncement(),
-            },
-        ],
-    },
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('announcements.read')
+            ? [{ title: 'Announcements', href: announcementsIndex() }]
+            : []),
+        { title: 'New draft', href: createAnnouncement() },
+    ],
 });
 </script>
 
@@ -41,7 +34,7 @@ defineOptions({
         <Head title="New Announcement draft" />
         <Heading
             title="New draft"
-            description="Drafts are shared with every Officer. Write the body in the rich text editor, then publish when ready."
+            description="Drafts are shared with staff who have Announcement access. Write the body in the rich text editor, then save your draft."
         />
 
         <Form
@@ -60,7 +53,14 @@ defineOptions({
                     Save draft
                 </Button>
                 <Button variant="ghost" as-child>
-                    <Link :href="announcementsIndex()">Cancel</Link>
+                    <Link
+                        :href="
+                            allows('announcements.read')
+                                ? announcementsIndex()
+                                : dashboard()
+                        "
+                        >Cancel</Link
+                    >
                 </Button>
             </div>
         </Form>
