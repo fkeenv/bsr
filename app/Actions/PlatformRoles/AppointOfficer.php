@@ -7,6 +7,7 @@ use App\Actions\Onboarding\InitializeOnboarding;
 use App\Enums\OnboardingExperience;
 use App\Enums\PlatformRole;
 use App\Models\User;
+use App\Support\PlatformAccess;
 use Illuminate\Validation\ValidationException;
 
 class AppointOfficer
@@ -24,7 +25,7 @@ class AppointOfficer
             ]);
         }
 
-        if (! $user->hasLiveOwnerMembership()) {
+        if (! PlatformAccess::canHoldStaffRole($user)) {
             throw ValidationException::withMessages([
                 'user_id' => 'Officer may only be appointed to a user with a live owner Membership.',
             ]);
