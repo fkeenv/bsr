@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PlatformAccess;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -50,12 +51,7 @@ class HandleInertiaRequests extends Middleware
                         ? route('profile.avatar.show')
                         : null,
                 ],
-                'capabilities' => $user === null ? null : [
-                    'isSuperAdmin' => $user->isSuperAdmin(),
-                    'canAccessOfficer' => $user->canAccessOfficerSurfaces(),
-                    'canAccessAdministrator' => $user->canAccessAdministratorSurfaces(),
-                    'isMembershipHolder' => $user->isMembershipHolder(),
-                ],
+                'capabilities' => $user === null ? null : PlatformAccess::capabilities($user),
             ],
             'announcementsPageListed' => true,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlatformRole;
 use App\Models\User;
 
 test('Super Admin can reach the Officer workspace', function () {
@@ -71,3 +72,23 @@ test('dashboard shares authorization capability flags for a plain User Account',
             ->where('auth.capabilities.isMembershipHolder', false)
         );
 });
+
+test('dashboard navigation capabilities preserve staff inheritance and Membership access', function (PlatformRole $role, bool $officerAccess, bool $administratorAccess) {
+    $user = User::factory()->member()->create();
+    $user->assignPlatformRole($role);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('auth.capabilities', [
+                'isSuperAdmin' => false,
+                'canAccessOfficer' => $officerAccess,
+                'canAccessAdministrator' => $administratorAccess,
+                'isMembershipHolder' => true,
+            ]));
+})->with([
+    'Administrator' => [PlatformRole::Administrator, true, true],
+    'Officer' => [PlatformRole::Officer, true, false],
+    'Member' => [PlatformRole::Member, false, false],
+]);

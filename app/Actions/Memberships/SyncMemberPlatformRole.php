@@ -4,6 +4,7 @@ namespace App\Actions\Memberships;
 
 use App\Enums\PlatformRole;
 use App\Models\User;
+use App\Support\PlatformAccess;
 
 class SyncMemberPlatformRole
 {
@@ -28,7 +29,7 @@ class SyncMemberPlatformRole
 
     private function syncLeadershipRoles(User $user): void
     {
-        if ($user->hasLiveOwnerMembership()) {
+        if (PlatformAccess::canHoldStaffRole($user)) {
             return;
         }
 

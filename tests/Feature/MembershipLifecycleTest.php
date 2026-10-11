@@ -196,3 +196,64 @@ test('Member cannot end another accounts Membership from the personal overview',
 
     expect($otherMembership->fresh()->ended_at)->toBeNull();
 });
+
+test('ending one of several owner Memberships retains staff workspace access', function (PlatformRole $role) {
+    $user = User::factory()->member()->create();
+    $user->assignPlatformRole($role);
+    $firstMembership = $user->memberships()->live()->sole();
+    Membership::factory()->owner()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->post(route('memberships.end', $firstMembership))
+        ->assertRedirect(route('dashboard'));
+
+    $this->actingAs($user->fresh())
+        ->get(route('officer.dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('auth.capabilities.canAccessOfficer', true)
+            ->where('auth.capabilities.isMembershipHolder', true));
+})->with([
+    'Officer' => [PlatformRole::Officer],
+    'Administrator' => [PlatformRole::Administrator],
+]);
+
+test('losing the last owner Membership removes Administrator navigation and workspace access', function () {
+    $user = User::factory()->administrator()->create();
+    $membership = $user->memberships()->live()->sole();
+    $actor = User::factory()->officer()->create();
+
+    $this->actingAs($actor)
+        ->put(route('officer.memberships.update-role', $membership), [
+            'role' => MembershipRole::Resident->value,
+        ])
+        ->assertRedirect(route('officer.memberships.index'));
+
+    $this->actingAs($user->fresh())
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('auth.capabilities.canAccessOfficer', false)
+            ->where('auth.capabilities.canAccessAdministrator', false)
+            ->where('auth.capabilities.isMembershipHolder', true));
+
+    $this->get(route('officer.dashboard'))->assertForbidden();
+    $this->get(route('administrator.dashboard'))->assertForbidden();
+});
+
+test('Super Admin retains navigation and workspace access after ending their last Membership', function () {
+    $user = User::factory()->superAdmin()->create();
+    $membership = Membership::factory()->owner()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->post(route('memberships.end', $membership))
+        ->assertRedirect(route('dashboard'));
+
+    $this->actingAs($user->fresh())
+        ->get(route('super-admin.dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('auth.capabilities', [
+                'isSuperAdmin' => true,
+                'canAccessOfficer' => true,
+                'canAccessAdministrator' => true,
+                'isMembershipHolder' => false,
+            ]));
+});

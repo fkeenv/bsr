@@ -35,3 +35,14 @@ role and ensures `user`; Member stays membership-synced. Ending the last live
 Membership revokes `member`, `officer`, and `administrator`. Super Admin or
 Administrator appoint Officers; Member is never appointed by hand. Optional titles
 and avatars belong on a future `user_profiles` table, not on roles.
+
+## Planned permission migration
+
+[Issue #88](https://github.com/fkeenv/bsr/issues/88) concentrates these access
+decisions without changing the hierarchy or Membership lifecycle rules. The
+subsequent permission slices, starting with
+[issue #89](https://github.com/fkeenv/bsr/issues/89) and completing the cutover in
+[issue #92](https://github.com/fkeenv/bsr/issues/92), will replace strict staff
+inheritance with independent role permissions. That replacement is not active
+in the prefactor; this decision remains the current access model until the
+corresponding areas migrate.

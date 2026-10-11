@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\MembershipRole;
 use App\Enums\PlatformRole;
+use App\Support\PlatformAccess;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -54,37 +55,27 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(PlatformRole::SuperAdmin);
+        return PlatformAccess::canAccessSurface($this, 'super-admin');
     }
 
     public function platformLevel(): ?int
     {
-        $levels = collect(PlatformRole::ordered())
-            ->filter(fn (PlatformRole $role): bool => $this->hasRole($role))
-            ->map(fn (PlatformRole $role): int => $role->level());
-
-        if ($levels->isEmpty()) {
-            return null;
-        }
-
-        return $levels->min();
+        return PlatformAccess::platformLevel($this);
     }
 
     public function hasPlatformLevelAtMost(int $level): bool
     {
-        $current = $this->platformLevel();
-
-        return $current !== null && $current <= $level;
+        return PlatformAccess::hasPlatformLevelAtMost($this, $level);
     }
 
     public function canAccessOfficerSurfaces(): bool
     {
-        return $this->hasPlatformLevelAtMost(PlatformRole::Officer->level());
+        return PlatformAccess::canAccessSurface($this, 'officer');
     }
 
     public function canAccessAdministratorSurfaces(): bool
     {
-        return $this->hasPlatformLevelAtMost(PlatformRole::Administrator->level());
+        return PlatformAccess::canAccessSurface($this, 'administrator');
     }
 
     /**
