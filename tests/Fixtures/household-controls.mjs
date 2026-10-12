@@ -201,11 +201,18 @@ void test('the role editor groups distinct feature grants without adding related
         [],
     );
     assert.deepEqual(
-        ui.all('legend').map((node) => ui.text(node).trim()),
-        ['Announcements', 'Properties'],
+        ui.all('fieldset').map((node) => node.props['aria-label']),
+        ['Announcements permissions', 'Properties permissions'],
     );
+    assert.equal(ui.all('Accordion')[0].props.type, 'multiple');
+    assert.deepEqual(
+        ui.all('AccordionItem').map((node) => node.props.value),
+        ['officer', 'Announcements', 'Properties'],
+    );
+    assert.match(ui.text(ui.all('AccordionTrigger')[2]), /0 of 2 enabled/);
     ui.all('Checkbox')[1].props['onUpdate:modelValue'](true);
     await vue.nextTick();
+    assert.match(ui.text(ui.all('AccordionTrigger')[2]), /1 of 2 enabled/);
     assert.equal(ui.all('Checkbox')[1].props['model-value'], true);
     assert.equal(ui.all('Checkbox')[2].props['model-value'], false);
     assert.match(ui.text(), /2 of 3/);
