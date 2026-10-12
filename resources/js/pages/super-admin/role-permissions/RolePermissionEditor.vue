@@ -104,7 +104,9 @@ function save() {
     <AccordionItem :value="role.name">
         <div class="flex flex-wrap items-center gap-x-4">
             <div class="min-w-0 flex-1">
-                <AccordionTrigger class="text-base">
+                <AccordionTrigger
+                    class="items-center text-base [&>svg]:translate-y-0"
+                >
                     <span class="space-y-1">
                         <span class="block font-medium">{{ role.label }}</span>
                         <span
