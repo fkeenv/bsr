@@ -2,11 +2,46 @@
 
 namespace App\Support;
 
+use App\Enums\AnnouncementPermission;
 use App\Enums\PlatformRole;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class PlatformAccess
 {
+    /** @return list<string> */
+    public static function announcementPermissions(?User $user): array
+    {
+        if ($user === null) {
+            return [];
+        }
+
+        if (self::canAccessSurface($user, 'super-admin')) {
+            return AnnouncementPermission::values();
+        }
+
+        if (! $user->hasLiveOwnerMembership()) {
+            return [];
+        }
+
+        return array_values(Role::query()
+            ->whereIn('id', $user->roles()->select('roles.id')->getQuery())
+            ->where('guard_name', 'web')
+            ->whereIn('name', [PlatformRole::Officer->value, PlatformRole::Administrator->value])
+            ->with('permissions')
+            ->get()
+            ->flatMap(fn (Role $role) => $role->permissions->pluck('name'))
+            ->filter(fn (string $name): bool => in_array($name, AnnouncementPermission::values(), true))
+            ->unique()
+            ->values()
+            ->all());
+    }
+
+    public static function allowsAnnouncement(?User $user, AnnouncementPermission $permission): bool
+    {
+        return in_array($permission->value, self::announcementPermissions($user), true);
+    }
+
     /**
      * @return array{isSuperAdmin: bool, canAccessOfficer: bool, canAccessAdministrator: bool, isMembershipHolder: bool}
      */

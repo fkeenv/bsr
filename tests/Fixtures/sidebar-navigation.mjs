@@ -23,11 +23,21 @@ function setup(
     url = '/dashboard',
     mobile = false,
     collapsed = false,
+    announcementPermissions = capabilities?.canAccessOfficer
+        ? [
+              'announcements.read',
+              'announcements.create',
+              'announcements.edit',
+              'announcements.publish',
+              'announcements.pin',
+              'announcements.attachments',
+          ]
+        : [],
 ) {
     const page = vue.reactive({
         url,
         props: {
-            auth: { capabilities },
+            auth: { capabilities, announcementPermissions },
             announcementsPageListed: true,
         },
     });
@@ -361,5 +371,41 @@ void test('role sections can close and reopen while visits select the current wo
         ui.all('Link').find((node) => node.props['aria-current'] === 'page')
             .props.href.url,
         '/officer/charges',
+    );
+});
+
+void test('Announcement navigation follows grants while legacy destinations remain available', async (context) => {
+    const ui = setup(
+        context,
+        { ...member, canAccessOfficer: true },
+        '/officer',
+        false,
+        false,
+        ['announcements.read'],
+    );
+    assert.ok(ui.destinations().includes('/officer/announcements'));
+    ui.page.props.auth.announcementPermissions = ['announcements.create'];
+    await vue.nextTick();
+    assert.equal(ui.destinations().includes('/officer/announcements'), false);
+    assert.ok(ui.destinations().includes('/officer/announcements/create'));
+    ui.page.props.auth.announcementPermissions = [];
+    await vue.nextTick();
+    assert.equal(
+        ui.destinations().includes('/officer/announcements/create'),
+        false,
+    );
+    assert.ok(ui.destinations().includes('/officer/properties'));
+    assert.ok(ui.destinations().includes('/officer/payments'));
+    assert.equal(
+        ui.destinations().includes('/super-admin/role-permissions'),
+        false,
+    );
+    const superAdmin = setup(context, {
+        ...member,
+        isSuperAdmin: true,
+        canAccessOfficer: true,
+    });
+    assert.ok(
+        superAdmin.destinations().includes('/super-admin/role-permissions'),
     );
 });

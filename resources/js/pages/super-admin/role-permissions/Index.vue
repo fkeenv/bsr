@@ -1,0 +1,40 @@
+<script setup lang="ts">
+import { Head } from '@inertiajs/vue3';
+import Heading from '@/components/Heading.vue';
+import RolePermissionEditor from './RolePermissionEditor.vue';
+import { dashboard } from '@/routes/super-admin';
+import { index } from '@/routes/super-admin/role-permissions';
+import type { PermissionOption, RolePermission } from '@/types/role-permission';
+
+defineProps<{ roles: RolePermission[]; permissions: PermissionOption[] }>();
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Super Admin', href: dashboard() },
+            { title: 'Roles & permissions', href: index() },
+        ],
+    },
+});
+</script>
+
+<template>
+    <div class="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-8">
+        <Head title="Roles & permissions" />
+        <Heading
+            title="Roles & permissions"
+            description="Choose the Announcement actions each staff role can perform. Changes apply on the next request, including current sessions."
+        />
+        <p class="text-muted-foreground text-sm leading-6">
+            Super Admin always has full access. Member and User access is
+            automatic. Property and finance access continue to use their
+            existing rules. Each permission is independent; enabling an action
+            does not enable other actions.
+        </p>
+        <RolePermissionEditor
+            v-for="role in roles"
+            :key="role.name"
+            :role="role"
+            :permissions="permissions"
+        />
+    </div>
+</template>

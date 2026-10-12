@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AnnouncementAttachmentController from '@/actions/App/Http/Controllers/Officer/AnnouncementAttachmentController';
 import AnnouncementController from '@/actions/App/Http/Controllers/Officer/AnnouncementController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import RichTextContent from '@/components/RichTextContent.vue';
+import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
+import { dashboard } from '@/routes';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AnnouncementFormFields from '@/pages/officer/announcements/AnnouncementFormFields.vue';
-import { dashboard as officerDashboard } from '@/routes/officer';
-import { index as announcementsIndex } from '@/routes/officer/announcements';
+import {
+    edit as editAnnouncement,
+    index as announcementsIndex,
+} from '@/routes/officer/announcements';
 import type {
     Announcement,
     AnnouncementVisibilityOption,
@@ -23,35 +27,34 @@ const props = defineProps<{
     visibilityOptions: AnnouncementVisibilityOption[];
 }>();
 
+const { allows } = useAnnouncementPermissions();
 const body = ref(props.announcement.body);
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Announcements',
-                href: announcementsIndex(),
-            },
-            {
-                title: 'Edit',
-                href: announcementsIndex(),
-            },
-        ],
-    },
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('announcements.read')
+            ? [{ title: 'Announcements', href: announcementsIndex() }]
+            : []),
+        {
+            title: props.announcement.title,
+            href: editAnnouncement(props.announcement),
+        },
+    ],
 });
 </script>
 
 <template>
     <div class="flex flex-col space-y-6 p-4">
-        <Head :title="`Edit ${announcement.title}`" />
+        <Head :title="announcement.title" />
         <div class="flex flex-wrap items-center gap-2">
             <Heading
                 :title="announcement.title"
-                description="Edit with the rich text editor. Attach images or PDFs below."
+                :description="
+                    allows('announcements.edit')
+                        ? 'Edit this Announcement.'
+                        : 'Read this Announcement and its attachments.'
+                "
             />
             <Badge v-if="announcement.is_published" variant="default">
                 Published
@@ -63,6 +66,7 @@ defineOptions({
         </div>
 
         <Form
+            v-if="allows('announcements.edit')"
             v-bind="AnnouncementController.update.form(announcement)"
             class="max-w-3xl space-y-6"
             v-slot="{ errors, processing }"
@@ -80,10 +84,38 @@ defineOptions({
                     Save changes
                 </Button>
                 <Button variant="ghost" as-child>
-                    <Link :href="announcementsIndex()">Back</Link>
+                    <Link
+                        :href="
+                            allows('announcements.read')
+                                ? announcementsIndex()
+                                : dashboard()
+                        "
+                        >Back</Link
+                    >
                 </Button>
             </div>
         </Form>
+
+        <Button
+            v-if="!allows('announcements.edit')"
+            variant="ghost"
+            as-child
+            class="self-start"
+        >
+            <Link
+                :href="
+                    allows('announcements.read')
+                        ? announcementsIndex()
+                        : dashboard()
+                "
+                >Back</Link
+            >
+        </Button>
+        <RichTextContent
+            v-if="!allows('announcements.edit')"
+            :html="announcement.body"
+            class="max-w-3xl"
+        />
 
         <div class="max-w-3xl space-y-4 border-t pt-6">
             <Heading
@@ -114,6 +146,7 @@ defineOptions({
             </p>
 
             <Form
+                v-if="allows('announcements.attachments')"
                 v-bind="
                     AnnouncementAttachmentController.store.form(announcement)
                 "
@@ -141,7 +174,7 @@ defineOptions({
         </div>
 
         <div
-            v-if="announcement.is_published"
+            v-if="allows('announcements.edit') && announcement.is_published"
             class="max-w-3xl space-y-2 border-t pt-6"
         >
             <p class="text-muted-foreground text-sm">Published preview</p>

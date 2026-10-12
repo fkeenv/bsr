@@ -32,6 +32,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import { useNavigationSection } from '@/composables/useNavigationSection';
 import { dashboard, home, joinProperty } from '@/routes';
 import { edit as propertyProfile } from '@/routes/property-profile';
@@ -39,7 +40,10 @@ import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as officersIndex } from '@/routes/administrator/officers';
 import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
-import { index as officerAnnouncementsIndex } from '@/routes/officer/announcements';
+import {
+    create as createAnnouncement,
+    index as officerAnnouncementsIndex,
+} from '@/routes/officer/announcements';
 import { edit as billSettingsEdit } from '@/routes/officer/bill-settings';
 import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
@@ -56,12 +60,14 @@ import {
     show as statementOfAccountShow,
 } from '@/routes/statement-of-account';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
+import { index as rolePermissionsIndex } from '@/routes/super-admin/role-permissions';
 import { index as administratorsIndex } from '@/routes/super-admin/administrators';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
 import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
 import type { NavItem, NavSection } from '@/types';
 
 const page = usePage();
+const { allows } = useAnnouncementPermissions();
 const { currentUrl, isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
 const capabilities = computed(() => page.props.auth.capabilities);
 const announcementsPageListed = computed(
@@ -131,6 +137,11 @@ const superAdminNavItems = computed((): NavItem[] => {
             icon: ShieldCheck,
         },
         {
+            title: 'Roles & permissions',
+            href: rolePermissionsIndex(),
+            icon: ShieldCheck,
+        },
+        {
             title: 'Terms of Service',
             href: editTermsOfService(),
             icon: BookOpen,
@@ -154,11 +165,23 @@ const officerNavItems = computed((): NavItem[] => {
             href: officerDashboard(),
             icon: Shield,
         },
-        {
-            title: 'Announcements',
-            href: officerAnnouncementsIndex(),
-            icon: Megaphone,
-        },
+        ...(allows('announcements.read')
+            ? [
+                  {
+                      title: 'Announcements',
+                      href: officerAnnouncementsIndex(),
+                      icon: Megaphone,
+                  },
+              ]
+            : allows('announcements.create')
+              ? [
+                    {
+                        title: 'New Announcement',
+                        href: createAnnouncement(),
+                        icon: Megaphone,
+                    },
+                ]
+              : []),
         {
             title: 'Unpaid',
             group: 'collection',

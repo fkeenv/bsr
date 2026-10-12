@@ -20,9 +20,18 @@ export type AuthCapabilities = {
     isMembershipHolder: boolean;
 };
 
+export type AnnouncementPermission =
+    | 'announcements.read'
+    | 'announcements.create'
+    | 'announcements.edit'
+    | 'announcements.publish'
+    | 'announcements.pin'
+    | 'announcements.attachments';
+
 export type Auth = {
     user: User | null;
     capabilities: AuthCapabilities | null;
+    announcementPermissions: AnnouncementPermission[];
 };
 
 export type TwoFactorConfigContent = {

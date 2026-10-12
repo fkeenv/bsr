@@ -9,6 +9,7 @@ use App\Actions\Announcements\UnpinAnnouncement;
 use App\Actions\Announcements\UnpublishAnnouncement;
 use App\Actions\Announcements\UpdateAnnouncementDraft;
 use App\Data\AnnouncementData;
+use App\Enums\AnnouncementPermission;
 use App\Enums\AnnouncementVisibility;
 use App\Http\Requests\Officer\PinAnnouncementRequest;
 use App\Http\Requests\Officer\PublishAnnouncementRequest;
@@ -17,6 +18,8 @@ use App\Http\Requests\Officer\UnpinAnnouncementRequest;
 use App\Http\Requests\Officer\UnpublishAnnouncementRequest;
 use App\Http\Requests\Officer\UpdateAnnouncementRequest;
 use App\Models\Announcement;
+use App\Models\User;
+use App\Support\PlatformAccess;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -53,9 +56,7 @@ class AnnouncementController
     ): RedirectResponse {
         $createAnnouncementDraft->handle($request->user(), $request->validated());
 
-        return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcement draft saved.');
+        return $this->redirectToWorkspace($request->user(), 'Announcement draft saved.');
     }
 
     public function edit(Announcement $announcement): Response
@@ -75,9 +76,7 @@ class AnnouncementController
     ): RedirectResponse {
         $updateAnnouncementDraft->handle($announcement, $request->user(), $request->validated());
 
-        return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcement updated.');
+        return $this->redirectToWorkspace($request->user(), 'Announcement updated.');
     }
 
     public function publish(
@@ -87,9 +86,7 @@ class AnnouncementController
     ): RedirectResponse {
         $publishAnnouncement->handle($announcement, $request->user());
 
-        return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcement published.');
+        return $this->redirectToWorkspace($request->user(), 'Announcement published.');
     }
 
     public function unpublish(
@@ -99,9 +96,7 @@ class AnnouncementController
     ): RedirectResponse {
         $unpublishAnnouncement->handle($announcement, $request->user());
 
-        return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcement returned to drafts.');
+        return $this->redirectToWorkspace($request->user(), 'Announcement returned to drafts.');
     }
 
     public function pin(
@@ -111,9 +106,7 @@ class AnnouncementController
     ): RedirectResponse {
         $pinAnnouncement->handle($announcement, $request->user());
 
-        return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcement pinned.');
+        return $this->redirectToWorkspace($request->user(), 'Announcement pinned.');
     }
 
     public function unpin(
@@ -123,9 +116,15 @@ class AnnouncementController
     ): RedirectResponse {
         $unpinAnnouncement->handle($announcement, $request->user());
 
+        return $this->redirectToWorkspace($request->user(), 'Announcement unpinned.');
+    }
+
+    private function redirectToWorkspace(User $user, string $message): RedirectResponse
+    {
         return redirect()
-            ->route('officer.announcements.index')
-            ->with('success', 'Announcement unpinned.');
+            ->route(PlatformAccess::allowsAnnouncement($user, AnnouncementPermission::Read)
+                ? 'officer.announcements.index' : 'dashboard')
+            ->with('success', $message);
     }
 
     /** @return list<array{value: string, label: string, description: string}> */

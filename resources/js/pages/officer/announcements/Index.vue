@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Paperclip, Pin } from '@lucide/vue';
 import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
+import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import AnnouncementActions from './AnnouncementActions.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard as officerDashboard } from '@/routes/officer';
@@ -16,6 +17,8 @@ import type { Announcement } from '@/types/announcement';
 const props = defineProps<{
     announcements: Announcement[];
 }>();
+
+const { allows } = useAnnouncementPermissions();
 
 const views = ['All', 'Published', 'Drafts', 'Pinned'] as const;
 type View = (typeof views)[number];
@@ -77,6 +80,7 @@ defineOptions({
                 />
             </div>
             <Button
+                v-if="allows('announcements.create')"
                 as-child
                 class="h-auto min-h-11 self-start px-5 py-3 sm:self-center"
             >

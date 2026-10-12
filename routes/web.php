@@ -33,7 +33,9 @@ use App\Http\Controllers\StatementOfAccountController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
+use App\Http\Controllers\SuperAdmin\RolePermissionController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Middleware\EnsureAnnouncementPermission;
 use App\Http\Middleware\EnsureRoleSurfaceAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -97,29 +99,42 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('properties/{property}/statement-of-account', [StatementOfAccountController::class, 'show'])
         ->name('statement-of-account.show');
 
-    Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
-        Route::get('/', OfficerDashboardController::class)->name('dashboard');
-
+    Route::prefix('officer')->name('officer.')->group(function () {
         Route::get('announcements', [OfficerAnnouncementController::class, 'index'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.read')
             ->name('announcements.index');
         Route::get('announcements/create', [OfficerAnnouncementController::class, 'create'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.create')
             ->name('announcements.create');
         Route::post('announcements', [OfficerAnnouncementController::class, 'store'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.create')
             ->name('announcements.store');
         Route::get('announcements/{announcement}/edit', [OfficerAnnouncementController::class, 'edit'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.read,announcements.edit')
             ->name('announcements.edit');
         Route::put('announcements/{announcement}', [OfficerAnnouncementController::class, 'update'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.edit')
             ->name('announcements.update');
         Route::post('announcements/{announcement}/publish', [OfficerAnnouncementController::class, 'publish'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.publish')
             ->name('announcements.publish');
         Route::post('announcements/{announcement}/unpublish', [OfficerAnnouncementController::class, 'unpublish'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.publish')
             ->name('announcements.unpublish');
         Route::post('announcements/{announcement}/pin', [OfficerAnnouncementController::class, 'pin'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.pin')
             ->name('announcements.pin');
         Route::post('announcements/{announcement}/unpin', [OfficerAnnouncementController::class, 'unpin'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.pin')
             ->name('announcements.unpin');
         Route::post('announcements/{announcement}/attachments', [OfficerAnnouncementAttachmentController::class, 'store'])
+            ->middleware(EnsureAnnouncementPermission::class.':announcements.attachments')
             ->name('announcements.attachments.store');
+
+    });
+
+    Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
+        Route::get('/', OfficerDashboardController::class)->name('dashboard');
 
         Route::get('memberships', [OfficerMembershipController::class, 'index'])
             ->name('memberships.index');
@@ -208,6 +223,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':super-admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('role-permissions', [RolePermissionController::class, 'index'])->name('role-permissions.index');
+        Route::put('role-permissions/{role:name}', [RolePermissionController::class, 'update'])->name('role-permissions.update');
         Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
 
         Route::get('administrators', [SuperAdminAdministratorController::class, 'index'])
