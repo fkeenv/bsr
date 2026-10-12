@@ -167,7 +167,33 @@ void test('Suspend reading does not imply edit controls', (context) => {
     }
 });
 
-void test('the role editor groups distinct feature grants without adding related permissions', async (context) => {
+void test('permission switches separate Read Write and Destructive actions and bulk changes stay within their group', async (context) => {
+    const options = [
+        {
+            value: 'announcements.read',
+            label: 'Read Announcements',
+            description: 'Read notices',
+            feature: 'Announcements',
+        },
+        {
+            value: 'properties.create',
+            label: 'Create Properties',
+            description: 'Add Properties',
+            feature: 'Properties',
+        },
+        {
+            value: 'properties.read',
+            label: 'List Properties',
+            description: 'Read the roster',
+            feature: 'Properties',
+        },
+        {
+            value: 'properties.delete',
+            label: 'Delete Properties',
+            description: 'Delete uncharged Properties',
+            feature: 'Properties',
+        },
+    ];
     const ui = setup(
         context,
         'resources/js/pages/super-admin/role-permissions/RolePermissionEditor.vue',
@@ -177,45 +203,78 @@ void test('the role editor groups distinct feature grants without adding related
                 label: 'Officer',
                 grants: ['announcements.read'],
             },
-            permissions: [
-                {
-                    value: 'announcements.read',
-                    label: 'Read Announcements',
-                    description: 'Read notices',
-                    feature: 'Announcements',
-                },
-                {
-                    value: 'properties.create',
-                    label: 'Create Properties',
-                    description: 'Add Properties',
-                    feature: 'Properties',
-                },
-                {
-                    value: 'properties.read',
-                    label: 'List Properties',
-                    description: 'Read the roster',
-                    feature: 'Properties',
-                },
-            ],
+            permissions: options,
         },
         [],
     );
+    const permission = (value) =>
+        ui
+            .all('Switch')
+            .find((control) => control.props.id === 'officer-' + value);
+    const group = (label) =>
+        ui
+            .all('Switch')
+            .find(
+                (control) =>
+                    control.props['aria-label'] ===
+                    'All ' + label + ' permissions for Officer',
+            );
+    const enabled = () =>
+        options
+            .filter((option) => permission(option.value).props['model-value'])
+            .map((option) => option.value);
     assert.deepEqual(
         ui.all('fieldset').map((node) => node.props['aria-label']),
-        ['Announcements permissions', 'Properties permissions'],
+        ['Read permissions', 'Write permissions', 'Destructive permissions'],
     );
-    assert.equal(ui.all('Accordion')[0].props.type, 'multiple');
     assert.deepEqual(
         ui.all('AccordionItem').map((node) => node.props.value),
-        ['officer', 'Announcements', 'Properties'],
+        ['officer', 'read', 'write', 'destructive'],
     );
-    assert.match(ui.text(ui.all('AccordionTrigger')[2]), /0 of 2 enabled/);
-    ui.all('Checkbox')[1].props['onUpdate:modelValue'](true);
+    assert.equal(group('Read').props['model-value'], false);
+    assert.match(ui.text(ui.all('AccordionTrigger')[1]), /1 of 2 on/);
+    group('Read').props['onUpdate:modelValue'](true);
     await vue.nextTick();
-    assert.match(ui.text(ui.all('AccordionTrigger')[2]), /1 of 2 enabled/);
-    assert.equal(ui.all('Checkbox')[1].props['model-value'], true);
-    assert.equal(ui.all('Checkbox')[2].props['model-value'], false);
-    assert.match(ui.text(), /2 of 3/);
+    assert.deepEqual(enabled(), ['announcements.read', 'properties.read']);
+    assert.equal(group('Read').props['model-value'], true);
+    assert.equal(group('Write').props['model-value'], false);
+    group('Read').props['onUpdate:modelValue'](false);
+    await vue.nextTick();
+    assert.deepEqual(enabled(), []);
+    permission('properties.create').props['onUpdate:modelValue'](true);
+    await vue.nextTick();
+    assert.deepEqual(enabled(), ['properties.create']);
+    assert.equal(group('Write').props['model-value'], true);
+    assert.equal(group('Read').props['model-value'], false);
+    group('Destructive').props['onUpdate:modelValue'](true);
+    await vue.nextTick();
+    assert.deepEqual(enabled(), ['properties.create', 'properties.delete']);
+    ui.all('Button')
+        .find(
+            (button) =>
+                button.props['aria-label'] === 'Enable all Officer permissions',
+        )
+        .props.onClick();
+    await vue.nextTick();
+    assert.deepEqual(
+        enabled(),
+        options.map((option) => option.value),
+    );
+    assert.match(ui.text(), /4 of 4 permissions enabled/);
+    ui.all('Button')
+        .find(
+            (button) =>
+                button.props['aria-label'] ===
+                'Disable all Officer permissions',
+        )
+        .props.onClick();
+    await vue.nextTick();
+    assert.deepEqual(enabled(), []);
+    assert.equal(
+        ui.all('Button').find((button) => button.props.type === 'submit').props
+            .disabled,
+        false,
+    );
 });
 
 void test('read-only Property Profiles cannot submit and Member editing still shows its save control', (context) => {

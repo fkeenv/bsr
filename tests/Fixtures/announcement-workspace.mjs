@@ -358,10 +358,20 @@ function roleEditor(context) {
 
 void test('the shadcn editor submits selected grants, disables pending saves and exposes validation errors', async (context) => {
     const ui = roleEditor(context);
-    assert.equal(ui.all('Button')[0].props.disabled, true);
-    ui.all('Checkbox')[1].props['onUpdate:modelValue'](true);
+    assert.equal(
+        ui.all('Button').find((button) => button.props.type === 'submit').props
+            .disabled,
+        true,
+    );
+    ui.all('Switch')
+        .find((control) => control.props.id === 'officer-announcements.create')
+        .props['onUpdate:modelValue'](true);
     await vue.nextTick();
-    assert.equal(ui.all('Button')[0].props.disabled, false);
+    assert.equal(
+        ui.all('Button').find((button) => button.props.type === 'submit').props
+            .disabled,
+        false,
+    );
     ui.all('form')[0].props.onSubmit({ preventDefault() {} });
     await vue.nextTick();
     assert.equal(ui.requests[0].url, '/super-admin/role-permissions/officer');
@@ -369,8 +379,13 @@ void test('the shadcn editor submits selected grants, disables pending saves and
         'announcements.read',
         'announcements.create',
     ]);
-    assert.equal(ui.all('Button')[0].props.disabled, true);
-    assert.ok(ui.all('Checkbox').every((checkbox) => checkbox.props.disabled));
+    assert.equal(
+        ui.all('Button').find((button) => button.props.type === 'submit').props
+            .disabled,
+        true,
+    );
+    assert.ok(ui.all('Switch').every((control) => control.props.disabled));
+    assert.ok(ui.all('Button').every((control) => control.props.disabled));
     ui.requests[0].callbacks.onError({
         grants: 'Choose an available permission.',
     });
@@ -380,17 +395,57 @@ void test('the shadcn editor submits selected grants, disables pending saves and
         ui.all('InputError')[0].props.message,
         'Choose an available permission.',
     );
-    assert.equal(ui.all('Button')[0].props.disabled, false);
+    assert.equal(
+        ui.all('Button').find((button) => button.props.type === 'submit').props
+            .disabled,
+        false,
+    );
+});
+
+void test('turning off all permissions stays a draft until saved and submits an empty grant list', async (context) => {
+    const ui = roleEditor(context);
+    ui.all('Button')
+        .find(
+            (button) =>
+                button.props['aria-label'] ===
+                'Disable all Officer permissions',
+        )
+        .props.onClick();
+    await vue.nextTick();
+    assert.equal(ui.requests.length, 0);
+    assert.ok(
+        ui
+            .all('Switch')
+            .every((control) => control.props['model-value'] === false),
+    );
+    ui.all('form')[0].props.onSubmit({ preventDefault() {} });
+    await vue.nextTick();
+    assert.deepEqual(ui.requests[0].data.grants, []);
+    assert.equal(ui.requests[0].url, '/super-admin/role-permissions/officer');
 });
 
 void test('unchanged server grants do not discard unsaved edits when another role is saved', async (context) => {
     const ui = roleEditor(context);
-    ui.all('Checkbox')[1].props['onUpdate:modelValue'](true);
+    ui.all('Switch')
+        .find((control) => control.props.id === 'officer-announcements.create')
+        .props['onUpdate:modelValue'](true);
     await vue.nextTick();
     ui.values.role = { ...ui.values.role, grants: ['announcements.read'] };
     await vue.nextTick();
-    assert.equal(ui.all('Checkbox')[1].props['model-value'], true);
-    assert.equal(ui.all('Button')[0].props.disabled, false);
+    assert.equal(
+        ui
+            .all('Switch')
+            .find(
+                (control) =>
+                    control.props.id === 'officer-announcements.create',
+            ).props['model-value'],
+        true,
+    );
+    assert.equal(
+        ui.all('Button').find((button) => button.props.type === 'submit').props
+            .disabled,
+        false,
+    );
 });
 
 void test('reading, editing and uploading expose their own page controls', (context) => {
