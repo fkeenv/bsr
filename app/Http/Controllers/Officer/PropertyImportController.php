@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Officer;
 
 use App\Actions\Properties\ImportPropertiesFromCsv;
+use App\Enums\HouseholdPermission;
 use App\Http\Requests\Officer\ImportPropertiesRequest;
+use App\Support\PlatformAccess;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,7 +20,7 @@ class PropertyImportController
     public function create(Request $request): Response
     {
         return Inertia::render('officer/properties/Import', [
-            'canImport' => $request->user()?->isSuperAdmin() ?? false,
+            'canImport' => PlatformAccess::allowsStaff($request->user(), HouseholdPermission::PropertiesImport),
         ]);
     }
 
@@ -55,8 +58,7 @@ class PropertyImportController
             return back()->withErrors(['csv' => 'The CSV could not be imported.']);
         }
 
-        return redirect()
-            ->route('officer.properties.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
             ->with('success', "Imported {$result['created']} created, {$result['updated']} updated.");
     }
 }

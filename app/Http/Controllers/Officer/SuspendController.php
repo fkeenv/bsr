@@ -6,11 +6,13 @@ use App\Actions\Suspends\CreateSuspend;
 use App\Actions\Suspends\UpdateSuspend;
 use App\Data\FeeTypeData;
 use App\Data\SuspendData;
+use App\Enums\HouseholdPermission;
 use App\Http\Requests\Officer\StoreSuspendRequest;
 use App\Http\Requests\Officer\UpdateSuspendRequest;
 use App\Models\FeeType;
 use App\Models\Property;
 use App\Models\Suspend;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -54,8 +56,7 @@ class SuspendController
                 ->withErrors(['ends_month' => $exception->getMessage()]);
         }
 
-        return redirect()
-            ->route('officer.suspends.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::SuspendsRead, 'officer.suspends.index')
             ->with('success', 'Suspend created.');
     }
 
@@ -82,8 +83,7 @@ class SuspendController
                 ->withErrors(['ends_month' => $exception->getMessage()]);
         }
 
-        return redirect()
-            ->route('officer.suspends.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::SuspendsRead, 'officer.suspends.index')
             ->with('success', 'Suspend updated.');
     }
 

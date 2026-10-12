@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Officer;
 
 use App\Enums\MembershipRole;
+use App\Models\Membership;
+use App\Support\MembershipAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,7 +12,9 @@ class ChangeMembershipRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->canAccessOfficerSurfaces() ?? false;
+        $membership = $this->route('membership');
+
+        return $membership instanceof Membership && MembershipAccess::canChangeRole($this->user(), $membership);
     }
 
     /**

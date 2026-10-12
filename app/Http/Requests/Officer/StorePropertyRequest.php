@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Officer;
 
+use App\Enums\HouseholdPermission;
+use App\Support\PlatformAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -9,7 +11,7 @@ class StorePropertyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->canAccessOfficerSurfaces() ?? false;
+        return PlatformAccess::allowsStaff($this->user(), HouseholdPermission::PropertiesCreate);
     }
 
     /**

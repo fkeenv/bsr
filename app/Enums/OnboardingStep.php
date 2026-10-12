@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use App\Models\User;
+use App\Support\PlatformAccess;
+
 enum OnboardingStep: string
 {
     case Announcements = 'announcements';
@@ -13,6 +16,17 @@ enum OnboardingStep: string
     case OfficerPayments = 'officer-payments';
     case OfficerCharges = 'officer-charges';
     case OfficerAnnouncements = 'officer-announcements';
+
+    public function isAvailableTo(User $user): bool
+    {
+        return match ($this) {
+            self::OfficerInvitations => PlatformAccess::allowsStaff($user, HouseholdPermission::InvitationsRead),
+            self::OfficerProperties => PlatformAccess::allowsStaff($user, HouseholdPermission::PropertiesRead),
+            self::OfficerMemberships => PlatformAccess::allowsStaff($user, HouseholdPermission::MembershipsRead),
+            self::OfficerAnnouncements => PlatformAccess::allowsAnnouncement($user, AnnouncementPermission::Read),
+            default => true,
+        };
+    }
 
     /**
      * The page whose first linked visit completes this step, or null when another action completes it.

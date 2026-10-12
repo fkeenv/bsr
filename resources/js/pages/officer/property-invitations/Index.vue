@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Head, router, useHttp } from '@inertiajs/vue3';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+
+import { Head, router, useHttp, setLayoutProps } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import OfficerPropertyInvitationController from '@/actions/App/Http/Controllers/Officer/PropertyInvitationController';
 import DataTable from '@/components/DataTable.vue';
@@ -26,7 +28,11 @@ import {
 } from '@/components/ui/select';
 import { propertyInvitationColumns } from '@/pages/officer/property-invitations/columns';
 import { dashboard as officerDashboard } from '@/routes/officer';
-import { index as propertyInvitationsIndex } from '@/routes/officer/property-invitations';
+import { dashboard } from '@/routes';
+import {
+    create as createInvitationPage,
+    index as propertyInvitationsIndex,
+} from '@/routes/officer/property-invitations';
 import type { DataTableValues } from '@/types/data-table';
 import type {
     PropertyInvitation,
@@ -61,6 +67,7 @@ const invitationForm = useHttp<InvitationForm, CreatedInvitationResponse>(
         role: 'owner',
     },
 );
+const { allows } = useStaffPermissions();
 const issuedInvitation = ref<CreatedInvitationResponse | null>(null);
 const shareOptions = [
     { key: 'url', label: 'Invitation link', button: 'Copy link' },
@@ -77,7 +84,7 @@ async function createInvitation(): Promise<void> {
     copyFeedback.value = {};
     invitationForm.defaults({ property_id: '', role: 'owner' });
     invitationForm.reset();
-    router.reload({ only: ['invitations'] });
+    if (allows('invitations.read')) router.reload({ only: ['invitations'] });
 }
 
 async function copyInvitationCredential(key: 'url' | 'code'): Promise<void> {
@@ -93,26 +100,22 @@ async function copyInvitationCredential(key: 'url' | 'code'): Promise<void> {
     }
 }
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Property Invitations',
-                href: propertyInvitationsIndex(),
-            },
-        ],
-    },
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        {
+            title: 'Property Invitations',
+            href: allows('invitations.read')
+                ? propertyInvitationsIndex()
+                : createInvitationPage(),
+        },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Property Invitations" />
-
     <div class="flex flex-col gap-6 p-4">
+        <Head title="Property Invitations" />
         <Heading
             title="Property Invitations"
             description="Issue secure, role-bound links and codes for active Properties and review their status."
@@ -157,7 +160,7 @@ defineOptions({
             </AlertDescription>
         </Alert>
 
-        <Card>
+        <Card v-if="allows('invitations.create')">
             <CardHeader>
                 <CardTitle>Create an invitation</CardTitle>
                 <CardDescription>
@@ -219,6 +222,7 @@ defineOptions({
         </Card>
 
         <DataTable
+            v-if="allows('invitations.read')"
             :columns="propertyInvitationColumns"
             :data="invitations"
             :action="propertyInvitationsIndex.url()"

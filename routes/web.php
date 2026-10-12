@@ -37,6 +37,7 @@ use App\Http\Controllers\SuperAdmin\RolePermissionController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Middleware\EnsureAnnouncementPermission;
 use App\Http\Middleware\EnsureRoleSurfaceAccess;
+use App\Http\Middleware\EnsureStaffPermission;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('home');
@@ -133,24 +134,66 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     });
 
-    Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
-        Route::get('/', OfficerDashboardController::class)->name('dashboard');
-
+    Route::prefix('officer')->name('officer.')->group(function () {
         Route::get('memberships', [OfficerMembershipController::class, 'index'])
+            ->middleware(EnsureStaffPermission::class.':memberships.read')
             ->name('memberships.index');
         Route::put('memberships/{membership}/role', [OfficerMembershipController::class, 'updateRole'])
+            ->middleware(EnsureStaffPermission::class.':memberships.change-role')
             ->name('memberships.update-role');
         Route::post('memberships/{membership}/end', [OfficerMembershipController::class, 'end'])
+            ->middleware(EnsureStaffPermission::class.':memberships.end')
             ->name('memberships.end');
 
         Route::get('property-invitations', [PropertyInvitationController::class, 'index'])
+            ->middleware(EnsureStaffPermission::class.':invitations.read')
             ->name('property-invitations.index');
+        Route::get('property-invitations/create', [PropertyInvitationController::class, 'create'])
+            ->middleware(EnsureStaffPermission::class.':invitations.create')->name('property-invitations.create');
         Route::post('property-invitations', [PropertyInvitationController::class, 'store'])
+            ->middleware(EnsureStaffPermission::class.':invitations.create')
             ->name('property-invitations.store');
         Route::delete('property-invitations/{propertyInvitation}', [PropertyInvitationController::class, 'destroy'])
+            ->middleware(EnsureStaffPermission::class.':invitations.revoke')
             ->name('property-invitations.destroy');
         Route::get('property-invitations/{propertyInvitation}/share', [PropertyInvitationController::class, 'share'])
+            ->middleware(EnsureStaffPermission::class.':invitations.credentials')
             ->name('property-invitations.share');
+
+        Route::get('properties/import', [PropertyImportController::class, 'create'])
+            ->middleware(EnsureStaffPermission::class.':properties.import,properties.import-sample')
+            ->name('properties.import.create');
+        Route::get('properties/import/sample', [PropertyImportController::class, 'sample'])
+            ->middleware(EnsureStaffPermission::class.':properties.import-sample')
+            ->name('properties.import.sample');
+        Route::post('properties/import', [PropertyImportController::class, 'store'])
+            ->middleware(EnsureStaffPermission::class.':properties.import')
+            ->name('properties.import.store');
+
+        Route::post('properties/{property}/deactivate', [PropertyController::class, 'deactivate'])
+            ->middleware(EnsureStaffPermission::class.':properties.deactivate')
+            ->name('properties.deactivate');
+        Route::post('properties/{property}/activate', [PropertyController::class, 'activate'])
+            ->middleware(EnsureStaffPermission::class.':properties.reactivate')
+            ->name('properties.activate');
+
+        Route::resource('properties', PropertyController::class)
+            ->except(['show'])
+            ->middlewareFor('index', EnsureStaffPermission::class.':properties.read')
+            ->middlewareFor(['create', 'store'], EnsureStaffPermission::class.':properties.create')
+            ->middlewareFor(['edit', 'update'], EnsureStaffPermission::class.':properties.edit')
+            ->middlewareFor('destroy', EnsureStaffPermission::class.':properties.delete');
+
+        Route::resource('suspends', SuspendController::class)
+            ->except(['show', 'destroy'])
+            ->middlewareFor('index', EnsureStaffPermission::class.':suspends.read')
+            ->middlewareFor(['create', 'store'], EnsureStaffPermission::class.':suspends.create')
+            ->middlewareFor(['edit', 'update'], EnsureStaffPermission::class.':suspends.edit');
+
+    });
+
+    Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
+        Route::get('/', OfficerDashboardController::class)->name('dashboard');
 
         Route::get('payments', [OfficerPaymentController::class, 'index'])
             ->name('payments.index');
@@ -173,25 +216,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('printed-bills/{property}', [PrintedBillController::class, 'show'])
             ->name('printed-bills.show');
 
-        Route::get('properties/import', [PropertyImportController::class, 'create'])
-            ->name('properties.import.create');
-        Route::get('properties/import/sample', [PropertyImportController::class, 'sample'])
-            ->name('properties.import.sample');
-        Route::post('properties/import', [PropertyImportController::class, 'store'])
-            ->name('properties.import.store');
-
-        Route::post('properties/{property}/deactivate', [PropertyController::class, 'deactivate'])
-            ->name('properties.deactivate');
-        Route::post('properties/{property}/activate', [PropertyController::class, 'activate'])
-            ->name('properties.activate');
-
-        Route::resource('properties', PropertyController::class)
-            ->except(['show']);
-
         Route::resource('fee-types', FeeTypeController::class)
-            ->except(['show', 'destroy']);
-
-        Route::resource('suspends', SuspendController::class)
             ->except(['show', 'destroy']);
 
         Route::get('charges/generate', [ChargeGenerationController::class, 'create'])

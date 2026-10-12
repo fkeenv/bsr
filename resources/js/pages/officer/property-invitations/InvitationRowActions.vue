@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+
 import { Form, useHttp } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref, watch } from 'vue';
 import OfficerPropertyInvitationController from '@/actions/App/Http/Controllers/Officer/PropertyInvitationController';
@@ -23,6 +25,7 @@ const props = defineProps<{
 }>();
 
 const open = ref(false);
+const { allows } = useStaffPermissions();
 type Credentials = { url: string; code: string };
 const request = useHttp<Record<string, never>, Credentials>({});
 const credentials = ref<Credentials | null>(null);
@@ -46,11 +49,23 @@ function clearSharing(): void {
 }
 
 watch(open, clearSharing);
+watch(
+    () => allows('invitations.credentials'),
+    (allowed) => {
+        if (!allowed) clearSharing();
+    },
+);
 watch(() => props.invitation, clearSharing);
 onBeforeUnmount(clearSharing);
 
 async function copyCredential(key: 'url' | 'code'): Promise<void> {
-    if (pending.value || !open.value || !props.invitation.can_share) return;
+    if (
+        pending.value ||
+        !open.value ||
+        !props.invitation.can_share ||
+        !allows('invitations.credentials')
+    )
+        return;
     const currentGeneration = generation;
     pending.value = true;
     try {
@@ -104,7 +119,13 @@ function closeDialog(): void {
 
 <template>
     <div class="flex justify-end">
-        <Dialog v-if="invitation.can_revoke" v-model:open="open">
+        <Dialog
+            v-if="
+                (invitation.can_share && allows('invitations.credentials')) ||
+                (invitation.can_revoke && allows('invitations.revoke'))
+            "
+            v-model:open="open"
+        >
             <DialogTrigger as-child>
                 <Button variant="outline" size="sm">Manage</Button>
             </DialogTrigger>
@@ -133,7 +154,13 @@ function closeDialog(): void {
                     </AlertDescription>
                 </Alert>
 
-                <div v-if="invitation.can_share" class="space-y-3">
+                <div
+                    v-if="
+                        invitation.can_share &&
+                        allows('invitations.credentials')
+                    "
+                    class="space-y-3"
+                >
                     <div
                         v-for="option in shareOptions"
                         :key="option.key"
@@ -164,16 +191,23 @@ function closeDialog(): void {
                         Accepting the link or code uses up both.
                     </p>
                 </div>
-                <p v-else class="text-muted-foreground text-sm">
+                <p
+                    v-else-if="allows('invitations.credentials')"
+                    class="text-muted-foreground text-sm"
+                >
                     {{ invitation.sharing_unavailable_reason }}
                 </p>
 
-                <p class="text-muted-foreground text-sm">
+                <p
+                    v-if="allows('invitations.revoke') && invitation.can_revoke"
+                    class="text-muted-foreground text-sm"
+                >
                     Revoking this invitation permanently disables its link and
                     code.
                 </p>
 
                 <Form
+                    v-if="allows('invitations.revoke') && invitation.can_revoke"
                     v-bind="
                         OfficerPropertyInvitationController.destroy.form(
                             invitation.id,

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as vue from 'vue';
 import { mount } from './mount-vue.mjs';
+import { defaultHouseholdGrants } from './staff-permissions.mjs';
 
 const member = {
     isMembershipHolder: true,
@@ -37,7 +38,13 @@ function setup(
     const page = vue.reactive({
         url,
         props: {
-            auth: { capabilities, announcementPermissions },
+            auth: {
+                capabilities,
+                announcementPermissions,
+                staffPermissions: capabilities?.canAccessOfficer
+                    ? [...defaultHouseholdGrants]
+                    : [],
+            },
             announcementsPageListed: true,
         },
     });
@@ -407,5 +414,37 @@ void test('Announcement navigation follows grants while legacy destinations rema
     });
     assert.ok(
         superAdmin.destinations().includes('/super-admin/role-permissions'),
+    );
+});
+
+void test('household list links follow current grants and creation-only users have an accessible destination', async (context) => {
+    const ui = setup(context, { ...member, canAccessOfficer: true });
+    ui.page.props.auth.staffPermissions = [
+        'properties.create',
+        'invitations.create',
+        'suspends.create',
+    ];
+    await vue.nextTick();
+    for (const path of [
+        '/officer/properties',
+        '/officer/property-invitations',
+        '/officer/memberships',
+        '/officer/suspends',
+    ]) {
+        assert.equal(ui.destinations().includes(path), false);
+    }
+    for (const path of [
+        '/officer/properties/create',
+        '/officer/property-invitations/create',
+        '/officer/suspends/create',
+    ]) {
+        assert.ok(ui.destinations().includes(path));
+    }
+    assert.ok(ui.destinations().includes('/officer/payments'));
+    ui.page.props.auth.staffPermissions = [];
+    await vue.nextTick();
+    assert.equal(
+        ui.destinations().includes('/officer/properties/create'),
+        false,
     );
 });

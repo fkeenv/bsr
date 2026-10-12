@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\SuperAdmin;
 
-use App\Enums\AnnouncementPermission;
+use App\Support\StaffPermissionCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +18,7 @@ class UpdateRolePermissionsRequest extends FormRequest
     {
         return [
             'grants' => ['present', 'array'],
-            'grants.*' => ['required', 'string', 'distinct', Rule::in(AnnouncementPermission::values())],
+            'grants.*' => ['required', 'string', 'distinct', Rule::in(StaffPermissionCatalog::values())],
         ];
     }
 }

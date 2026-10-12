@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { edit as editSuspend } from '@/routes/officer/suspends';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+import { dashboard } from '@/routes';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import SuspendController from '@/actions/App/Http/Controllers/Officer/SuspendController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -19,30 +22,22 @@ type Props = {
 
 const { suspend } = defineProps<Props>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Suspends',
-                href: suspendsIndex(),
-            },
-            {
-                title: 'Edit',
-                href: suspendsIndex(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('suspends.read')
+            ? [{ title: 'Suspends', href: suspendsIndex() }]
+            : []),
+        { title: 'Edit', href: editSuspend(suspend) },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Edit Suspend" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head title="Edit Suspend" />
         <Heading
             title="Edit Suspend"
             description="Adjust which Billing Periods omit this Fee Type on the Property."
@@ -150,7 +145,14 @@ defineOptions({
                     Save changes
                 </Button>
                 <Button variant="ghost" as-child>
-                    <Link :href="suspendsIndex()">Cancel</Link>
+                    <Link
+                        :href="
+                            allows('suspends.read')
+                                ? suspendsIndex()
+                                : dashboard()
+                        "
+                        >Cancel</Link
+                    >
                 </Button>
             </div>
         </Form>

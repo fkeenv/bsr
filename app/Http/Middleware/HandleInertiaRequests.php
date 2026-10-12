@@ -53,6 +53,7 @@ class HandleInertiaRequests extends Middleware
                 ],
                 'capabilities' => $user === null ? null : PlatformAccess::capabilities($user),
                 'announcementPermissions' => PlatformAccess::announcementPermissions($user),
+                'staffPermissions' => PlatformAccess::staffPermissions($user),
             ],
             'announcementsPageListed' => true,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

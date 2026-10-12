@@ -2,14 +2,16 @@
 
 namespace App\Http\Requests\Officer;
 
+use App\Enums\HouseholdPermission;
 use App\Models\Property;
+use App\Support\PlatformAccess;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePropertyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->canAccessOfficerSurfaces() ?? false;
+        return PlatformAccess::allowsStaff($this->user(), HouseholdPermission::PropertiesEdit);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\AnnouncementPermission;
+use App\Enums\HouseholdPermission;
 use App\Enums\PlatformRole;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
@@ -10,14 +11,14 @@ use Spatie\Permission\Models\Role;
 class PlatformAccess
 {
     /** @return list<string> */
-    public static function announcementPermissions(?User $user): array
+    public static function staffPermissions(?User $user): array
     {
         if ($user === null) {
             return [];
         }
 
         if (self::canAccessSurface($user, 'super-admin')) {
-            return AnnouncementPermission::values();
+            return StaffPermissionCatalog::values();
         }
 
         if (! $user->hasLiveOwnerMembership()) {
@@ -31,10 +32,21 @@ class PlatformAccess
             ->with('permissions')
             ->get()
             ->flatMap(fn (Role $role) => $role->permissions->pluck('name'))
-            ->filter(fn (string $name): bool => in_array($name, AnnouncementPermission::values(), true))
+            ->filter(fn (string $name): bool => in_array($name, StaffPermissionCatalog::values(), true))
             ->unique()
             ->values()
             ->all());
+    }
+
+    /** @return list<string> */
+    public static function announcementPermissions(?User $user): array
+    {
+        return array_values(array_intersect(self::staffPermissions($user), AnnouncementPermission::values()));
+    }
+
+    public static function allowsStaff(?User $user, HouseholdPermission $permission): bool
+    {
+        return in_array($permission->value, self::staffPermissions($user), true);
     }
 
     public static function allowsAnnouncement(?User $user, AnnouncementPermission $permission): bool

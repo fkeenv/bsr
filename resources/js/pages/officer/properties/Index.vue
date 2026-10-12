@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+
 import { Head, Link } from '@inertiajs/vue3';
 import PropertyImportController from '@/actions/App/Http/Controllers/Officer/PropertyImportController';
 import DataTable from '@/components/DataTable.vue';
@@ -27,6 +29,8 @@ type Props = {
 };
 
 defineProps<Props>();
+
+const { allows } = useStaffPermissions();
 
 defineOptions({
     layout: {
@@ -57,12 +61,19 @@ defineOptions({
             />
 
             <div class="flex flex-wrap gap-2">
-                <Button variant="outline" as-child>
+                <Button
+                    v-if="
+                        allows('properties.import') ||
+                        allows('properties.import-sample')
+                    "
+                    variant="outline"
+                    as-child
+                >
                     <Link :href="PropertyImportController.create.url()">
                         Import CSV
                     </Link>
                 </Button>
-                <Button as-child>
+                <Button v-if="allows('properties.create')" as-child>
                     <Link :href="createProperty()">Add Property</Link>
                 </Button>
             </div>

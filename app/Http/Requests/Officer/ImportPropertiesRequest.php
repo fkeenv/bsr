@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\Officer;
 
+use App\Enums\HouseholdPermission;
+use App\Support\PlatformAccess;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ImportPropertiesRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isSuperAdmin() ?? false;
+        return PlatformAccess::allowsStaff($this->user(), HouseholdPermission::PropertiesImport);
     }
 
     /**

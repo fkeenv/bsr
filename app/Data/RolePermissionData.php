@@ -2,7 +2,7 @@
 
 namespace App\Data;
 
-use App\Enums\AnnouncementPermission;
+use App\Support\StaffPermissionCatalog;
 use Spatie\LaravelData\Data;
 use Spatie\Permission\Models\Role;
 
@@ -21,7 +21,7 @@ class RolePermissionData extends Data
             $role->name,
             ucfirst($role->name),
             array_values($role->permissions->pluck('name')->filter(
-                fn (string $name): bool => in_array($name, AnnouncementPermission::values(), true),
+                fn (string $name): bool => in_array($name, StaffPermissionCatalog::values(), true),
             )->values()->all()),
         );
     }

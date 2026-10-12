@@ -2,10 +2,10 @@
 
 namespace App\Actions\PlatformRoles;
 
-use App\Enums\AnnouncementPermission;
 use App\Enums\PlatformRole;
 use App\Models\RolePermissionChange;
 use App\Models\User;
+use App\Support\StaffPermissionCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -17,7 +17,7 @@ class UpdateRolePermissions
     {
         abort_unless($actor->isSuperAdmin(), 403);
 
-        if (array_diff($grants, AnnouncementPermission::values()) !== []) {
+        if (array_diff($grants, StaffPermissionCatalog::values()) !== []) {
             throw ValidationException::withMessages(['grants' => 'Choose permissions from the available catalog.']);
         }
 
@@ -29,7 +29,7 @@ class UpdateRolePermissions
 
             $previousGrants = $lockedRole->permissions()->pluck('name')->sort()->values()->all();
             $newGrants = array_values(array_unique([
-                ...array_diff($previousGrants, AnnouncementPermission::values()),
+                ...array_diff($previousGrants, StaffPermissionCatalog::values()),
                 ...$grants,
             ]));
             sort($newGrants);

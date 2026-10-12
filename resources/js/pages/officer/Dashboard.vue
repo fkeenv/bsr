@@ -4,6 +4,7 @@ import { ArrowRight, ChevronDown, CircleHelp } from '@lucide/vue';
 import { computed, nextTick, ref } from 'vue';
 import OnboardingChecklist from '@/components/OnboardingChecklist.vue';
 import { Button } from '@/components/ui/button';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import { useOnboardingTour } from '@/composables/useOnboardingTour';
 import type { TourStep } from '@/composables/useTour';
@@ -19,6 +20,7 @@ import { index as properties } from '@/routes/officer/properties';
 import { index as propertyInvitations } from '@/routes/officer/property-invitations';
 import { index as unpaidRoster } from '@/routes/officer/unpaid';
 import { store as completeOnboardingStep } from '@/routes/onboarding/steps';
+import type { StaffPermission } from '@/types';
 import type {
     OfficerOnboardingStepKey,
     Onboarding,
@@ -31,33 +33,64 @@ const props = defineProps<{
 
 const page = usePage();
 const { allows } = useAnnouncementPermissions();
+const { allows: allowsStaff } = useStaffPermissions();
 const orientationOpen = ref(false);
 const officerName = computed(() => page.props.auth.user?.name?.trim() ?? '');
-const workspaceGroups = [
-    {
-        id: 'collection',
-        title: 'Payments & collection',
-        description: 'Keep records clear and follow up on balances.',
-        links: [
-            { title: 'Review Payments', href: payments() },
-            { title: 'Open the Unpaid roster', href: unpaidRoster() },
-            { title: 'View Charges', href: charges() },
-        ],
-    },
-    {
-        id: 'people',
-        title: 'Properties & people',
-        description: 'Keep the roster and Memberships up to date.',
-        links: [
-            { title: 'Browse Properties', href: properties() },
-            {
-                title: 'Issue a Property Invitation',
-                href: propertyInvitations(),
-            },
-            { title: 'Manage Memberships', href: memberships() },
-        ],
-    },
-];
+type WorkspaceLink = {
+    title: string;
+    href: ReturnType<typeof properties>;
+    permission?: StaffPermission;
+};
+type WorkspaceGroup = {
+    id: string;
+    title: string;
+    description: string;
+    links: WorkspaceLink[];
+};
+const workspaceGroups = computed(() => {
+    const groups: WorkspaceGroup[] = [
+        {
+            id: 'collection',
+            title: 'Payments & collection',
+            description: 'Keep records clear and follow up on balances.',
+            links: [
+                { title: 'Review Payments', href: payments() },
+                { title: 'Open the Unpaid roster', href: unpaidRoster() },
+                { title: 'View Charges', href: charges() },
+            ],
+        },
+        {
+            id: 'people',
+            title: 'Properties & people',
+            description: 'Keep the roster and Memberships up to date.',
+            links: [
+                {
+                    title: 'Browse Properties',
+                    href: properties(),
+                    permission: 'properties.read' as const,
+                },
+                {
+                    title: 'Issue a Property Invitation',
+                    href: propertyInvitations(),
+                    permission: 'invitations.read' as const,
+                },
+                {
+                    title: 'Manage Memberships',
+                    href: memberships(),
+                    permission: 'memberships.read' as const,
+                },
+            ],
+        },
+    ];
+    return groups
+        .map((group) => ({
+            ...group,
+            links: group.links.filter(
+                (link) => !link.permission || allowsStaff(link.permission),
+            ),
+        }))
+        .filter((group) => group.links.length);
+});
 
 const checklistCopy: Record<
     OfficerOnboardingStepKey,
@@ -100,8 +133,14 @@ const checklistItems = computed((): OnboardingChecklistItem[] => {
     return (onboarding.steps as OfficerOnboardingStepKey[])
         .filter(
             (step) =>
-                step !== 'officer-announcements' ||
-                allows('announcements.read'),
+                (step !== 'officer-announcements' ||
+                    allows('announcements.read')) &&
+                (step !== 'officer-properties' ||
+                    allowsStaff('properties.read')) &&
+                (step !== 'officer-invitations' ||
+                    allowsStaff('invitations.read')) &&
+                (step !== 'officer-memberships' ||
+                    allowsStaff('memberships.read')),
         )
         .map((step) => ({
             key: step,

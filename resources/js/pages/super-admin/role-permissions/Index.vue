@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
+import { Accordion } from '@/components/ui/accordion';
 import RolePermissionEditor from './RolePermissionEditor.vue';
 import { dashboard } from '@/routes/super-admin';
 import { index } from '@/routes/super-admin/role-permissions';
@@ -22,19 +23,24 @@ defineOptions({
         <Head title="Roles & permissions" />
         <Heading
             title="Roles & permissions"
-            description="Choose the Announcement actions each staff role can perform. Changes apply on the next request, including current sessions."
+            description="Choose the actions each staff role can perform. Changes apply on the next request, including current sessions."
         />
         <p class="text-muted-foreground text-sm leading-6">
             Super Admin always has full access. Member and User access is
-            automatic. Property and finance access continue to use their
-            existing rules. Each permission is independent; enabling an action
-            does not enable other actions.
+            automatic. Payment and finance access continue to use their existing
+            rules. Each permission is independent; enabling an action does not
+            enable other actions.
         </p>
-        <RolePermissionEditor
-            v-for="role in roles"
-            :key="role.name"
-            :role="role"
-            :permissions="permissions"
-        />
+        <Accordion
+            type="multiple"
+            class="bg-card w-full rounded-xl border px-4 sm:px-6"
+        >
+            <RolePermissionEditor
+                v-for="role in roles"
+                :key="role.name"
+                :role="role"
+                :permissions="permissions"
+            />
+        </Accordion>
     </div>
 </template>

@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Officer;
 use App\Actions\Memberships\ChangeMembershipRole;
 use App\Actions\Memberships\EndMembership;
 use App\Data\MembershipData;
+use App\Enums\HouseholdPermission;
 use App\Enums\MembershipRole;
 use App\Http\Requests\EndMembershipRequest;
 use App\Http\Requests\Officer\ChangeMembershipRoleRequest;
 use App\Models\Membership;
 use App\Support\FlashToast;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,11 +40,11 @@ class MembershipController
         ChangeMembershipRole $changeMembershipRole,
     ): RedirectResponse {
         $role = MembershipRole::from($request->validated('role'));
-        $changeMembershipRole->handle($membership, $role);
+        $changeMembershipRole->handle($membership, $role, $request->user());
 
         FlashToast::success('Membership role updated.');
 
-        return redirect()->route('officer.memberships.index');
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::MembershipsRead, 'officer.memberships.index');
     }
 
     public function end(
@@ -61,6 +63,6 @@ class MembershipController
 
         FlashToast::success('Membership ended.');
 
-        return redirect()->route('officer.memberships.index');
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::MembershipsRead, 'officer.memberships.index');
     }
 }

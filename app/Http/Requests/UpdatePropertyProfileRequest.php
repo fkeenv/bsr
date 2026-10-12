@@ -23,7 +23,7 @@ class UpdatePropertyProfileRequest extends FormRequest
             return AuthorizationResponse::denyAsNotFound();
         }
 
-        return $authorizePropertyProfile->handle($user, $property);
+        return $authorizePropertyProfile->handle($user, $property, editing: true);
     }
 
     /**

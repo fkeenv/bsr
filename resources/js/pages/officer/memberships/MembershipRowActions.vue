@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { Form } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+
+import { Form, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import OfficerMembershipController from '@/actions/App/Http/Controllers/Officer/MembershipController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { Membership } from '@/types/membership';
 
 const props = defineProps<{
@@ -23,6 +32,15 @@ const props = defineProps<{
 }>();
 
 const open = ref(false);
+const { allows } = useStaffPermissions();
+const page = usePage();
+const canChangeRole = computed(
+    () =>
+        allows('memberships.change-role') &&
+        (page.props.auth.capabilities?.isSuperAdmin ||
+            page.props.auth.user?.id !== props.membership.user_id ||
+            !page.props.auth.capabilities?.canAccessAdministrator),
+);
 
 function closeDialog(): void {
     open.value = false;
@@ -31,7 +49,10 @@ function closeDialog(): void {
 
 <template>
     <div class="flex justify-end">
-        <Dialog v-model:open="open">
+        <Dialog
+            v-if="canChangeRole || allows('memberships.end')"
+            v-model:open="open"
+        >
             <DialogTrigger as-child>
                 <Button variant="outline" size="sm">Manage</Button>
             </DialogTrigger>
@@ -48,6 +69,7 @@ function closeDialog(): void {
 
                 <div class="space-y-6">
                     <Form
+                        v-if="canChangeRole"
                         v-bind="
                             OfficerMembershipController.updateRole.form(
                                 props.membership.id,
@@ -62,29 +84,21 @@ function closeDialog(): void {
                             <Label :for="`role_${props.membership.id}`"
                                 >Role</Label
                             >
-                            <select
-                                :id="`role_${props.membership.id}`"
+                            <Select
                                 name="role"
-                                required
-                                class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs focus-visible:ring-2 focus-visible:outline-none"
+                                :default-value="props.membership.role"
                             >
-                                <option
-                                    value="owner"
-                                    :selected="
-                                        props.membership.role === 'owner'
-                                    "
+                                <SelectTrigger
+                                    :id="`role_${props.membership.id}`"
+                                    ><SelectValue
+                                /></SelectTrigger>
+                                <SelectContent
+                                    ><SelectItem value="owner">Owner</SelectItem
+                                    ><SelectItem value="resident"
+                                        >Resident</SelectItem
+                                    ></SelectContent
                                 >
-                                    Owner
-                                </option>
-                                <option
-                                    value="resident"
-                                    :selected="
-                                        props.membership.role === 'resident'
-                                    "
-                                >
-                                    Resident
-                                </option>
-                            </select>
+                            </Select>
                             <InputError :message="errors.role" />
                         </div>
                         <Button type="submit" :disabled="processing">
@@ -92,9 +106,13 @@ function closeDialog(): void {
                         </Button>
                     </Form>
 
-                    <div class="border-border border-t" />
+                    <div
+                        v-if="canChangeRole && allows('memberships.end')"
+                        class="border-border border-t"
+                    />
 
                     <Form
+                        v-if="allows('memberships.end')"
                         v-bind="
                             OfficerMembershipController.end.form(
                                 props.membership.id,

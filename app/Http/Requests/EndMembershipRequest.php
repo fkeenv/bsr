@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Membership;
+use App\Support\MembershipAccess;
 use Illuminate\Foundation\Http\FormRequest;
 
 class EndMembershipRequest extends FormRequest
@@ -16,7 +17,7 @@ class EndMembershipRequest extends FormRequest
             return false;
         }
 
-        return $user->id === $membership->user_id || $user->canAccessOfficerSurfaces();
+        return MembershipAccess::canEnd($user, $membership);
     }
 
     /**

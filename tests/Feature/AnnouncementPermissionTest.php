@@ -90,7 +90,8 @@ test('Administrator does not inherit Officer grants and direct or automatic acco
     Role::findByName('member', 'web')->givePermissionTo('announcements.read');
     $this->actingAs($member)->get(route('officer.announcements.index'))->assertForbidden();
 
-    $this->actingAs($administrator)->get(route('officer.properties.index'))->assertOk();
+    $this->actingAs($administrator)->get(route('officer.properties.index'))->assertForbidden();
+    $this->get(route('officer.fee-types.index'))->assertOk();
     $this->get(route('officer.payments.index'))->assertOk();
 });
 

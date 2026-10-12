@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\AnnouncementPermission;
+use App\Enums\HouseholdPermission;
 use Spatie\LaravelData\Data;
 
 class PermissionOptionData extends Data
@@ -11,10 +12,12 @@ class PermissionOptionData extends Data
         public string $value,
         public string $label,
         public string $description,
+        public string $feature,
     ) {}
 
-    public static function fromPermission(AnnouncementPermission $permission): self
+    public static function fromPermission(AnnouncementPermission|HouseholdPermission $permission): self
     {
-        return new self($permission->value, $permission->label(), $permission->description());
+        return new self($permission->value, $permission->label(), $permission->description(),
+            $permission instanceof AnnouncementPermission ? 'Announcements' : $permission->feature());
     }
 }

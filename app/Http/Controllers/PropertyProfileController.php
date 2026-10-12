@@ -7,11 +7,13 @@ use App\Actions\Onboarding\FindCurrentOnboardingProgress;
 use App\Actions\PropertyProfiles\AuthorizePropertyProfile;
 use App\Actions\PropertyProfiles\UpdatePropertyProfile;
 use App\Data\PropertyProfileData;
+use App\Enums\HouseholdPermission;
 use App\Enums\OnboardingExperience;
 use App\Enums\OnboardingStep;
 use App\Http\Requests\UpdatePropertyProfileRequest;
 use App\Models\Property;
 use App\Models\User;
+use App\Support\PlatformAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -31,7 +33,8 @@ class PropertyProfileController extends Controller
 
         return Inertia::render('property-profile/Edit', [
             'profile' => PropertyProfileData::fromProperty($property),
-            'canAccessOfficerProperties' => $user->canAccessOfficerSurfaces(),
+            'canAccessOfficerProperties' => PlatformAccess::allowsStaff($user, HouseholdPermission::PropertiesRead),
+            'canEditProfile' => $authorizePropertyProfile->handle($user, $property, editing: true)->allowed(),
         ]);
     }
 

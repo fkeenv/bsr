@@ -4,6 +4,7 @@ import { http, HttpResponseError } from '@inertiajs/core';
 import { useHttp } from '@inertiajs/vue3';
 import * as vue from 'vue';
 import { mount } from './mount-vue.mjs';
+import { defaultHouseholdGrants } from './staff-permissions.mjs';
 
 const flush = async () => {
     await new Promise((resolve) => setImmediate(resolve));
@@ -64,6 +65,7 @@ async function dashboard(
                             user: { name: 'Ana Cruz' },
                             capabilities: { canAccessOfficer: true },
                             announcementPermissions: grants,
+                            staffPermissions: [...defaultHouseholdGrants],
                         },
                     },
                 }),
