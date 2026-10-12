@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { show as printedBillShow } from '@/routes/officer/printed-bills';
@@ -49,6 +50,7 @@ const printUrl = computed((): string | null => {
         },
     });
 });
+const { allows } = useStaffPermissions();
 </script>
 
 <template>
@@ -174,7 +176,7 @@ const printUrl = computed((): string | null => {
                         </p>
                     </div>
                     <Button
-                        v-if="printUrl"
+                        v-if="printUrl && allows('printed-bills.single')"
                         as-child
                         variant="outline"
                         size="sm"

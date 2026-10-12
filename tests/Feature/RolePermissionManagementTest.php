@@ -43,7 +43,7 @@ test('the editor lists only editable roles and enforced staff permissions', func
         ->has('roles', 2)
         ->where('roles.0.name', 'administrator')
         ->where('roles.1.name', 'officer')
-        ->has('permissions', 26)
+        ->has('permissions', 44)
         ->where('permissions.0.value', 'announcements.read'));
 });
 
@@ -72,7 +72,7 @@ test('non Super Admin accounts cannot open or update the permission editor', fun
     $this->actingAs($user)->get(route('super-admin.role-permissions.index'))->assertForbidden();
     $this->put(route('super-admin.role-permissions.update', $role), ['grants' => []])->assertForbidden();
     $this->assertDatabaseCount('role_permission_changes', 0);
-    expect($role->fresh()->permissions)->toHaveCount(25);
+    expect($role->fresh()->permissions)->toHaveCount(43);
 })->with(['officer', 'administrator', 'member']);
 
 test('protected roles and unknown or duplicate permissions cannot be changed', function () {
@@ -87,7 +87,7 @@ test('protected roles and unknown or duplicate permissions cannot be changed', f
     $this->put(route('super-admin.role-permissions.update', $role), ['grants' => ['announcements.read', 'announcements.read']])
         ->assertSessionHasErrors('grants.0');
     $this->assertDatabaseCount('role_permission_changes', 0);
-    expect($role->fresh()->permissions)->toHaveCount(25);
+    expect($role->fresh()->permissions)->toHaveCount(43);
 });
 
 test('saving unchanged permissions does not add an audit change', function () {

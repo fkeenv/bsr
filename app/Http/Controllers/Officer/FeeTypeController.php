@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Officer;
 use App\Actions\FeeTypes\CreateFeeType;
 use App\Actions\FeeTypes\UpdateFeeType;
 use App\Data\FeeTypeData;
+use App\Enums\FinancialPermission;
 use App\Http\Requests\Officer\StoreFeeTypeRequest;
 use App\Http\Requests\Officer\UpdateFeeTypeRequest;
 use App\Models\FeeType;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,8 +39,7 @@ class FeeTypeController
     {
         $createFeeType->handle($request->validated());
 
-        return redirect()
-            ->route('officer.fee-types.index')
+        return StaffWorkspace::redirect($request->user(), FinancialPermission::FeeTypesRead, 'officer.fee-types.index')
             ->with('success', 'Fee Type created.');
     }
 
@@ -56,8 +57,7 @@ class FeeTypeController
     ): RedirectResponse {
         $updateFeeType->handle($feeType, $request->validated());
 
-        return redirect()
-            ->route('officer.fee-types.index')
+        return StaffWorkspace::redirect($request->user(), FinancialPermission::FeeTypesRead, 'officer.fee-types.index')
             ->with('success', 'Fee Type updated.');
     }
 }

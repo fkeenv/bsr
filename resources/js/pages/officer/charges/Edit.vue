@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { setLayoutProps, Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import ChargeController from '@/actions/App/Http/Controllers/Officer/ChargeController';
 import Heading from '@/components/Heading.vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import { index as chargesIndex } from '@/routes/officer/charges';
 import type { Charge, ChargeLine } from '@/types/charge';
@@ -93,116 +101,127 @@ function submit(): void {
     );
 }
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Charges',
-                href: chargesIndex(),
-            },
-            {
-                title: 'Edit',
-                href: chargesIndex(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: 'Officer',
+            href: officerDashboard(),
+        },
+        {
+            title: 'Charges',
+            href: allows('charges.read') ? chargesIndex() : officerDashboard(),
+        },
+        {
+            title: 'Edit',
+            href: allows('charges.read') ? chargesIndex() : officerDashboard(),
+        },
+    ],
 });
 </script>
 
 <template>
-    <Head :title="`Edit Charge ${charge.period_label}`" />
+    <div>
+        <Head :title="`Edit Charge ${charge.period_label}`" />
 
-    <div class="flex flex-col space-y-6 p-4">
-        <Heading
-            :title="periodTitle"
-            description="Edit Fee Type lines until a confirmed Payment freezes this Charge."
-        />
+        <div class="flex flex-col space-y-6 p-4">
+            <Heading
+                :title="periodTitle"
+                description="Edit Fee Type lines until a confirmed Payment freezes this Charge."
+            />
 
-        <p v-if="charge.is_frozen" class="text-muted-foreground text-sm">
-            This Charge is frozen after a confirmed Payment.
-        </p>
+            <p v-if="charge.is_frozen" class="text-muted-foreground text-sm">
+                This Charge is frozen after a confirmed Payment.
+            </p>
 
-        <form class="max-w-2xl space-y-6" @submit.prevent="submit">
-            <div
-                v-for="(line, index) in lines"
-                :key="line.id ?? `new-${index}`"
-                class="grid gap-4 border-b pb-4 sm:grid-cols-[1fr_8rem_auto]"
-            >
-                <div class="grid gap-2">
-                    <Label :for="`fee_type_${index}`">Fee Type</Label>
-                    <select
-                        :id="`fee_type_${index}`"
-                        :disabled="charge.is_frozen"
-                        class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
-                        :value="line.fee_type_id ?? ''"
-                        @change="
-                            onFeeTypeChange(
-                                index,
-                                ($event.target as HTMLSelectElement).value,
-                            )
-                        "
-                    >
-                        <option
-                            v-for="feeType in feeTypes"
-                            :key="feeType.id"
-                            :value="feeType.id"
+            <form class="max-w-2xl space-y-6" @submit.prevent="submit">
+                <div
+                    v-for="(line, index) in lines"
+                    :key="line.id ?? `new-${index}`"
+                    class="grid gap-4 border-b pb-4 sm:grid-cols-[1fr_8rem_auto]"
+                >
+                    <div class="grid gap-2">
+                        <Label :for="`fee_type_${index}`">Fee Type</Label>
+                        <Select
+                            :disabled="charge.is_frozen"
+                            :model-value="String(line.fee_type_id ?? '')"
+                            @update:model-value="
+                                onFeeTypeChange(index, String($event))
+                            "
                         >
-                            {{ feeType.name }}
-                        </option>
-                    </select>
+                            <SelectTrigger
+                                :id="`fee_type_${index}`"
+                                class="w-full"
+                                ><SelectValue placeholder="Select a Fee Type"
+                            /></SelectTrigger>
+                            <SelectContent
+                                ><SelectItem
+                                    v-for="feeType in feeTypes"
+                                    :key="feeType.id"
+                                    :value="String(feeType.id)"
+                                    >{{ feeType.name }}</SelectItem
+                                ></SelectContent
+                            >
+                        </Select>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label :for="`amount_${index}`">Amount</Label>
+                        <Input
+                            :id="`amount_${index}`"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            :disabled="charge.is_frozen"
+                            :model-value="line.amount"
+                            @update:model-value="
+                                (value) => (line.amount = String(value ?? ''))
+                            "
+                        />
+                        <InputError
+                            :message="errors[`lines.${index}.amount`]"
+                        />
+                    </div>
+
+                    <div class="flex items-end">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            :disabled="charge.is_frozen"
+                            @click="removeLine(index)"
+                        >
+                            Remove
+                        </Button>
+                    </div>
                 </div>
 
-                <div class="grid gap-2">
-                    <Label :for="`amount_${index}`">Amount</Label>
-                    <Input
-                        :id="`amount_${index}`"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        :disabled="charge.is_frozen"
-                        :model-value="line.amount"
-                        @update:model-value="
-                            (value) => (line.amount = String(value ?? ''))
-                        "
-                    />
-                    <InputError :message="errors[`lines.${index}.amount`]" />
-                </div>
-
-                <div class="flex items-end">
+                <div class="flex flex-wrap gap-2">
                     <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         :disabled="charge.is_frozen"
-                        @click="removeLine(index)"
+                        @click="addLine"
                     >
-                        Remove
+                        Add line
+                    </Button>
+                    <Button
+                        type="submit"
+                        :disabled="processing || charge.is_frozen"
+                    >
+                        Save changes
+                    </Button>
+                    <Button variant="ghost" as-child>
+                        <Link
+                            :href="
+                                allows('charges.read')
+                                    ? chargesIndex()
+                                    : officerDashboard()
+                            "
+                            >Back</Link
+                        >
                     </Button>
                 </div>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    :disabled="charge.is_frozen"
-                    @click="addLine"
-                >
-                    Add line
-                </Button>
-                <Button
-                    type="submit"
-                    :disabled="processing || charge.is_frozen"
-                >
-                    Save changes
-                </Button>
-                <Button variant="ghost" as-child>
-                    <Link :href="chargesIndex()">Back</Link>
-                </Button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </template>

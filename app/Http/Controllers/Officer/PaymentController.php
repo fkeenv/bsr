@@ -7,6 +7,7 @@ use App\Actions\Payments\CreateAndConfirmPayment;
 use App\Actions\Payments\ListOfficerPaymentsPage;
 use App\Actions\Payments\RejectPayment;
 use App\Actions\Payments\VoidPayment;
+use App\Enums\FinancialPermission;
 use App\Http\Requests\Officer\ConfirmPaymentRequest;
 use App\Http\Requests\Officer\RejectPaymentRequest;
 use App\Http\Requests\Officer\StoreConfirmedPaymentRequest;
@@ -14,6 +15,7 @@ use App\Http\Requests\Officer\VoidPaymentRequest;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Support\FlashToast;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -66,7 +68,7 @@ class PaymentController
 
         FlashToast::success('Payment recorded and confirmed.');
 
-        return redirect()->route('officer.payments.index');
+        return StaffWorkspace::redirect($request->user(), FinancialPermission::PaymentsRead, 'officer.payments.index');
     }
 
     public function confirm(
@@ -81,7 +83,7 @@ class PaymentController
 
         FlashToast::success('Payment confirmed and allocated.');
 
-        return redirect()->route('officer.payments.index');
+        return StaffWorkspace::redirect($request->user(), FinancialPermission::PaymentsRead, 'officer.payments.index');
     }
 
     public function reject(
@@ -96,7 +98,7 @@ class PaymentController
 
         FlashToast::success('Payment rejected.');
 
-        return redirect()->route('officer.payments.index');
+        return StaffWorkspace::redirect($request->user(), FinancialPermission::PaymentsRead, 'officer.payments.index');
     }
 
     public function void(
@@ -111,6 +113,6 @@ class PaymentController
 
         FlashToast::success('Payment voided. Allocation reversed.');
 
-        return redirect()->route('officer.payments.index');
+        return StaffWorkspace::redirect($request->user(), FinancialPermission::PaymentsRead, 'officer.payments.index');
     }
 }

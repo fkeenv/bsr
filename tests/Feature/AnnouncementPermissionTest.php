@@ -91,8 +91,8 @@ test('Administrator does not inherit Officer grants and direct or automatic acco
     $this->actingAs($member)->get(route('officer.announcements.index'))->assertForbidden();
 
     $this->actingAs($administrator)->get(route('officer.properties.index'))->assertForbidden();
-    $this->get(route('officer.fee-types.index'))->assertOk();
-    $this->get(route('officer.payments.index'))->assertOk();
+    $this->get(route('officer.fee-types.index'))->assertForbidden();
+    $this->get(route('officer.payments.index'))->assertForbidden();
 });
 
 test('staff must retain a live owner Membership while Super Admin always has all grants', function () {

@@ -54,9 +54,21 @@ const workspaceGroups = computed(() => {
             title: 'Payments & collection',
             description: 'Keep records clear and follow up on balances.',
             links: [
-                { title: 'Review Payments', href: payments() },
-                { title: 'Open the Unpaid roster', href: unpaidRoster() },
-                { title: 'View Charges', href: charges() },
+                {
+                    title: 'Review Payments',
+                    href: payments(),
+                    permission: 'payments.read',
+                },
+                {
+                    title: 'Open the Unpaid roster',
+                    href: unpaidRoster(),
+                    permission: 'unpaid.read',
+                },
+                {
+                    title: 'View Charges',
+                    href: charges(),
+                    permission: 'charges.read',
+                },
             ],
         },
         {
@@ -139,6 +151,8 @@ const checklistItems = computed((): OnboardingChecklistItem[] => {
                     allowsStaff('properties.read')) &&
                 (step !== 'officer-invitations' ||
                     allowsStaff('invitations.read')) &&
+                (step !== 'officer-payments' || allowsStaff('payments.read')) &&
+                (step !== 'officer-charges' || allowsStaff('charges.read')) &&
                 (step !== 'officer-memberships' ||
                     allowsStaff('memberships.read')),
         )

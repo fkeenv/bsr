@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { setLayoutProps, Form, Head, Link } from '@inertiajs/vue3';
 import FeeTypeController from '@/actions/App/Http/Controllers/Officer/FeeTypeController';
 import Heading from '@/components/Heading.vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,67 +13,77 @@ import {
     index as feeTypesIndex,
 } from '@/routes/officer/fee-types';
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Fee Types',
-                href: feeTypesIndex(),
-            },
-            {
-                title: 'Add',
-                href: createFeeType(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: 'Officer',
+            href: officerDashboard(),
+        },
+        {
+            title: 'Fee Types',
+            href: allows('fee-types.read')
+                ? feeTypesIndex()
+                : officerDashboard(),
+        },
+        {
+            title: 'Add',
+            href: createFeeType(),
+        },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Add Fee Type" />
+    <div>
+        <Head title="Add Fee Type" />
 
-    <div class="flex flex-col space-y-6 p-4">
-        <Heading
-            title="Add Fee Type"
-            description="Create a named dues Fee Type with its schedule amount."
-        />
+        <div class="flex flex-col space-y-6 p-4">
+            <Heading
+                title="Add Fee Type"
+                description="Create a named dues Fee Type with its schedule amount."
+            />
 
-        <Form
-            v-bind="FeeTypeController.store.form()"
-            class="max-w-lg space-y-6"
-            v-slot="{ errors, processing }"
-        >
-            <div class="grid gap-2">
-                <Label for="name">Name</Label>
-                <Input id="name" name="name" required />
-                <InputError :message="errors.name" />
-            </div>
+            <Form
+                v-bind="FeeTypeController.store.form()"
+                class="max-w-lg space-y-6"
+                v-slot="{ errors, processing }"
+            >
+                <div class="grid gap-2">
+                    <Label for="name">Name</Label>
+                    <Input id="name" name="name" required />
+                    <InputError :message="errors.name" />
+                </div>
 
-            <div class="grid gap-2">
-                <Label for="amount">Amount</Label>
-                <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    required
-                />
-                <InputError :message="errors.amount" />
-            </div>
+                <div class="grid gap-2">
+                    <Label for="amount">Amount</Label>
+                    <Input
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                    />
+                    <InputError :message="errors.amount" />
+                </div>
 
-            <div class="flex gap-2">
-                <Button type="submit" :disabled="processing">
-                    Create Fee Type
-                </Button>
-                <Button variant="ghost" as-child>
-                    <Link :href="feeTypesIndex()">Cancel</Link>
-                </Button>
-            </div>
-        </Form>
+                <div class="flex gap-2">
+                    <Button type="submit" :disabled="processing">
+                        Create Fee Type
+                    </Button>
+                    <Button variant="ghost" as-child>
+                        <Link
+                            :href="
+                                allows('fee-types.read')
+                                    ? feeTypesIndex()
+                                    : officerDashboard()
+                            "
+                            >Cancel</Link
+                        >
+                    </Button>
+                </div>
+            </Form>
+        </div>
     </div>
 </template>

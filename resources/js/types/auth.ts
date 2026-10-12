@@ -50,7 +50,30 @@ export type HouseholdPermission =
     | 'suspends.create'
     | 'suspends.edit';
 
-export type StaffPermission = AnnouncementPermission | HouseholdPermission;
+export type FinancialPermission =
+    | 'payments.read'
+    | 'payments.create'
+    | 'payments.confirm'
+    | 'payments.reject'
+    | 'payments.void'
+    | 'charges.read'
+    | 'charges.edit'
+    | 'charges.generate'
+    | 'unpaid.read'
+    | 'printed-bills.single'
+    | 'printed-bills.batch'
+    | 'fee-types.read'
+    | 'fee-types.create'
+    | 'fee-types.edit'
+    | 'levy-settings.read'
+    | 'levy-settings.edit'
+    | 'bill-settings.read'
+    | 'bill-settings.edit';
+
+export type StaffPermission =
+    | AnnouncementPermission
+    | HouseholdPermission
+    | FinancialPermission;
 
 export type Auth = {
     user: User | null;

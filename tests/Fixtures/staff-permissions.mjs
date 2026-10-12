@@ -19,3 +19,28 @@ export const defaultHouseholdGrants = [
     'suspends.create',
     'suspends.edit',
 ];
+
+export const defaultFinancialGrants = [
+    'payments.read',
+    'payments.create',
+    'payments.confirm',
+    'payments.reject',
+    'payments.void',
+    'charges.read',
+    'charges.edit',
+    'charges.generate',
+    'unpaid.read',
+    'printed-bills.single',
+    'printed-bills.batch',
+    'fee-types.read',
+    'fee-types.create',
+    'fee-types.edit',
+    'levy-settings.read',
+    'levy-settings.edit',
+    'bill-settings.read',
+    'bill-settings.edit',
+];
+export const defaultStaffGrants = [
+    ...defaultHouseholdGrants,
+    ...defaultFinancialGrants,
+];

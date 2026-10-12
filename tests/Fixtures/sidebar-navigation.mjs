@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as vue from 'vue';
 import { mount } from './mount-vue.mjs';
-import { defaultHouseholdGrants } from './staff-permissions.mjs';
+import { defaultStaffGrants } from './staff-permissions.mjs';
 
 const member = {
     isMembershipHolder: true,
@@ -42,7 +42,7 @@ function setup(
                 capabilities,
                 announcementPermissions,
                 staffPermissions: capabilities?.canAccessOfficer
-                    ? [...defaultHouseholdGrants]
+                    ? [...defaultStaffGrants]
                     : [],
             },
             announcementsPageListed: true,
@@ -440,11 +440,46 @@ void test('household list links follow current grants and creation-only users ha
     ]) {
         assert.ok(ui.destinations().includes(path));
     }
-    assert.ok(ui.destinations().includes('/officer/payments'));
+    assert.equal(ui.destinations().includes('/officer/payments'), false);
     ui.page.props.auth.staffPermissions = [];
     await vue.nextTick();
     assert.equal(
         ui.destinations().includes('/officer/properties/create'),
         false,
     );
+});
+
+void test('financial links follow independent reading and creation grants', async (context) => {
+    const ui = setup(context, { ...member, canAccessOfficer: true });
+    ui.page.props.auth.staffPermissions = [
+        'payments.create',
+        'fee-types.create',
+        'charges.generate',
+        'levy-settings.read',
+    ];
+    await vue.nextTick();
+    for (const path of [
+        '/officer/payments/create',
+        '/officer/fee-types/create',
+        '/officer/charges/generate',
+        '/officer/levy-settings',
+    ])
+        assert.ok(ui.destinations().includes(path));
+    for (const path of [
+        '/officer/payments',
+        '/officer/fee-types',
+        '/officer/charges',
+        '/officer/unpaid',
+        '/officer/bill-settings',
+    ])
+        assert.equal(ui.destinations().includes(path), false);
+    ui.page.props.auth.staffPermissions = [];
+    await vue.nextTick();
+    for (const path of [
+        '/officer/payments/create',
+        '/officer/fee-types/create',
+        '/officer/charges/generate',
+        '/officer/levy-settings',
+    ])
+        assert.equal(ui.destinations().includes(path), false);
 });

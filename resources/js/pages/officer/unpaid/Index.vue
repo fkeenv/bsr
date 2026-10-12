@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -151,6 +152,7 @@ const batchPrintUrl = computed((): string =>
         },
     }),
 );
+const { allows } = useStaffPermissions();
 </script>
 
 <template>
@@ -165,7 +167,7 @@ const batchPrintUrl = computed((): string =>
                 :description="`${this_billing_period.label} · Outstanding > ₱0`"
             />
             <Button
-                v-if="empty_state !== 'clear'"
+                v-if="empty_state !== 'clear' && allows('printed-bills.batch')"
                 as-child
                 variant="outline"
                 size="sm"
