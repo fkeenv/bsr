@@ -48,10 +48,16 @@ import {
 import { edit as billSettingsEdit } from '@/routes/officer/bill-settings';
 import { index as chargesIndex } from '@/routes/officer/charges';
 import { create as generateCharges } from '@/routes/officer/charges/generate';
-import { index as feeTypesIndex } from '@/routes/officer/fee-types';
+import {
+    create as createFeeType,
+    index as feeTypesIndex,
+} from '@/routes/officer/fee-types';
 import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
 import { index as membershipsIndex } from '@/routes/officer/memberships';
-import { index as paymentsIndex } from '@/routes/officer/payments';
+import {
+    create as createPayment,
+    index as paymentsIndex,
+} from '@/routes/officer/payments';
 import { create as createInvitation } from '@/routes/officer/property-invitations';
 import { create as createProperty } from '@/routes/officer/properties';
 import { create as importProperties } from '@/routes/officer/properties/import';
@@ -188,12 +194,16 @@ const officerNavItems = computed((): NavItem[] => {
                     },
                 ]
               : []),
-        {
-            title: 'Unpaid',
-            group: 'collection',
-            href: unpaidIndex(),
-            icon: Receipt,
-        },
+        ...(allowsStaff('unpaid.read')
+            ? [
+                  {
+                      title: 'Unpaid',
+                      group: 'collection' as const,
+                      href: unpaidIndex(),
+                      icon: Receipt,
+                  },
+              ]
+            : []),
         ...(allowsStaff('memberships.read')
             ? [
                   {
@@ -223,12 +233,25 @@ const officerNavItems = computed((): NavItem[] => {
                     },
                 ]
               : []),
-        {
-            title: 'Payments',
-            group: 'collection',
-            href: paymentsIndex(),
-            icon: Receipt,
-        },
+        ...(allowsStaff('payments.read')
+            ? [
+                  {
+                      title: 'Payments',
+                      group: 'collection' as const,
+                      href: paymentsIndex(),
+                      icon: Receipt,
+                  },
+              ]
+            : allowsStaff('payments.create')
+              ? [
+                    {
+                        title: 'Record Payment',
+                        group: 'collection' as const,
+                        href: createPayment(),
+                        icon: Receipt,
+                    },
+                ]
+              : []),
         ...(allowsStaff('properties.read')
             ? [
                   {
@@ -258,12 +281,25 @@ const officerNavItems = computed((): NavItem[] => {
                       },
                   ]
                 : []),
-        {
-            title: 'Fee Types',
-            group: 'settings',
-            href: feeTypesIndex(),
-            icon: Receipt,
-        },
+        ...(allowsStaff('fee-types.read')
+            ? [
+                  {
+                      title: 'Fee Types',
+                      group: 'settings' as const,
+                      href: feeTypesIndex(),
+                      icon: Receipt,
+                  },
+              ]
+            : allowsStaff('fee-types.create')
+              ? [
+                    {
+                        title: 'New Fee Type',
+                        group: 'settings' as const,
+                        href: createFeeType(),
+                        icon: Receipt,
+                    },
+                ]
+              : []),
         ...(allowsStaff('suspends.read')
             ? [
                   {
@@ -283,30 +319,48 @@ const officerNavItems = computed((): NavItem[] => {
                     },
                 ]
               : []),
-        {
-            title: 'Charges',
-            group: 'collection',
-            href: chargesIndex(),
-            icon: ClipboardList,
-        },
-        {
-            title: 'Generate Charges',
-            group: 'collection',
-            href: generateCharges(),
-            icon: CalendarClock,
-        },
-        {
-            title: 'Levy day',
-            group: 'settings',
-            href: levySettingsEdit(),
-            icon: Settings2,
-        },
-        {
-            title: 'Printed Bill',
-            group: 'settings',
-            href: billSettingsEdit(),
-            icon: Receipt,
-        },
+        ...(allowsStaff('charges.read')
+            ? [
+                  {
+                      title: 'Charges',
+                      group: 'collection' as const,
+                      href: chargesIndex(),
+                      icon: ClipboardList,
+                  },
+              ]
+            : []),
+        ...(allowsStaff('charges.generate')
+            ? [
+                  {
+                      title: 'Generate Charges',
+                      group: 'collection' as const,
+                      href: generateCharges(),
+                      icon: CalendarClock,
+                  },
+              ]
+            : []),
+        ...(allowsStaff('levy-settings.read') ||
+        allowsStaff('levy-settings.edit')
+            ? [
+                  {
+                      title: 'Levy day',
+                      group: 'settings' as const,
+                      href: levySettingsEdit(),
+                      icon: Settings2,
+                  },
+              ]
+            : []),
+        ...(allowsStaff('bill-settings.read') ||
+        allowsStaff('bill-settings.edit')
+            ? [
+                  {
+                      title: 'Printed Bill',
+                      group: 'settings' as const,
+                      href: billSettingsEdit(),
+                      icon: Receipt,
+                  },
+              ]
+            : []),
     ];
 });
 

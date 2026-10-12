@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import { Button } from '@/components/ui/button';
 import { feeTypeColumns } from '@/pages/officer/fee-types/columns';
 import { dashboard as officerDashboard } from '@/routes/officer';
@@ -16,6 +17,7 @@ type Props = {
 };
 
 defineProps<Props>();
+const { allows } = useStaffPermissions();
 
 defineOptions({
     layout: {
@@ -34,27 +36,29 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Fee Types" />
+    <div>
+        <Head title="Fee Types" />
 
-    <div class="flex flex-col space-y-6 p-4">
-        <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-        >
-            <Heading
-                title="Fee Types"
-                description="Named dues the association levies on roster Properties."
+        <div class="flex flex-col space-y-6 p-4">
+            <div
+                class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+            >
+                <Heading
+                    title="Fee Types"
+                    description="Named dues the association levies on roster Properties."
+                />
+
+                <Button v-if="allows('fee-types.create')" as-child>
+                    <Link :href="createFeeType()">Add Fee Type</Link>
+                </Button>
+            </div>
+
+            <DataTable
+                :columns="feeTypeColumns"
+                :data="feeTypes"
+                :action="feeTypesIndex.url()"
+                empty-text="No Fee Types yet."
             />
-
-            <Button as-child>
-                <Link :href="createFeeType()">Add Fee Type</Link>
-            </Button>
         </div>
-
-        <DataTable
-            :columns="feeTypeColumns"
-            :data="feeTypes"
-            :action="feeTypesIndex.url()"
-            empty-text="No Fee Types yet."
-        />
     </div>
 </template>

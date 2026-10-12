@@ -27,9 +27,9 @@ defineOptions({
         />
         <p class="text-muted-foreground text-sm leading-6">
             Super Admin always has full access. Member and User access is
-            automatic. Payment and finance access continue to use their existing
-            rules. Each permission is independent; enabling an action does not
-            enable other actions.
+            automatic. Financial actions follow these permissions while
+            allocation and billing rules still apply. Each permission is
+            independent; enabling an action does not enable other actions.
         </p>
         <Accordion
             type="multiple"

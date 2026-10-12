@@ -7,7 +7,7 @@ import { compileScript, parse, registerTS } from '@vue/compiler-sfc';
 import ts from 'typescript';
 import * as vue from 'vue';
 import * as vueUse from '@vueuse/core';
-import { defaultHouseholdGrants } from './staff-permissions.mjs';
+import { defaultStaffGrants } from './staff-permissions.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(import.meta.url);
@@ -28,7 +28,7 @@ export function mount(
                 capabilities,
                 announcementPermissions: [],
                 staffPermissions: capabilities?.canAccessOfficer
-                    ? [...defaultHouseholdGrants]
+                    ? [...defaultStaffGrants]
                     : [],
             },
         },

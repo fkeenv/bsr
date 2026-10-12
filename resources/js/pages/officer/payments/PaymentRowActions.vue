@@ -3,6 +3,7 @@ import { Form } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import OfficerPaymentController from '@/actions/App/Http/Controllers/Officer/PaymentController';
 import InputError from '@/components/InputError.vue';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -23,11 +24,13 @@ const props = defineProps<{
 }>();
 
 const open = ref(false);
+const { allows } = useStaffPermissions();
 
 const canManage = computed(
     () =>
-        props.payment.status === 'pending' ||
-        props.payment.status === 'confirmed',
+        (props.payment.status === 'pending' &&
+            (allows('payments.confirm') || allows('payments.reject'))) ||
+        (props.payment.status === 'confirmed' && allows('payments.void')),
 );
 
 function closeDialog(): void {
@@ -67,6 +70,7 @@ function methodLabel(method: string): string {
 
                 <div v-if="payment.status === 'pending'" class="space-y-6">
                     <Form
+                        v-if="allows('payments.confirm')"
                         v-bind="
                             OfficerPaymentController.confirm.form(payment.id)
                         "
@@ -84,6 +88,7 @@ function methodLabel(method: string): string {
                     </Form>
 
                     <Form
+                        v-if="allows('payments.reject')"
                         v-bind="
                             OfficerPaymentController.reject.form(payment.id)
                         "
@@ -121,7 +126,10 @@ function methodLabel(method: string): string {
                 </div>
 
                 <Form
-                    v-else-if="payment.status === 'confirmed'"
+                    v-else-if="
+                        payment.status === 'confirmed' &&
+                        allows('payments.void')
+                    "
                     v-bind="OfficerPaymentController.void.form(payment.id)"
                     class="space-y-4"
                     :options="{ preserveScroll: true }"

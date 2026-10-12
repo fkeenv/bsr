@@ -194,47 +194,69 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':officer'])->prefix('officer')->name('officer.')->group(function () {
         Route::get('/', OfficerDashboardController::class)->name('dashboard');
+    });
 
+    Route::prefix('officer')->name('officer.')->group(function () {
         Route::get('payments', [OfficerPaymentController::class, 'index'])
+            ->middleware(EnsureStaffPermission::class.':payments.read')
             ->name('payments.index');
         Route::get('payments/create', [OfficerPaymentController::class, 'create'])
+            ->middleware(EnsureStaffPermission::class.':payments.create')
             ->name('payments.create');
         Route::post('payments', [OfficerPaymentController::class, 'store'])
+            ->middleware(EnsureStaffPermission::class.':payments.create')
             ->name('payments.store');
         Route::post('payments/{payment}/confirm', [OfficerPaymentController::class, 'confirm'])
+            ->middleware(EnsureStaffPermission::class.':payments.confirm')
             ->name('payments.confirm');
         Route::post('payments/{payment}/reject', [OfficerPaymentController::class, 'reject'])
+            ->middleware(EnsureStaffPermission::class.':payments.reject')
             ->name('payments.reject');
         Route::post('payments/{payment}/void', [OfficerPaymentController::class, 'void'])
+            ->middleware(EnsureStaffPermission::class.':payments.void')
             ->name('payments.void');
 
         Route::get('unpaid', [UnpaidRosterController::class, 'index'])
+            ->middleware(EnsureStaffPermission::class.':unpaid.read')
             ->name('unpaid.index');
 
         Route::get('printed-bills/batch', [PrintedBillController::class, 'batch'])
+            ->middleware(EnsureStaffPermission::class.':printed-bills.batch')
             ->name('printed-bills.batch');
         Route::get('printed-bills/{property}', [PrintedBillController::class, 'show'])
+            ->middleware(EnsureStaffPermission::class.':printed-bills.single')
             ->name('printed-bills.show');
 
         Route::resource('fee-types', FeeTypeController::class)
-            ->except(['show', 'destroy']);
+            ->except(['show', 'destroy'])
+            ->middlewareFor('index', EnsureStaffPermission::class.':fee-types.read')
+            ->middlewareFor(['create', 'store'], EnsureStaffPermission::class.':fee-types.create')
+            ->middlewareFor(['edit', 'update'], EnsureStaffPermission::class.':fee-types.edit');
 
         Route::get('charges/generate', [ChargeGenerationController::class, 'create'])
+            ->middleware(EnsureStaffPermission::class.':charges.generate')
             ->name('charges.generate.create');
         Route::post('charges/generate', [ChargeGenerationController::class, 'store'])
+            ->middleware(EnsureStaffPermission::class.':charges.generate')
             ->name('charges.generate');
 
         Route::resource('charges', ChargeController::class)
-            ->only(['index', 'edit', 'update']);
+            ->only(['index', 'edit', 'update'])
+            ->middlewareFor('index', EnsureStaffPermission::class.':charges.read')
+            ->middlewareFor(['edit', 'update'], EnsureStaffPermission::class.':charges.edit');
 
         Route::get('levy-settings', [LevySettingsController::class, 'edit'])
+            ->middleware(EnsureStaffPermission::class.':levy-settings.read,levy-settings.edit')
             ->name('levy-settings.edit');
         Route::put('levy-settings', [LevySettingsController::class, 'update'])
+            ->middleware(EnsureStaffPermission::class.':levy-settings.edit')
             ->name('levy-settings.update');
 
         Route::get('bill-settings', [BillSettingsController::class, 'edit'])
+            ->middleware(EnsureStaffPermission::class.':bill-settings.read,bill-settings.edit')
             ->name('bill-settings.edit');
         Route::put('bill-settings', [BillSettingsController::class, 'update'])
+            ->middleware(EnsureStaffPermission::class.':bill-settings.edit')
             ->name('bill-settings.update');
     });
 

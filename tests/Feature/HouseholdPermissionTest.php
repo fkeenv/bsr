@@ -26,7 +26,7 @@ test('the role editor exposes the migrated household grants without changing Ann
         ->assertSessionHasNoErrors()->assertRedirect();
     expect($role->fresh()->permissions->pluck('name')->sort()->values()->all())->toBe(['announcements.read', 'invitations.credentials', 'properties.read']);
     $this->get(route('super-admin.role-permissions.index'))->assertInertia(fn ($page) => $page
-        ->has('permissions', 26)->where('permissions.6.feature', 'Properties'));
+        ->has('permissions', 44)->where('permissions.6.feature', 'Properties'));
 });
 
 test('Property creation works without the listing grant and returns to an accessible workspace', function () {
@@ -124,7 +124,7 @@ test('household grants apply to the association and revoked grants take effect o
     $role->syncPermissions([]);
     $this->put(route('officer.properties.update', $otherProperty), ['street_address' => 'Denied'])->assertForbidden();
     expect($otherProperty->fresh()->street_address)->toBe('Changed');
-    $this->get(route('officer.payments.index'))->assertOk();
+    $this->get(route('officer.payments.index'))->assertForbidden();
 });
 
 test('a delete grant cannot delete charged Property history', function () {
@@ -140,7 +140,7 @@ test('seeded grants retain staff access without broad role or direct grant bypas
     $officer = User::factory()->officer()->create();
     $administrator = User::factory()->administrator()->create();
     $role = Role::findByName('officer', 'web');
-    expect($role->permissions)->toHaveCount(25);
+    expect($role->permissions)->toHaveCount(43);
     expect($role->hasPermissionTo('properties.read'))->toBeTrue();
     Role::findByName('administrator', 'web')->syncPermissions([]);
     $administrator->givePermissionTo('properties.read');

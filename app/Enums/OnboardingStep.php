@@ -23,6 +23,8 @@ enum OnboardingStep: string
             self::OfficerInvitations => PlatformAccess::allowsStaff($user, HouseholdPermission::InvitationsRead),
             self::OfficerProperties => PlatformAccess::allowsStaff($user, HouseholdPermission::PropertiesRead),
             self::OfficerMemberships => PlatformAccess::allowsStaff($user, HouseholdPermission::MembershipsRead),
+            self::OfficerPayments => PlatformAccess::allowsStaff($user, FinancialPermission::PaymentsRead),
+            self::OfficerCharges => PlatformAccess::allowsStaff($user, FinancialPermission::ChargesRead),
             self::OfficerAnnouncements => PlatformAccess::allowsAnnouncement($user, AnnouncementPermission::Read),
             default => true,
         };

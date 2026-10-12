@@ -306,3 +306,196 @@ void test('read-only Property Profiles cannot submit and Member editing still sh
             ui.all('form')[0].props.onSubmit({ preventDefault() {} });
     }
 });
+
+void test('Payment controls require both the action grant and the applicable Payment state', (context) => {
+    for (const [status, grants, forms, dialog] of [
+        ['pending', ['payments.read'], 0, false],
+        ['pending', ['payments.confirm'], 1, true],
+        ['pending', ['payments.reject'], 1, true],
+        ['pending', ['payments.void'], 0, false],
+        ['confirmed', ['payments.confirm'], 0, false],
+        ['confirmed', ['payments.void'], 1, true],
+        ['pending', ['payments.confirm', 'payments.reject'], 2, true],
+        [
+            'rejected',
+            ['payments.confirm', 'payments.reject', 'payments.void'],
+            0,
+            false,
+        ],
+    ]) {
+        const ui = setup(
+            context,
+            'resources/js/pages/officer/payments/PaymentRowActions.vue',
+            {
+                payment: {
+                    id: 1,
+                    status,
+                    amount: '100.00',
+                    method: 'cash',
+                    property_label: 'Block 1 · Lot 1',
+                },
+            },
+            grants,
+        );
+        assert.equal(ui.all('Form').length, forms);
+        assert.equal(ui.all('Dialog').length, dialog ? 1 : 0);
+        if (!grants.includes('payments.reject'))
+            assert.equal(
+                ui
+                    .all('Input')
+                    .some((input) => input.props.name === 'rejection_reason'),
+                false,
+            );
+    }
+});
+
+void test('financial list readers see no create generate or edit controls without those grants', (context) => {
+    for (const { directory, file, props, read, mutate } of [
+        {
+            directory: 'payments',
+            file: 'Index',
+            props: {
+                payments: [],
+                table: {
+                    searchables: [],
+                    filters: [],
+                    dateRanges: [],
+                    filterOptions: {},
+                    values: {},
+                },
+            },
+            read: 'payments.read',
+            mutate: 'payments.create',
+        },
+        {
+            directory: 'charges',
+            file: 'Index',
+            props: { charges: [] },
+            read: 'charges.read',
+            mutate: 'charges.generate',
+        },
+        {
+            directory: 'fee-types',
+            file: 'Index',
+            props: { feeTypes: [] },
+            read: 'fee-types.read',
+            mutate: 'fee-types.create',
+        },
+        {
+            directory: 'charges',
+            file: 'ChargeRowActions',
+            props: { charge: { id: 8 } },
+            read: 'charges.read',
+            mutate: 'charges.edit',
+        },
+        {
+            directory: 'fee-types',
+            file: 'FeeTypeRowActions',
+            props: { feeType: { id: 8 } },
+            read: 'fee-types.read',
+            mutate: 'fee-types.edit',
+        },
+    ]) {
+        const reader = setup(
+            context,
+            `resources/js/pages/officer/${directory}/${file}.vue`,
+            props,
+            [read],
+        );
+        assert.equal(reader.all('Link').length, 0);
+        const writer = setup(
+            context,
+            `resources/js/pages/officer/${directory}/${file}.vue`,
+            props,
+            [mutate],
+        );
+        assert.equal(writer.all('Link').length, 1);
+    }
+});
+
+void test('settings readers have disabled fields and no Save or channel mutation controls', (context) => {
+    for (const canEdit of [false, true]) {
+        for (const { directory, props } of [
+            { directory: 'levy-settings', props: { levyDayOfMonth: 15 } },
+            {
+                directory: 'bill-settings',
+                props: {
+                    letterheadName: 'BSR',
+                    letterheadShortName: 'BSR',
+                    letterheadAddressLines: ['Basak'],
+                    letterheadContact: 'Office',
+                    letterheadTreasurer: 'Treasurer',
+                    paymentChannels: [{ method: 'Cash', detail: 'Office' }],
+                },
+            },
+        ]) {
+            const ui = setup(
+                context,
+                `resources/js/pages/officer/${directory}/Edit.vue`,
+                { ...props, canEdit },
+                [],
+            );
+            assert.equal(ui.all('fieldset')[0].props.disabled, !canEdit);
+            assert.equal(
+                ui
+                    .all('Button')
+                    .filter((button) => button.props.type === 'submit').length,
+                canEdit ? 1 : 0,
+            );
+            if (!canEdit) assert.doesNotMatch(ui.text(), /Add channel|Remove/);
+        }
+    }
+});
+
+void test('single and batch print buttons follow distinct grants on the unpaid screens', (context) => {
+    const statement = {
+        property: { id: 8, label: 'Block 1 · Lot 1' },
+        outstanding_balance: '100.00',
+        remaining_opening_balance: '0.00',
+        prepaid_balance: '0.00',
+        pending_declarations: [],
+        periods: [],
+        selected_period: {
+            charge_id: 1,
+            year: 2026,
+            month: 10,
+            label: 'October 2026',
+            status: 'unpaid',
+            remaining: '100.00',
+            charge_total: '100.00',
+            lines: [],
+            payments: [],
+        },
+    };
+    const roster = {
+        roster_count: 1,
+        unpaid_count: 1,
+        filters_active: false,
+        rows: [],
+        values: {},
+        filter_options: { blocks: [], owes_for: [] },
+        empty_state: 'no_matches',
+        selected: null,
+        this_billing_period: { year: 2026, month: 10, label: 'October 2026' },
+    };
+    for (const [grants, single, batch] of [
+        [['unpaid.read'], 0, 0],
+        [['printed-bills.single'], 1, 0],
+        [['printed-bills.batch'], 0, 1],
+    ]) {
+        const panel = setup(
+            context,
+            'resources/js/pages/officer/unpaid/PropertyStatementPanel.vue',
+            { statement },
+            grants,
+        );
+        const list = setup(
+            context,
+            'resources/js/pages/officer/unpaid/Index.vue',
+            roster,
+            grants,
+        );
+        assert.equal(panel.all('a').length, single);
+        assert.equal(list.all('a').length, batch);
+    }
+});

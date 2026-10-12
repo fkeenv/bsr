@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Officer;
 
+use App\Enums\FinancialPermission;
 use App\Models\FeeType;
+use App\Support\PlatformAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,7 +12,7 @@ class UpdateFeeTypeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->canAccessOfficerSurfaces() ?? false;
+        return PlatformAccess::allowsStaff($this->user(), FinancialPermission::FeeTypesEdit);
     }
 
     /**

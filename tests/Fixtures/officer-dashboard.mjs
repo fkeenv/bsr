@@ -4,7 +4,7 @@ import { http, HttpResponseError } from '@inertiajs/core';
 import { useHttp } from '@inertiajs/vue3';
 import * as vue from 'vue';
 import { mount } from './mount-vue.mjs';
-import { defaultHouseholdGrants } from './staff-permissions.mjs';
+import { defaultStaffGrants } from './staff-permissions.mjs';
 
 const flush = async () => {
     await new Promise((resolve) => setImmediate(resolve));
@@ -23,6 +23,7 @@ async function dashboard(
         'announcements.pin',
         'announcements.attachments',
     ],
+    staffGrants = defaultStaffGrants,
 ) {
     const requests = [];
     const drivers = [];
@@ -65,7 +66,7 @@ async function dashboard(
                             user: { name: 'Ana Cruz' },
                             capabilities: { canAccessOfficer: true },
                             announcementPermissions: grants,
-                            staffPermissions: [...defaultHouseholdGrants],
+                            staffPermissions: [...staffGrants],
                         },
                     },
                 }),
@@ -339,4 +340,31 @@ void test('creation-only staff can start a draft without denied reading or onboa
         false,
     );
     assert.equal(checklist.length, 5);
+});
+
+void test('revoked financial grants remove dashboard and onboarding shortcuts', async (context) => {
+    const ui = await dashboard(
+        context,
+        orientation(),
+        false,
+        ['announcements.read'],
+        ['properties.read'],
+    );
+    const destinations = ui.all('Link').map((link) => link.props.href.url);
+    for (const path of [
+        '/officer/payments',
+        '/officer/unpaid',
+        '/officer/charges',
+    ])
+        assert.equal(destinations.includes(path), false);
+    const checklist = ui.all('OnboardingChecklist')[0].props.items;
+    assert.equal(
+        checklist.some(
+            (item) =>
+                item.key === 'officer-payments' ||
+                item.key === 'officer-charges',
+        ),
+        false,
+    );
+    assert.ok(destinations.includes('/officer/properties'));
 });
