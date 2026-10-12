@@ -1,13 +1,14 @@
-import type { AnnouncementPermission } from './auth';
+import type { StaffPermission } from './auth';
 
 export type RolePermission = {
     name: string;
     label: string;
-    grants: AnnouncementPermission[];
+    grants: StaffPermission[];
 };
 
 export type PermissionOption = {
-    value: AnnouncementPermission;
+    value: StaffPermission;
     label: string;
     description: string;
+    feature: string;
 };

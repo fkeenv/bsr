@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\AnnouncementPermission;
 use App\Enums\OnboardingExperience;
 use App\Enums\OnboardingStep;
-use App\Support\PlatformAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -14,9 +12,11 @@ class RecordOnboardingStepRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null
-            && ($this->input('step') !== OnboardingStep::OfficerAnnouncements->value
-                || PlatformAccess::allowsAnnouncement($this->user(), AnnouncementPermission::Read));
+        $user = $this->user();
+        $input = $this->input('step');
+        $step = is_string($input) ? OnboardingStep::tryFrom($input) : null;
+
+        return $user !== null && ($step === null || $step->isAvailableTo($user));
     }
 
     /**

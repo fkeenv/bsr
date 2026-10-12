@@ -86,6 +86,12 @@ test('roster lists Properties and filters by Block', function () {
 
 test('roster searches across owner name Block and Lot', function () {
     $user = User::factory()->officer()->create();
+    $user->memberships()->sole()->property->update([
+        'block' => '50',
+        'lot' => '50',
+        'street_address' => null,
+        'recorded_owner_name' => 'Chris Green',
+    ]);
     Property::factory()->create([
         'block' => '1',
         'lot' => '1',

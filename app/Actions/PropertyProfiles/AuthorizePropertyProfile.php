@@ -2,15 +2,18 @@
 
 namespace App\Actions\PropertyProfiles;
 
+use App\Enums\HouseholdPermission;
 use App\Models\Property;
 use App\Models\User;
+use App\Support\PlatformAccess;
 use Illuminate\Auth\Access\Response;
 
 class AuthorizePropertyProfile
 {
-    public function handle(User $user, Property $property): Response
+    public function handle(User $user, Property $property, bool $editing = false): Response
     {
-        if ($user->canAccessOfficerSurfaces()) {
+        if (PlatformAccess::allowsStaff($user, HouseholdPermission::ProfilesEdit)
+            || (! $editing && PlatformAccess::allowsStaff($user, HouseholdPermission::ProfilesRead))) {
             return Response::allow();
         }
 

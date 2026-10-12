@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+
 import { Form, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import PropertyController from '@/actions/App/Http/Controllers/Officer/PropertyController';
@@ -14,6 +16,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { edit as editProfile } from '@/routes/property-profile';
 import { edit as editProperty } from '@/routes/officer/properties';
 import type { Property } from '@/types/property';
 
@@ -21,6 +24,7 @@ defineProps<{
     property: Property;
 }>();
 
+const { allows } = useStaffPermissions();
 const open = ref(false);
 const processing = ref(false);
 
@@ -41,7 +45,21 @@ function closeDialog(): void {
 
 <template>
     <div class="flex justify-end">
-        <Dialog :open="open" @update:open="updateOpen">
+        <Dialog
+            v-if="
+                allows('properties.edit') ||
+                allows(
+                    property.is_active
+                        ? 'properties.deactivate'
+                        : 'properties.reactivate',
+                ) ||
+                (allows('properties.delete') && !property.has_been_charged) ||
+                allows('properties.profiles.read') ||
+                allows('properties.profiles.edit')
+            "
+            :open="open"
+            @update:open="updateOpen"
+        >
             <DialogTrigger as-child>
                 <Button variant="outline" size="sm">Manage</Button>
             </DialogTrigger>
@@ -54,14 +72,42 @@ function closeDialog(): void {
                 </DialogHeader>
 
                 <div class="space-y-6">
-                    <Button v-if="processing" variant="outline" disabled>
+                    <Button
+                        v-if="allows('properties.edit') && processing"
+                        variant="outline"
+                        disabled
+                    >
                         Edit
                     </Button>
-                    <Button v-else variant="outline" as-child>
+                    <Button
+                        v-if="allows('properties.edit') && !processing"
+                        variant="outline"
+                        as-child
+                    >
                         <Link :href="editProperty(property)">Edit</Link>
                     </Button>
 
+                    <Button
+                        v-if="
+                            !processing &&
+                            (allows('properties.profiles.read') ||
+                                allows('properties.profiles.edit'))
+                        "
+                        variant="outline"
+                        as-child
+                    >
+                        <Link :href="editProfile(property.id)"
+                            >Shared profile</Link
+                        >
+                    </Button>
                     <Form
+                        v-if="
+                            allows(
+                                property.is_active
+                                    ? 'properties.deactivate'
+                                    : 'properties.reactivate',
+                            )
+                        "
                         v-bind="
                             property.is_active
                                 ? PropertyController.deactivate.form(property)
@@ -99,7 +145,10 @@ function closeDialog(): void {
                     </Form>
 
                     <Form
-                        v-if="!property.has_been_charged"
+                        v-if="
+                            allows('properties.delete') &&
+                            !property.has_been_charged
+                        "
                         v-bind="PropertyController.destroy.form(property)"
                         class="space-y-2"
                         :options="{ preserveScroll: true }"

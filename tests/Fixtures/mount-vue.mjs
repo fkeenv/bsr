@@ -7,6 +7,7 @@ import { compileScript, parse, registerTS } from '@vue/compiler-sfc';
 import ts from 'typescript';
 import * as vue from 'vue';
 import * as vueUse from '@vueuse/core';
+import { defaultHouseholdGrants } from './staff-permissions.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const require = createRequire(import.meta.url);
@@ -21,7 +22,16 @@ export function mount(
 ) {
     const page = vue.reactive({
         url,
-        props: { auth: { capabilities, announcementPermissions: [] } },
+        props: {
+            auth: {
+                user: null,
+                capabilities,
+                announcementPermissions: [],
+                staffPermissions: capabilities?.canAccessOfficer
+                    ? [...defaultHouseholdGrants]
+                    : [],
+            },
+        },
     });
     const visits = [];
     const cache = new Map();
@@ -58,15 +68,19 @@ export function mount(
         const module = { exports: {} };
         cache.set(filename, module.exports);
         const importModule = (specifier) => {
-            if (specifier in adapters) return adapters[specifier];
+            if (specifier in adapters && specifier !== '@inertiajs/vue3')
+                return adapters[specifier];
             if (specifier.endsWith('.css')) return {};
             if (specifier === 'vue') return vue;
             if (specifier === '@vueuse/core') return vueUse;
             if (specifier === '@inertiajs/vue3')
                 return {
                     usePage: () => page,
+                    setLayoutProps: () => {},
+                    Head: primitive('Head'),
                     Link: primitive('Link'),
                     router: { get: (...args) => visits.push(args) },
+                    ...adapters[specifier],
                 };
             if (specifier === '@lucide/vue' || specifier === 'reka-ui')
                 return primitives;

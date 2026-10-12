@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+import { dashboard } from '@/routes';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PropertyImportController from '@/actions/App/Http/Controllers/Officer/PropertyImportController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -16,30 +18,22 @@ type Props = {
 
 defineProps<Props>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Properties',
-                href: propertiesIndex(),
-            },
-            {
-                title: 'Import CSV',
-                href: importProperties(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('properties.read')
+            ? [{ title: 'Properties', href: propertiesIndex() }]
+            : []),
+        { title: 'Import', href: importProperties() },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Import Property CSV" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head title="Import Property CSV" />
         <Heading
             title="Import Property CSV"
             description="Go-live upsert: creates unknown Block+Lot rows, updates address and recorded owner, applies Opening Balance only on create, and never deletes."
@@ -50,6 +44,7 @@ defineOptions({
                 Required columns: block, lot. Optional: street_address,
                 recorded_owner_name, opening_balance.
                 <a
+                    v-if="allows('properties.import-sample')"
                     class="text-foreground underline underline-offset-4"
                     :href="PropertyImportController.sample.url()"
                 >
@@ -81,14 +76,28 @@ defineOptions({
                         Import roster
                     </Button>
                     <Button variant="ghost" as-child>
-                        <Link :href="propertiesIndex()">Cancel</Link>
+                        <Link
+                            :href="
+                                allows('properties.read')
+                                    ? propertiesIndex()
+                                    : dashboard()
+                            "
+                            >Cancel</Link
+                        >
                     </Button>
                 </div>
             </Form>
 
             <div v-else class="flex gap-2">
                 <Button variant="ghost" as-child>
-                    <Link :href="propertiesIndex()">Back to roster</Link>
+                    <Link
+                        :href="
+                            allows('properties.read')
+                                ? propertiesIndex()
+                                : dashboard()
+                        "
+                        >Back to roster</Link
+                    >
                 </Button>
             </div>
         </div>

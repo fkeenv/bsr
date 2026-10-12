@@ -4,8 +4,8 @@ namespace App\Actions\PlatformRoles;
 
 use App\Data\PermissionOptionData;
 use App\Data\RolePermissionData;
-use App\Enums\AnnouncementPermission;
 use App\Enums\PlatformRole;
+use App\Support\StaffPermissionCatalog;
 use Spatie\Permission\Models\Role;
 
 class ListRolePermissionsPage
@@ -18,7 +18,7 @@ class ListRolePermissionsPage
                 ->whereIn('name', [PlatformRole::Officer->value, PlatformRole::Administrator->value])
                 ->with('permissions')->orderBy('name')->get()
                 ->map(fn (Role $role): RolePermissionData => RolePermissionData::fromModel($role))->all()),
-            'permissions' => array_map(PermissionOptionData::fromPermission(...), AnnouncementPermission::cases()),
+            'permissions' => array_map(PermissionOptionData::fromPermission(...), StaffPermissionCatalog::permissions()),
         ];
     }
 }

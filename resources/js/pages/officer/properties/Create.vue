@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+import { dashboard } from '@/routes';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PropertyController from '@/actions/App/Http/Controllers/Officer/PropertyController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -12,30 +14,22 @@ import {
     index as propertiesIndex,
 } from '@/routes/officer/properties';
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Properties',
-                href: propertiesIndex(),
-            },
-            {
-                title: 'Add',
-                href: createProperty(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('properties.read')
+            ? [{ title: 'Properties', href: propertiesIndex() }]
+            : []),
+        { title: 'Create', href: createProperty() },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Add Property" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head title="Add Property" />
         <Heading
             title="Add Property"
             description="Create a roster house identified by Block and Lot."
@@ -89,7 +83,14 @@ defineOptions({
                     Create Property
                 </Button>
                 <Button variant="ghost" as-child>
-                    <Link :href="propertiesIndex()">Cancel</Link>
+                    <Link
+                        :href="
+                            allows('properties.read')
+                                ? propertiesIndex()
+                                : dashboard()
+                        "
+                        >Cancel</Link
+                    >
                 </Button>
             </div>
         </Form>

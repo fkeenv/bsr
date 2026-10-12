@@ -336,11 +336,13 @@ function roleEditor(context) {
             permissions: [
                 {
                     value: 'announcements.read',
+                    feature: 'Announcements',
                     label: 'Read staff Announcements',
                     description: 'Read the staff workspace.',
                 },
                 {
                     value: 'announcements.create',
+                    feature: 'Announcements',
                     label: 'Create drafts',
                     description: 'Write new drafts.',
                 },

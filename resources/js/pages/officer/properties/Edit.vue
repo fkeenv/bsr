@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { edit as editProperty } from '@/routes/officer/properties';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+import { dashboard } from '@/routes';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PropertyController from '@/actions/App/Http/Controllers/Officer/PropertyController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -17,30 +20,22 @@ type Props = {
 
 const { property } = defineProps<Props>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Properties',
-                href: propertiesIndex(),
-            },
-            {
-                title: 'Edit',
-                href: propertiesIndex(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('properties.read')
+            ? [{ title: 'Properties', href: propertiesIndex() }]
+            : []),
+        { title: 'Edit', href: editProperty(property) },
+    ],
 });
 </script>
 
 <template>
-    <Head :title="`Edit Block ${property.block} Lot ${property.lot}`" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head :title="`Edit Block ${property.block} Lot ${property.lot}`" />
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
@@ -48,7 +43,14 @@ defineOptions({
                 :title="`Block ${property.block} · Lot ${property.lot}`"
                 description="Block and Lot are immutable. Update address, recorded owner, and Opening Balance when still editable."
             />
-            <Button variant="outline" as-child>
+            <Button
+                v-if="
+                    allows('properties.profiles.read') ||
+                    allows('properties.profiles.edit')
+                "
+                variant="outline"
+                as-child
+            >
                 <Link :href="editPropertyProfile(property.id)">
                     Shared profile
                 </Link>
@@ -105,7 +107,14 @@ defineOptions({
                     Save changes
                 </Button>
                 <Button variant="ghost" as-child>
-                    <Link :href="propertiesIndex()">Cancel</Link>
+                    <Link
+                        :href="
+                            allows('properties.read')
+                                ? propertiesIndex()
+                                : dashboard()
+                        "
+                        >Cancel</Link
+                    >
                 </Button>
             </div>
         </Form>

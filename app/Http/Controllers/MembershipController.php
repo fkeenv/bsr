@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Memberships\EndMembership;
+use App\Enums\HouseholdPermission;
 use App\Http\Requests\EndMembershipRequest;
 use App\Models\Membership;
 use App\Support\FlashToast;
+use App\Support\PlatformAccess;
 use Illuminate\Http\RedirectResponse;
 
 class MembershipController extends Controller
@@ -26,7 +28,7 @@ class MembershipController extends Controller
 
         FlashToast::success('Membership ended.');
 
-        if ($actor->canAccessOfficerSurfaces() && $actor->id !== $membership->user_id) {
+        if (PlatformAccess::allowsStaff($actor, HouseholdPermission::MembershipsRead) && $actor->id !== $membership->user_id) {
             return redirect()->route('officer.memberships.index');
         }
 

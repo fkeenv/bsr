@@ -6,6 +6,7 @@ use App\Actions\PropertyInvitations\CreatePropertyInvitation;
 use App\Actions\PropertyInvitations\GetPropertyInvitationCredentials;
 use App\Actions\PropertyInvitations\ListOfficerPropertyInvitationsPage;
 use App\Actions\PropertyInvitations\RevokePropertyInvitation;
+use App\Enums\HouseholdPermission;
 use App\Enums\MembershipRole;
 use App\Http\Requests\Officer\RevokePropertyInvitationRequest;
 use App\Http\Requests\Officer\SharePropertyInvitationRequest;
@@ -13,6 +14,8 @@ use App\Http\Requests\Officer\StorePropertyInvitationRequest;
 use App\Models\Property;
 use App\Models\PropertyInvitation;
 use App\Support\FlashToast;
+use App\Support\PlatformAccess;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +33,13 @@ class PropertyInvitationController
             createdTo: $request->string('created_to')->toString() ?: null,
             expiresFrom: $request->string('expires_from')->toString() ?: null,
             expiresTo: $request->string('expires_to')->toString() ?: null,
+            includeProperties: PlatformAccess::allowsStaff($request->user(), HouseholdPermission::InvitationsCreate),
         ));
+    }
+
+    public function create(ListOfficerPropertyInvitationsPage $listPage): Response
+    {
+        return Inertia::render('officer/property-invitations/Index', $listPage->handle(includeInvitations: false));
     }
 
     public function store(
@@ -83,11 +92,11 @@ class PropertyInvitationController
         } catch (InvalidArgumentException $exception) {
             FlashToast::error($exception->getMessage());
 
-            return redirect()->route('officer.property-invitations.index');
+            return StaffWorkspace::redirect($request->user(), HouseholdPermission::InvitationsRead, 'officer.property-invitations.index');
         }
 
         FlashToast::success('Invitation revoked.');
 
-        return redirect()->route('officer.property-invitations.index');
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::InvitationsRead, 'officer.property-invitations.index');
     }
 }

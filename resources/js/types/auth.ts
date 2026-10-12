@@ -28,10 +28,35 @@ export type AnnouncementPermission =
     | 'announcements.pin'
     | 'announcements.attachments';
 
+export type HouseholdPermission =
+    | 'properties.read'
+    | 'properties.create'
+    | 'properties.edit'
+    | 'properties.delete'
+    | 'properties.deactivate'
+    | 'properties.reactivate'
+    | 'properties.import'
+    | 'properties.import-sample'
+    | 'properties.profiles.read'
+    | 'properties.profiles.edit'
+    | 'invitations.read'
+    | 'invitations.create'
+    | 'invitations.revoke'
+    | 'invitations.credentials'
+    | 'memberships.read'
+    | 'memberships.change-role'
+    | 'memberships.end'
+    | 'suspends.read'
+    | 'suspends.create'
+    | 'suspends.edit';
+
+export type StaffPermission = AnnouncementPermission | HouseholdPermission;
+
 export type Auth = {
     user: User | null;
     capabilities: AuthCapabilities | null;
     announcementPermissions: AnnouncementPermission[];
+    staffPermissions: StaffPermission[];
 };
 
 export type TwoFactorConfigContent = {

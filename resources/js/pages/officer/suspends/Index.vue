@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+
 import { Head, Link } from '@inertiajs/vue3';
 import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
@@ -16,6 +18,8 @@ type Props = {
 };
 
 defineProps<Props>();
+
+const { allows } = useStaffPermissions();
 
 defineOptions({
     layout: {
@@ -45,7 +49,7 @@ defineOptions({
                 description="Pause one Fee Type on one Property for Billing Periods."
             />
 
-            <Button as-child>
+            <Button v-if="allows('suspends.create')" as-child>
                 <Link :href="createSuspend()">Add Suspend</Link>
             </Button>
         </div>

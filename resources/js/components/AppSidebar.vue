@@ -32,6 +32,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import { useNavigationSection } from '@/composables/useNavigationSection';
 import { dashboard, home, joinProperty } from '@/routes';
@@ -51,6 +52,10 @@ import { index as feeTypesIndex } from '@/routes/officer/fee-types';
 import { edit as levySettingsEdit } from '@/routes/officer/levy-settings';
 import { index as membershipsIndex } from '@/routes/officer/memberships';
 import { index as paymentsIndex } from '@/routes/officer/payments';
+import { create as createInvitation } from '@/routes/officer/property-invitations';
+import { create as createProperty } from '@/routes/officer/properties';
+import { create as importProperties } from '@/routes/officer/properties/import';
+import { create as createSuspend } from '@/routes/officer/suspends';
 import { index as propertyInvitationsIndex } from '@/routes/officer/property-invitations';
 import { index as propertiesIndex } from '@/routes/officer/properties';
 import { index as suspendsIndex } from '@/routes/officer/suspends';
@@ -68,6 +73,7 @@ import type { NavItem, NavSection } from '@/types';
 
 const page = usePage();
 const { allows } = useAnnouncementPermissions();
+const { allows: allowsStaff } = useStaffPermissions();
 const { currentUrl, isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
 const capabilities = computed(() => page.props.auth.capabilities);
 const announcementsPageListed = computed(
@@ -188,42 +194,95 @@ const officerNavItems = computed((): NavItem[] => {
             href: unpaidIndex(),
             icon: Receipt,
         },
-        {
-            title: 'Memberships',
-            group: 'people',
-            href: membershipsIndex(),
-            icon: Users,
-        },
-        {
-            title: 'Invitations',
-            group: 'people',
-            href: propertyInvitationsIndex(),
-            icon: MailPlus,
-        },
+        ...(allowsStaff('memberships.read')
+            ? [
+                  {
+                      title: 'Memberships',
+                      group: 'people' as const,
+                      href: membershipsIndex(),
+                      icon: Users,
+                  },
+              ]
+            : []),
+        ...(allowsStaff('invitations.read')
+            ? [
+                  {
+                      title: 'Invitations',
+                      group: 'people' as const,
+                      href: propertyInvitationsIndex(),
+                      icon: MailPlus,
+                  },
+              ]
+            : allowsStaff('invitations.create')
+              ? [
+                    {
+                        title: 'New Invitation',
+                        group: 'people' as const,
+                        href: createInvitation(),
+                        icon: MailPlus,
+                    },
+                ]
+              : []),
         {
             title: 'Payments',
             group: 'collection',
             href: paymentsIndex(),
             icon: Receipt,
         },
-        {
-            title: 'Properties',
-            group: 'people',
-            href: propertiesIndex(),
-            icon: ClipboardList,
-        },
+        ...(allowsStaff('properties.read')
+            ? [
+                  {
+                      title: 'Properties',
+                      group: 'people' as const,
+                      href: propertiesIndex(),
+                      icon: ClipboardList,
+                  },
+              ]
+            : allowsStaff('properties.create')
+              ? [
+                    {
+                        title: 'New Property',
+                        group: 'people' as const,
+                        href: createProperty(),
+                        icon: ClipboardList,
+                    },
+                ]
+              : allowsStaff('properties.import') ||
+                  allowsStaff('properties.import-sample')
+                ? [
+                      {
+                          title: 'Property import',
+                          group: 'people' as const,
+                          href: importProperties(),
+                          icon: ClipboardList,
+                      },
+                  ]
+                : []),
         {
             title: 'Fee Types',
             group: 'settings',
             href: feeTypesIndex(),
             icon: Receipt,
         },
-        {
-            title: 'Suspends',
-            group: 'people',
-            href: suspendsIndex(),
-            icon: Pause,
-        },
+        ...(allowsStaff('suspends.read')
+            ? [
+                  {
+                      title: 'Suspends',
+                      group: 'people' as const,
+                      href: suspendsIndex(),
+                      icon: Pause,
+                  },
+              ]
+            : allowsStaff('suspends.create')
+              ? [
+                    {
+                        title: 'New Suspend',
+                        group: 'people' as const,
+                        href: createSuspend(),
+                        icon: ClipboardList,
+                    },
+                ]
+              : []),
         {
             title: 'Charges',
             group: 'collection',

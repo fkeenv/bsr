@@ -89,7 +89,7 @@ function setup(context, overrides = {}) {
     const ui = mount(
         'resources/js/pages/officer/properties/PropertyRowActions.vue',
         { property: { ...property, ...overrides } },
-        null,
+        { canAccessOfficer: true },
         '/officer/properties',
         {
             '@inertiajs/vue3': { Form, Link: primitive('Link') },
@@ -189,7 +189,10 @@ void test('charged Property retains Edit and lifecycle action but cannot Delete'
     await ui.open();
     assert.equal(ui.all('form').length, 1);
     assert.doesNotMatch(ui.text(), /Delete/);
-    assert.equal(ui.all('Link').length, 1);
+    assert.deepEqual(
+        ui.all('Link').map((link) => link.props.href.url),
+        ['/officer/properties/7/edit', '/properties/7/profile'],
+    );
 });
 
 for (const operation of [0, 1]) {
@@ -214,6 +217,7 @@ for (const operation of [0, 1]) {
                 .every((node) => node.props.disabled),
         );
         assert.match(ui.text(), /Deactivating|Deleting/);
+        assert.equal(ui.all('Link').length, 0);
         assert.equal(
             ui.all('Button').find((node) => text(node).trim() === 'Cancel')
                 .props.disabled,

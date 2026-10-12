@@ -8,9 +8,11 @@ use App\Actions\Properties\DeactivateProperty;
 use App\Actions\Properties\DestroyProperty;
 use App\Actions\Properties\UpdateProperty;
 use App\Data\PropertyData;
+use App\Enums\HouseholdPermission;
 use App\Http\Requests\Officer\StorePropertyRequest;
 use App\Http\Requests\Officer\UpdatePropertyRequest;
 use App\Models\Property;
+use App\Support\StaffWorkspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -92,8 +94,7 @@ class PropertyController
     {
         $createProperty->handle($request->validated());
 
-        return redirect()
-            ->route('officer.properties.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
             ->with('success', 'Property created.');
     }
 
@@ -111,41 +112,36 @@ class PropertyController
     ): RedirectResponse {
         $updateProperty->handle($property, $request->validated());
 
-        return redirect()
-            ->route('officer.properties.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
             ->with('success', 'Property updated.');
     }
 
-    public function destroy(Property $property, DestroyProperty $destroyProperty): RedirectResponse
+    public function destroy(Property $property, DestroyProperty $destroyProperty, Request $request): RedirectResponse
     {
         try {
             $destroyProperty->handle($property);
         } catch (InvalidArgumentException $exception) {
-            return redirect()
-                ->route('officer.properties.index')
+            return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
                 ->with('error', $exception->getMessage());
         }
 
-        return redirect()
-            ->route('officer.properties.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
             ->with('success', 'Property deleted.');
     }
 
-    public function deactivate(Property $property, DeactivateProperty $deactivateProperty): RedirectResponse
+    public function deactivate(Property $property, DeactivateProperty $deactivateProperty, Request $request): RedirectResponse
     {
         $deactivateProperty->handle($property);
 
-        return redirect()
-            ->route('officer.properties.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
             ->with('success', 'Property marked inactive.');
     }
 
-    public function activate(Property $property, ActivateProperty $activateProperty): RedirectResponse
+    public function activate(Property $property, ActivateProperty $activateProperty, Request $request): RedirectResponse
     {
         $activateProperty->handle($property);
 
-        return redirect()
-            ->route('officer.properties.index')
+        return StaffWorkspace::redirect($request->user(), HouseholdPermission::PropertiesRead, 'officer.properties.index')
             ->with('success', 'Property reactivated.');
     }
 }

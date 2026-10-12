@@ -10,6 +10,10 @@ use Spatie\Permission\Models\Role;
 test('Super Admin can replace a staff roles Announcement grants and audit the change', function () {
     $actor = User::factory()->superAdmin()->create();
     $role = Role::findByName('officer', 'web');
+    $role->syncPermissions([
+        'announcements.read', 'announcements.create', 'announcements.edit',
+        'announcements.publish', 'announcements.pin', 'announcements.attachments',
+    ]);
 
     $this->actingAs($actor)
         ->put(route('super-admin.role-permissions.update', $role), [
@@ -31,7 +35,7 @@ test('Super Admin can replace a staff roles Announcement grants and audit the ch
         ->and($audit->created_at)->not->toBeNull();
 });
 
-test('the editor lists only editable roles and enforced Announcement permissions', function () {
+test('the editor lists only editable roles and enforced staff permissions', function () {
     $this->actingAs(User::factory()->superAdmin()->create())
         ->get(route('super-admin.role-permissions.index'))
         ->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
@@ -39,7 +43,7 @@ test('the editor lists only editable roles and enforced Announcement permissions
         ->has('roles', 2)
         ->where('roles.0.name', 'administrator')
         ->where('roles.1.name', 'officer')
-        ->has('permissions', 6)
+        ->has('permissions', 26)
         ->where('permissions.0.value', 'announcements.read'));
 });
 
@@ -68,7 +72,7 @@ test('non Super Admin accounts cannot open or update the permission editor', fun
     $this->actingAs($user)->get(route('super-admin.role-permissions.index'))->assertForbidden();
     $this->put(route('super-admin.role-permissions.update', $role), ['grants' => []])->assertForbidden();
     $this->assertDatabaseCount('role_permission_changes', 0);
-    expect($role->fresh()->permissions)->toHaveCount(6);
+    expect($role->fresh()->permissions)->toHaveCount(25);
 })->with(['officer', 'administrator', 'member']);
 
 test('protected roles and unknown or duplicate permissions cannot be changed', function () {
@@ -83,7 +87,7 @@ test('protected roles and unknown or duplicate permissions cannot be changed', f
     $this->put(route('super-admin.role-permissions.update', $role), ['grants' => ['announcements.read', 'announcements.read']])
         ->assertSessionHasErrors('grants.0');
     $this->assertDatabaseCount('role_permission_changes', 0);
-    expect($role->fresh()->permissions)->toHaveCount(6);
+    expect($role->fresh()->permissions)->toHaveCount(25);
 });
 
 test('saving unchanged permissions does not add an audit change', function () {

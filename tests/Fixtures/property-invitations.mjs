@@ -90,7 +90,7 @@ void test('Officer creation submits the selected Property, resets the picker, an
     const ui = mount(
         'resources/js/pages/officer/property-invitations/Index.vue',
         { properties, invitations: [], table: { dateRanges: [], values: {} } },
-        null,
+        { canAccessOfficer: true },
         '/officer/property-invitations',
         {
             '@inertiajs/vue3': {
@@ -261,7 +261,7 @@ void test('Manage retrieves credentials on demand, supports manual copying, and 
                 sharing_unavailable_reason: null,
             },
         },
-        null,
+        { canAccessOfficer: true },
         '/officer/property-invitations',
         {
             '@inertiajs/vue3': { Form, useHttp },

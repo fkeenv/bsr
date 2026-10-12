@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Enums\AnnouncementPermission;
 use App\Enums\PlatformRole;
+use App\Support\StaffPermissionCatalog;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -15,7 +15,7 @@ class RoleSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach (AnnouncementPermission::cases() as $permission) {
+        foreach (StaffPermissionCatalog::permissions() as $permission) {
             Permission::findOrCreate($permission->value, 'web');
         }
 

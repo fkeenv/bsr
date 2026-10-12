@@ -30,8 +30,10 @@ class ListOfficerPropertyInvitationsPage
         ?string $createdTo = null,
         ?string $expiresFrom = null,
         ?string $expiresTo = null,
+        bool $includeInvitations = true,
+        bool $includeProperties = true,
     ): array {
-        $invitations = array_values(
+        $invitations = $includeInvitations ? array_values(
             PropertyInvitation::query()
                 ->with(['property', 'creator'])
                 ->when(
@@ -66,9 +68,9 @@ class ListOfficerPropertyInvitationsPage
                 ->get()
                 ->map(fn (PropertyInvitation $invitation): PropertyInvitationData => PropertyInvitationData::fromModel($invitation))
                 ->all(),
-        );
+        ) : [];
 
-        $properties = array_values(
+        $properties = $includeProperties ? array_values(
             Property::query()
                 ->active()
                 ->orderBy('block')
@@ -76,7 +78,7 @@ class ListOfficerPropertyInvitationsPage
                 ->get()
                 ->map(fn (Property $property): PropertyInvitationPropertyOptionData => PropertyInvitationPropertyOptionData::fromModel($property))
                 ->all(),
-        );
+        ) : [];
 
         return [
             'invitations' => $invitations,

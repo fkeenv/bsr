@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { useStaffPermissions } from '@/composables/useStaffPermissions';
+import { dashboard } from '@/routes';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import SuspendController from '@/actions/App/Http/Controllers/Officer/SuspendController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -21,30 +23,22 @@ type Props = {
 
 defineProps<Props>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Officer',
-                href: officerDashboard(),
-            },
-            {
-                title: 'Suspends',
-                href: suspendsIndex(),
-            },
-            {
-                title: 'Add',
-                href: createSuspend(),
-            },
-        ],
-    },
+const { allows } = useStaffPermissions();
+
+setLayoutProps({
+    breadcrumbs: [
+        { title: 'Dashboard', href: dashboard() },
+        ...(allows('suspends.read')
+            ? [{ title: 'Suspends', href: suspendsIndex() }]
+            : []),
+        { title: 'Create', href: createSuspend() },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Add Suspend" />
-
     <div class="flex flex-col space-y-6 p-4">
+        <Head title="Add Suspend" />
         <Heading
             title="Add Suspend"
             description="Omit a Fee Type from a Property’s Charges for covered Billing Periods."
@@ -144,7 +138,14 @@ defineOptions({
                     Create Suspend
                 </Button>
                 <Button variant="ghost" as-child>
-                    <Link :href="suspendsIndex()">Cancel</Link>
+                    <Link
+                        :href="
+                            allows('suspends.read')
+                                ? suspendsIndex()
+                                : dashboard()
+                        "
+                        >Cancel</Link
+                    >
                 </Button>
             </div>
         </Form>

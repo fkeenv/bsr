@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import { update } from '@/actions/App/Http/Controllers/SuperAdmin/RolePermissionController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -14,13 +14,25 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import type { AnnouncementPermission } from '@/types';
+import type { StaffPermission } from '@/types';
 import type { PermissionOption, RolePermission } from '@/types/role-permission';
 
 const props = defineProps<{
     role: RolePermission;
     permissions: PermissionOption[];
 }>();
+const groups = computed(() => {
+    const grouped = new Map<string, PermissionOption[]>();
+    for (const permission of props.permissions) {
+        const options = grouped.get(permission.feature) ?? [];
+        options.push(permission);
+        grouped.set(permission.feature, options);
+    }
+    return [...grouped.entries()].map(([feature, permissions]) => ({
+        feature,
+        permissions,
+    }));
+});
 const form = useForm({ grants: [...props.role.grants] });
 watch(
     () => props.role.grants,
@@ -36,7 +48,7 @@ watch(
     },
 );
 function toggle(
-    permission: AnnouncementPermission,
+    permission: StaffPermission,
     checked: boolean | 'indeterminate',
 ) {
     form.grants =
@@ -54,21 +66,23 @@ function save() {
         <CardHeader>
             <CardTitle>{{ role.label }}</CardTitle>
             <CardDescription
-                >Announcements · {{ form.grants.length }} of
+                >Staff access · {{ form.grants.length }} of
                 {{ permissions.length }} permissions enabled</CardDescription
             >
         </CardHeader>
         <form @submit.prevent="save">
             <CardContent class="space-y-4">
                 <fieldset
+                    v-for="group in groups"
+                    :key="group.feature"
                     :disabled="form.processing"
                     class="grid gap-3 sm:grid-cols-2"
                 >
-                    <legend class="sr-only">
-                        {{ role.label }} Announcement permissions
+                    <legend class="mb-3 text-base font-medium">
+                        {{ group.feature }}
                     </legend>
                     <div
-                        v-for="permission in permissions"
+                        v-for="permission in group.permissions"
                         :key="permission.value"
                         class="flex items-start gap-3 rounded-lg border p-4"
                     >
