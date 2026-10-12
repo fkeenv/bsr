@@ -21,8 +21,8 @@ enum AnnouncementVisibility: string
     {
         return match ($this) {
             self::Public => 'Anyone can read this Announcement once published, including guests.',
-            self::Private => 'Only live Membership holders and Officers can read this Announcement.',
-            self::Hidden => 'Only Officers can read this Announcement. It stays hidden from everyone else.',
+            self::Private => 'Only live Membership holders and staff with Announcement reading permission can read this Announcement.',
+            self::Hidden => 'Only staff with Announcement reading permission can read this Announcement. It stays hidden from everyone else.',
         };
     }
 

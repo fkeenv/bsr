@@ -10,17 +10,6 @@ enum PlatformRole: string
     case Member = 'member';
     case User = 'user';
 
-    public function level(): int
-    {
-        return match ($this) {
-            self::SuperAdmin => 0,
-            self::Administrator => 1,
-            self::Officer => 2,
-            self::Member => 3,
-            self::User => 4,
-        };
-    }
-
     /**
      * @return list<self>
      */

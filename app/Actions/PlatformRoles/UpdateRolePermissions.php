@@ -2,10 +2,10 @@
 
 namespace App\Actions\PlatformRoles;
 
-use App\Enums\PlatformRole;
 use App\Models\RolePermissionChange;
 use App\Models\User;
 use App\Support\StaffPermissionCatalog;
+use App\Support\StaffRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -23,9 +23,7 @@ class UpdateRolePermissions
 
         DB::transaction(function () use ($actor, $role, $grants): void {
             $lockedRole = Role::query()->lockForUpdate()->findOrFail($role->id);
-            abort_unless($lockedRole->guard_name === 'web' && in_array($lockedRole->name, [
-                PlatformRole::Officer->value, PlatformRole::Administrator->value,
-            ], true), 403);
+            abort_unless(StaffRoles::isEditable($lockedRole), 403);
 
             $previousGrants = $lockedRole->permissions()->pluck('name')->sort()->values()->all();
             $newGrants = array_values(array_unique([
@@ -44,6 +42,9 @@ class UpdateRolePermissions
                 'actor_user_id' => $actor->id,
                 'role_id' => $lockedRole->id,
                 'role_name' => $lockedRole->name,
+                'action' => 'permissions',
+                'previous_role_name' => $lockedRole->name,
+                'new_role_name' => $lockedRole->name,
                 'previous_grants' => $previousGrants,
                 'new_grants' => $newGrants,
             ]);

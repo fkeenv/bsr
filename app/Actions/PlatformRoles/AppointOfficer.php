@@ -17,8 +17,9 @@ class AppointOfficer
         private InitializeOnboarding $initializeOnboarding,
     ) {}
 
-    public function handle(User $user): User
+    public function handle(User $user, User $actor): User
     {
+        abort_unless($actor->canAccessAdministratorSurfaces() && ($actor->isSuperAdmin() || $actor->id !== $user->id), 403);
         if ($user->isSuperAdmin()) {
             throw ValidationException::withMessages([
                 'user_id' => 'Super Admin accounts cannot be appointed as Officer.',

@@ -11,11 +11,14 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $actor_user_id
  * @property int|null $role_id
+ * @property string $action
+ * @property string|null $previous_role_name
+ * @property string|null $new_role_name
  * @property string $role_name
  * @property list<string> $previous_grants
  * @property list<string> $new_grants
  */
-#[Fillable(['actor_user_id', 'role_id', 'role_name', 'previous_grants', 'new_grants'])]
+#[Fillable(['actor_user_id', 'role_id', 'role_name', 'previous_grants', 'new_grants', 'action', 'previous_role_name', 'new_role_name'])]
 class RolePermissionChange extends Model
 {
     /** @use HasFactory<RolePermissionChangeFactory> */

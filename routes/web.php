@@ -271,6 +271,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':super-admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
         Route::get('role-permissions', [RolePermissionController::class, 'index'])->name('role-permissions.index');
+        Route::post('role-permissions', [RolePermissionController::class, 'store'])->name('role-permissions.store');
+        Route::patch('role-permissions/{role:name}/name', [RolePermissionController::class, 'rename'])->name('role-permissions.rename');
+        Route::delete('role-permissions/{role:name}', [RolePermissionController::class, 'destroy'])->name('role-permissions.destroy');
         Route::put('role-permissions/{role:name}', [RolePermissionController::class, 'update'])->name('role-permissions.update');
         Route::get('/', SuperAdminDashboardController::class)->name('dashboard');
 

@@ -499,3 +499,22 @@ void test('single and batch print buttons follow distinct grants on the unpaid s
         assert.equal(list.all('a').length, batch);
     }
 });
+
+void test('Officer appointment controls reject Administrator self changes and retain protected authority', (context) => {
+    for (const [capabilities, candidateId, forms] of [
+        [{ canAccessAdministrator: true }, 1, 0],
+        [{ canAccessAdministrator: true }, 2, 1],
+        [{ isSuperAdmin: true, canAccessAdministrator: true }, 2, 1],
+        [{ canAccessOfficer: true }, 2, 0],
+    ]) {
+        const ui = setup(
+            context,
+            'resources/js/pages/administrator/officers/OfficerRowActions.vue',
+            { candidate: { id: candidateId, name: 'Ana', is_officer: false } },
+            [],
+            capabilities,
+        );
+        assert.equal(ui.all('Form').length, forms);
+        assert.equal(ui.all('Dialog').length, forms);
+    }
+});

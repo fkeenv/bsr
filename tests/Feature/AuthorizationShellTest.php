@@ -73,7 +73,7 @@ test('dashboard shares authorization capability flags for a plain User Account',
         );
 });
 
-test('dashboard navigation capabilities preserve staff inheritance and Membership access', function (PlatformRole $role, bool $officerAccess, bool $administratorAccess) {
+test('dashboard capabilities identify eligible staff roles and Membership access', function (PlatformRole $role, bool $officerAccess, bool $administratorAccess) {
     $user = User::factory()->member()->create();
     $user->assignPlatformRole($role);
 

@@ -5,8 +5,9 @@ use App\Enums\PlatformRole;
 use App\Models\User;
 use App\Support\PlatformAccess;
 
-test('workspace access preserves the existing role hierarchy', function (PlatformRole $role, array $expected) {
-    $user = User::factory()->create();
+test('workspace access follows protected role identity and Owner eligibility', function (PlatformRole $role, array $expected) {
+    $user = in_array($role, [PlatformRole::Officer, PlatformRole::Administrator], true)
+        ? User::factory()->member()->create() : User::factory()->create();
     $user->assignPlatformRole($role);
 
     expect(PlatformAccess::canAccessSurface($user, 'super-admin'))->toBe($expected[0])
@@ -44,9 +45,7 @@ test('accounts without recognized roles have no workspace access', function () {
     $user = User::factory()->create();
     $user->syncRoles([]);
 
-    expect($user->platformLevel())->toBeNull()
-        ->and($user->hasPlatformLevelAtMost(4))->toBeFalse()
-        ->and(PlatformAccess::canAccessSurface($user, 'officer'))->toBeFalse();
+    expect(PlatformAccess::canAccessSurface($user, 'officer'))->toBeFalse();
 });
 
 test('staff eligibility requires ownership while Super Admin is exempt', function (string $account, bool $expected) {
