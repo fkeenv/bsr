@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
 import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
 import {
@@ -41,6 +43,14 @@ defineOptions({
             title="Officers"
             description="Appoint Officers from users with a live owner Membership."
         />
+
+        <p class="text-muted-foreground text-sm">
+            Manage staff assignments and revocations in the User Account
+            directory.
+        </p>
+        <Button as-child variant="outline" class="self-start"
+            ><Link :href="userAccountsIndex()">Open User Accounts</Link></Button
+        >
 
         <section class="space-y-3">
             <h2 class="text-sm font-medium">Current Officers</h2>

@@ -38,7 +38,7 @@ import { useNavigationSection } from '@/composables/useNavigationSection';
 import { dashboard, home, joinProperty } from '@/routes';
 import { edit as propertyProfile } from '@/routes/property-profile';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
-import { index as officersIndex } from '@/routes/administrator/officers';
+import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
 import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import {
@@ -72,7 +72,6 @@ import {
 } from '@/routes/statement-of-account';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
 import { index as rolePermissionsIndex } from '@/routes/super-admin/role-permissions';
-import { index as administratorsIndex } from '@/routes/super-admin/administrators';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
 import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
 import type { NavItem, NavSection } from '@/types';
@@ -144,8 +143,8 @@ const superAdminNavItems = computed((): NavItem[] => {
             icon: KeyRound,
         },
         {
-            title: 'Administrators',
-            href: administratorsIndex(),
+            title: 'User Accounts',
+            href: userAccountsIndex(),
             icon: ShieldCheck,
         },
         {
@@ -375,11 +374,15 @@ const administratorNavItems = computed((): NavItem[] => {
             href: administratorDashboard(),
             icon: ShieldCheck,
         },
-        {
-            title: 'Officers',
-            href: officersIndex(),
-            icon: Users,
-        },
+        ...(!capabilities.value?.isSuperAdmin
+            ? [
+                  {
+                      title: 'User Accounts',
+                      href: userAccountsIndex(),
+                      icon: Users,
+                  },
+              ]
+            : []),
     ];
 });
 

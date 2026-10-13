@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Administrator\DashboardController as AdministratorDashboardController;
 use App\Http\Controllers\Administrator\OfficerController as AdministratorOfficerController;
+use App\Http\Controllers\Administrator\UserAccountController;
 use App\Http\Controllers\AnnouncementAttachmentController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
@@ -262,6 +263,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':administrator'])->prefix('administrator')->name('administrator.')->group(function () {
         Route::get('/', AdministratorDashboardController::class)->name('dashboard');
+
+        Route::post('user-accounts/{user}/staff-roles/{role:name}', [UserAccountController::class, 'assignRole'])->name('user-accounts.staff-roles.store');
+        Route::delete('user-accounts/{user}/staff-roles/{role:name}', [UserAccountController::class, 'revokeRole'])->name('user-accounts.staff-roles.destroy');
+        Route::post('user-accounts/{user}/memberships/{membership}/end', [UserAccountController::class, 'endMembership'])->name('user-accounts.memberships.end');
+        Route::put('user-accounts/{user}/memberships/{membership}/role', [UserAccountController::class, 'changeMembershipRole'])->name('user-accounts.memberships.update-role');
+        Route::get('user-accounts', [UserAccountController::class, 'index'])->name('user-accounts.index');
+        Route::get('user-accounts/{user}', [UserAccountController::class, 'show'])->name('user-accounts.show');
 
         Route::get('officers', [AdministratorOfficerController::class, 'index'])
             ->name('officers.index');
