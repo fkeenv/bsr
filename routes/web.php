@@ -31,6 +31,7 @@ use App\Http\Controllers\PropertyInvitationCodeController;
 use App\Http\Controllers\PropertyInvitationRedemptionController;
 use App\Http\Controllers\PropertyProfileController;
 use App\Http\Controllers\StatementOfAccountController;
+use App\Http\Controllers\SuperAdmin\AccessHistoryController;
 use App\Http\Controllers\SuperAdmin\AdministratorController as SuperAdminAdministratorController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\LegalDocumentController as SuperAdminLegalDocumentController;
@@ -278,6 +279,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware([EnsureRoleSurfaceAccess::class.':super-admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('access-history', [AccessHistoryController::class, 'index'])->name('access-history.index');
         Route::get('role-permissions', [RolePermissionController::class, 'index'])->name('role-permissions.index');
         Route::post('role-permissions', [RolePermissionController::class, 'store'])->name('role-permissions.store');
         Route::patch('role-permissions/{role:name}/name', [RolePermissionController::class, 'rename'])->name('role-permissions.rename');

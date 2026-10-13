@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { index as accessHistoryIndex } from '@/routes/super-admin/access-history';
 import Heading from '@/components/Heading.vue';
 import { Accordion } from '@/components/ui/accordion';
 import RolePermissionEditor from './RolePermissionEditor.vue';
@@ -29,7 +31,13 @@ defineOptions({
                 title="Roles & permissions"
                 description="Choose the actions each staff role can perform. Changes apply on the next request, including current sessions."
             />
-            <StaffRoleDialog />
+            <div class="flex gap-2">
+                <Button as-child variant="outline"
+                    ><Link :href="accessHistoryIndex()"
+                        >View history</Link
+                    ></Button
+                ><StaffRoleDialog />
+            </div>
         </div>
         <p class="text-muted-foreground text-sm leading-6">
             Super Admin always has full access. Member and User access is
