@@ -111,10 +111,11 @@ function clearRange(): void {
     <Popover v-model:open="open">
         <PopoverTrigger as-child>
             <Button
+                type="button"
                 variant="outline"
                 :class="
                     cn(
-                        'w-[16.5rem] justify-start text-left font-normal',
+                        'w-[16.5rem] max-w-full justify-start text-left font-normal',
                         !hasValue && 'text-muted-foreground',
                     )
                 "
