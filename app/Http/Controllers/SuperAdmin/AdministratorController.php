@@ -29,7 +29,7 @@ class AdministratorController
         AppointAdministrator $appointAdministrator,
     ): RedirectResponse {
         $user = User::query()->findOrFail((int) $request->validated('user_id'));
-        $appointAdministrator->handle($user);
+        $appointAdministrator->handle($user, $request->user());
 
         FlashToast::success('Administrator appointed.');
 

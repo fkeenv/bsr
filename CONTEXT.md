@@ -14,7 +14,7 @@ set without losing history.
 _Avoid_: Unit, household, home, address
 
 **Membership**:
-A person's tie to a Property in a role — owner or resident — that an Officer may change. It is
+A person's tie to a Property in a role — owner or resident — that authorized staff may change. It is
 what redeeming a Property Invitation creates, it keeps a reference to that invitation and to the
 Terms of Service and Privacy Policy versions accepted, it can be ended, a person holds at most one
 live on a given Property and may hold live ones on several Properties, and it is not a platform
@@ -22,10 +22,10 @@ role.
 _Avoid_: Member, member record, subscription
 
 **Property Invitation**:
-A single-use link or code issued for one Property and one role — owner or resident. An Officer may
+A single-use link or code issued for one Property and one role — owner or resident. Staff with Invitation creation permission may
 issue either role; a User Account with a live owner Membership may invite residents to that same
 active Property. Owners may view and revoke their own unused invitations for Properties they
-currently own, and Officers retain oversight of all invitations. It expires after 30 days and may
+currently own, and staff manage Invitations according to their permissions. It expires after 30 days and may
 be revoked while unused. A signed-in User Account that accepts the current
 Terms of Service and Privacy Policy redeems it into a live Membership straight away, with no
 Officer approval step. Following one from **Join a Property** is how a person gains a Membership.
@@ -33,7 +33,7 @@ _Avoid_: Membership Application (retired before launch), registration form, onbo
 
 **Property Profile**:
 The shared household details of one Property — Household Members, Emergency Contacts, and Vehicles —
-kept by its live Memberships and by Officers. It belongs to the Property, not to any one Membership.
+kept by its live Membership holders and authorized staff. It belongs to the Property, not to any one Membership.
 _Avoid_: Application details, member profile
 
 **Household Member**:
@@ -65,33 +65,44 @@ account without yet holding a Membership. It holds that person's email and mobil
 _Avoid_: Member, user (when the Membership is what's meant)
 
 **Super Admin**:
-A seeded User Account with the highest platform role (level 0). It does not require a
-Membership. Super Admin accounts are created by seed or ops, not in the application.
+A seeded User Account with protected full association access, including role definitions and
+Administrator appointments. It does not require a Membership and is created by seed or operations.
 _Avoid_: Superuser, Administrator (when the seeded account is meant)
 
 **Administrator**:
-A person with the Administrator platform role (level 1). They may appoint Officers and
-inherit Officer powers. Appointment requires a live owner Membership.
+A person holding the protected Administrator staff role who may appoint Officers for other
+eligible Owners. A live Owner Membership is required; action permissions are independently assigned.
 _Avoid_: Super Admin, Superuser, admin (when Officer is meant)
 
 **Officer**:
-A person with the Officer platform role (level 2), acting on the association's behalf —
-posting Announcements, levying dues, issuing Property Invitations, and recording
-Payments. Appointment requires a live owner Membership.
-_Avoid_: Admin, staff
+A person holding the Officer staff role, acting on the association’s behalf through its assigned
+permissions. A live Owner Membership is required.
+_Avoid_: Admin, staff (when this specific role is meant)
+
+**Staff role**:
+An association role—Officer, Administrator, or a custom role—with independently assigned action
+permissions. An eligible Owner may hold several staff roles and use their combined permissions.
+_Avoid_: Membership role, access level
+
+**Custom staff role**:
+An association role defined by Super Admin for a particular set of duties. It requires a live Owner
+Membership and does not confer protected Administrator or Super Admin authority.
+
+**Permission**:
+An independently enabled association action for a staff role, such as reading Payments or issuing
+Invitations. Enabling one action does not enable another.
 
 **Member** (platform role):
-The Spatie role (level 3) synced from holding at least one live Membership. It is not
-hand-assigned and is not the same thing as a Membership.
+The account state derived from holding at least one live Membership. It is not hand-assigned and
+is not the same thing as a Property Membership.
 _Avoid_: Member record, membership role (when Membership owner/resident is meant)
 
 **User** (platform role):
-The Spatie role (level 4) given to every User Account on registration. It is the base
-of the role stack.
+The automatic base account state given to every User Account on registration.
 _Avoid_: Member (when only a login is meant)
 
 **Announcement**:
-A notice an Officer authors on behalf of the association. It is a draft until published; published
+A notice authorized staff author on behalf of the association. It is a draft until published; published
 Announcements form a single feed every live Membership can read.
 _Avoid_: Post, news, bulletin
 

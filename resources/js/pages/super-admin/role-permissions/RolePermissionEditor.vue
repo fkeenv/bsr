@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 import { update } from '@/actions/App/Http/Controllers/SuperAdmin/RolePermissionController';
 import InputError from '@/components/InputError.vue';
+import StaffRoleDialog from './StaffRoleDialog.vue';
 import {
     Accordion,
     AccordionContent,
@@ -47,7 +48,7 @@ const categories: {
         value: 'destructive',
         label: 'Destructive',
         description:
-            'Delete records, deactivate Properties, revoke Invitations, or end Memberships.',
+            'Delete or deactivate records, revoke Invitations, end Memberships, or reject and void Payments.',
         badgeClass: 'border-destructive/20 bg-destructive/10 text-destructive',
     },
 ];
@@ -118,7 +119,12 @@ function save() {
                     </span>
                 </AccordionTrigger>
             </div>
-            <div class="flex shrink-0 gap-2 pb-4 sm:pb-0">
+            <div class="flex shrink-0 flex-wrap gap-2 pb-4 sm:pb-0">
+                <StaffRoleDialog
+                    v-if="role.is_builtin === false"
+                    :role="role"
+                    :disabled="form.processing"
+                />
                 <Button
                     type="button"
                     variant="outline"

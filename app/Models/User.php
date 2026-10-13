@@ -58,16 +58,6 @@ class User extends Authenticatable
         return PlatformAccess::canAccessSurface($this, 'super-admin');
     }
 
-    public function platformLevel(): ?int
-    {
-        return PlatformAccess::platformLevel($this);
-    }
-
-    public function hasPlatformLevelAtMost(int $level): bool
-    {
-        return PlatformAccess::hasPlatformLevelAtMost($this, $level);
-    }
-
     public function canAccessOfficerSurfaces(): bool
     {
         return PlatformAccess::canAccessSurface($this, 'officer');

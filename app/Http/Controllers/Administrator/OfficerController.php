@@ -29,7 +29,7 @@ class OfficerController
         AppointOfficer $appointOfficer,
     ): RedirectResponse {
         $user = User::query()->findOrFail((int) $request->validated('user_id'));
-        $appointOfficer->handle($user);
+        $appointOfficer->handle($user, $request->user());
 
         FlashToast::success('Officer appointed.');
 

@@ -1,5 +1,7 @@
 # Platform roles are Spatie levels with strict inheritance
 
+**Status**: superseded by [ADR-0018](0018-independent-staff-role-permissions.md).
+
 Access is five Spatie roles ordered by level (lower number = more power). A higher
 level may do everything a lower level may do. **Member** is synced from a live
 Membership and is never hand-assigned. Officer and Administrator are immediate Spatie
@@ -36,13 +38,8 @@ Membership revokes `member`, `officer`, and `administrator`. Super Admin or
 Administrator appoint Officers; Member is never appointed by hand. Optional titles
 and avatars belong on a future `user_profiles` table, not on roles.
 
-## Planned permission migration
+## Completed permission migration
 
-[Issue #88](https://github.com/fkeenv/bsr/issues/88) concentrates these access
-decisions without changing the hierarchy or Membership lifecycle rules. The
-subsequent permission slices, starting with
-[issue #89](https://github.com/fkeenv/bsr/issues/89) and completing the cutover in
-[issue #92](https://github.com/fkeenv/bsr/issues/92), will replace strict staff
-inheritance with independent role permissions. That replacement is not active
-in the prefactor; this decision remains the current access model until the
-corresponding areas migrate.
+Issues #89–#92 replace this hierarchy with independent staff role grants under
+[ADR-0018](0018-independent-staff-role-permissions.md). The protected roles,
+Owner eligibility, and Membership-derived Member state remain; numeric inheritance does not.

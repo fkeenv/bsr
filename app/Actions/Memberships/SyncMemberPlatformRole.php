@@ -5,15 +5,12 @@ namespace App\Actions\Memberships;
 use App\Enums\PlatformRole;
 use App\Models\User;
 use App\Support\PlatformAccess;
+use App\Support\StaffRoles;
 
 class SyncMemberPlatformRole
 {
     public function handle(User $user): void
     {
-        if ($user->isSuperAdmin()) {
-            return;
-        }
-
         $hasLiveMembership = $user->hasLiveMembership();
 
         if ($hasLiveMembership) {
@@ -33,12 +30,9 @@ class SyncMemberPlatformRole
             return;
         }
 
-        if ($user->hasRole(PlatformRole::Officer)) {
-            $user->removeRole(PlatformRole::Officer);
-        }
-
-        if ($user->hasRole(PlatformRole::Administrator)) {
-            $user->removeRole(PlatformRole::Administrator);
+        $roles = StaffRoles::query()->whereIn('id', $user->roles()->select('roles.id')->getQuery())->get();
+        foreach ($roles as $role) {
+            $user->removeRole($role);
         }
     }
 }

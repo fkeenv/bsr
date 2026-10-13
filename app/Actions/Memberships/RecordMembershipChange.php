@@ -2,10 +2,10 @@
 
 namespace App\Actions\Memberships;
 
-use App\Enums\PlatformRole;
 use App\Models\Membership;
 use App\Models\MembershipChange;
 use App\Models\User;
+use App\Support\StaffRoles;
 
 /**
  * @phpstan-type MembershipSnapshot array{
@@ -32,9 +32,7 @@ class RecordMembershipChange
             'ended_at' => $membership->ended_at?->toIso8601String(),
             'ended_by_user_id' => $membership->ended_by_user_id,
             'end_reason' => $membership->end_reason,
-            'staff_roles' => array_values($membership->user->roles()
-                ->where('guard_name', 'web')
-                ->whereIn('name', [PlatformRole::Officer->value, PlatformRole::Administrator->value])
+            'staff_roles' => array_values(StaffRoles::query()->whereIn('id', $membership->user->roles()->select('roles.id')->getQuery())
                 ->orderBy('name')->pluck('name')->all()),
         ];
     }

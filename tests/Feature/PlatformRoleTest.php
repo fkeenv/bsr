@@ -7,7 +7,6 @@ test('plain User Account receives the user platform role', function () {
     $user = User::factory()->create();
 
     expect($user->hasRole(PlatformRole::User))->toBeTrue()
-        ->and($user->platformLevel())->toBe(PlatformRole::User->level())
         ->and($user->canAccessOfficerSurfaces())->toBeFalse()
         ->and($user->canAccessAdministratorSurfaces())->toBeFalse();
 });
@@ -28,7 +27,7 @@ test('Officer can reach Officer surfaces and not Administrator surfaces', functi
         ->assertForbidden();
 });
 
-test('Administrator inherits Officer surfaces', function () {
+test('eligible Administrators can open the staff workspace without inherited action grants', function () {
     $user = User::factory()->administrator()->create();
 
     expect($user->canAccessOfficerSurfaces())->toBeTrue()

@@ -319,7 +319,17 @@ void test('pin permission does not display an empty action menu for a draft', (c
     assert.equal(ui.all('DropdownMenu').length, 0);
 });
 
-function roleEditor(context) {
+function roleEditor(
+    context,
+    role = {
+        id: 3,
+        name: 'officer',
+        label: 'Officer',
+        is_builtin: true,
+        assigned_count: 0,
+        grants: ['announcements.read'],
+    },
+) {
     const requests = [];
     context.mock.method(router, 'put', (url, data, callbacks) => {
         callbacks.onStart?.({});
@@ -328,11 +338,7 @@ function roleEditor(context) {
     const ui = mount(
         'resources/js/pages/super-admin/role-permissions/RolePermissionEditor.vue',
         {
-            role: {
-                name: 'officer',
-                label: 'Officer',
-                grants: ['announcements.read'],
-            },
+            role,
             permissions: [
                 {
                     value: 'announcements.read',
@@ -500,4 +506,122 @@ void test('reading, editing and uploading expose their own page controls', (cont
                 '<p>Rich text</p>',
             );
     }
+});
+
+void test('role renaming retains unsaved grants and saves against the new name', async (context) => {
+    const ui = roleEditor(context, {
+        id: 6,
+        name: 'records-reader',
+        label: 'Records Reader',
+        is_builtin: false,
+        assigned_count: 1,
+        grants: ['announcements.read'],
+    });
+    ui.all('Switch')
+        .find(
+            (control) =>
+                control.props.id === 'records-reader-announcements.create',
+        )
+        .props['onUpdate:modelValue'](true);
+    await vue.nextTick();
+    ui.values.role = {
+        ...ui.values.role,
+        name: 'records-editor',
+        label: 'Records Editor',
+    };
+    await vue.nextTick();
+    assert.equal(
+        ui
+            .all('Switch')
+            .find(
+                (control) =>
+                    control.props.id === 'records-editor-announcements.create',
+            ).props['model-value'],
+        true,
+    );
+    ui.all('form')[0].props.onSubmit({ preventDefault() {} });
+    await vue.nextTick();
+    assert.equal(
+        ui.requests[0].url,
+        '/super-admin/role-permissions/records-editor',
+    );
+    assert.deepEqual(ui.requests[0].data.grants, [
+        'announcements.read',
+        'announcements.create',
+    ]);
+});
+
+void test('staff role dialogs create empty roles and prevent deleting assigned roles', async (context) => {
+    const requests = [];
+    context.mock.method(router, 'post', (url, data, callbacks) => {
+        requests.push({ url, data, callbacks });
+        callbacks.onStart?.({});
+    });
+    context.mock.method(router, 'patch', (url, data, callbacks) => {
+        requests.push({ url, data, callbacks });
+        callbacks.onStart?.({});
+    });
+    context.mock.method(router, 'delete', (url, callbacks) => {
+        requests.push({ url, data: callbacks.data, callbacks });
+        callbacks.onStart?.({});
+    });
+    const create = mount(
+        'resources/js/pages/super-admin/role-permissions/StaffRoleDialog.vue',
+        {},
+        null,
+        '',
+        { '@inertiajs/vue3': { useForm } },
+    );
+    context.after(create.unmount);
+    create.all('Input')[0].props['onUpdate:modelValue']('Community Treasurer');
+    create.all('form')[0].props.onSubmit({ preventDefault() {} });
+    await vue.nextTick();
+    assert.equal(requests[0].url, '/super-admin/role-permissions');
+    assert.deepEqual(requests[0].data, { name: 'Community Treasurer' });
+    const manage = mount(
+        'resources/js/pages/super-admin/role-permissions/StaffRoleDialog.vue',
+        {
+            role: {
+                id: 6,
+                name: 'treasurer',
+                label: 'Treasurer',
+                grants: [],
+                is_builtin: false,
+                assigned_count: 1,
+            },
+        },
+        null,
+        '',
+        { '@inertiajs/vue3': { useForm } },
+    );
+    context.after(manage.unmount);
+    const deleteButton = () =>
+        manage
+            .all('Button')
+            .find((button) => button.props.variant === 'destructive');
+    assert.equal(deleteButton().props.disabled, true);
+    deleteButton().props.onClick();
+    assert.equal(requests.length, 1);
+    manage.all('Input')[0].props['onUpdate:modelValue']('Records Manager');
+    manage.all('form')[0].props.onSubmit({ preventDefault() {} });
+    await vue.nextTick();
+    assert.equal(
+        requests[1].url,
+        '/super-admin/role-permissions/treasurer/name',
+    );
+    assert.deepEqual(requests[1].data, { name: 'Records Manager' });
+    requests[1].callbacks.onError({ name: 'This role name is already used.' });
+    requests[1].callbacks.onFinish({});
+    await vue.nextTick();
+    assert.equal(
+        manage.all('InputError')[0].props.message,
+        'This role name is already used.',
+    );
+    manage.values.role = { ...manage.values.role, assigned_count: 0 };
+    await vue.nextTick();
+    assert.equal(deleteButton().props.disabled, false);
+    deleteButton().props.onClick();
+    await vue.nextTick();
+    assert.equal(requests[2].url, '/super-admin/role-permissions/treasurer');
+    assert.equal(deleteButton().props.disabled, true);
 });

@@ -26,10 +26,8 @@ class PlatformAccess
             return [];
         }
 
-        return array_values(Role::query()
+        return array_values(StaffRoles::query()
             ->whereIn('id', $user->roles()->select('roles.id')->getQuery())
-            ->where('guard_name', 'web')
-            ->whereIn('name', [PlatformRole::Officer->value, PlatformRole::Administrator->value])
             ->with('permissions')
             ->get()
             ->flatMap(fn (Role $role) => $role->permissions->pluck('name'))
@@ -74,28 +72,16 @@ class PlatformAccess
             return false;
         }
 
+        $isSuperAdmin = $user->roles()->where('guard_name', 'web')->where('name', PlatformRole::SuperAdmin->value)->exists();
+
         return match ($surface) {
-            'super-admin' => $user->hasRole(PlatformRole::SuperAdmin),
-            'administrator' => self::hasPlatformLevelAtMost($user, PlatformRole::Administrator->level()),
-            'officer' => self::hasPlatformLevelAtMost($user, PlatformRole::Officer->level()),
+            'super-admin' => $isSuperAdmin,
+            'administrator' => $isSuperAdmin || ($user->hasLiveOwnerMembership()
+                && $user->roles()->where('guard_name', 'web')->where('name', PlatformRole::Administrator->value)->exists()),
+            'officer' => $isSuperAdmin || ($user->hasLiveOwnerMembership()
+                && StaffRoles::query()->whereIn('id', $user->roles()->select('roles.id')->getQuery())->exists()),
             default => false,
         };
-    }
-
-    public static function platformLevel(User $user): ?int
-    {
-        $levels = collect(PlatformRole::ordered())
-            ->filter(fn (PlatformRole $role): bool => $user->hasRole($role))
-            ->map(fn (PlatformRole $role): int => $role->level());
-
-        return $levels->min();
-    }
-
-    public static function hasPlatformLevelAtMost(User $user, int $level): bool
-    {
-        $current = self::platformLevel($user);
-
-        return $current !== null && $current <= $level;
     }
 
     public static function canHoldStaffRole(User $user): bool
