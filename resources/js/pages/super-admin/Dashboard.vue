@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
+import { index as accessHistoryIndex } from '@/routes/super-admin/access-history';
 import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
 import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
@@ -28,6 +29,13 @@ defineOptions({
         />
 
         <ul class="max-w-lg space-y-3 text-sm">
+            <li>
+                <Link
+                    :href="accessHistoryIndex()"
+                    class="font-medium underline-offset-4 hover:underline"
+                    >Access history</Link
+                >
+            </li>
             <li>
                 <Link
                     :href="userAccountsIndex()"

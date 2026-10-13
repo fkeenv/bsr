@@ -155,6 +155,10 @@ void test('staff navigation preserves permitted workspaces and restricts the Use
         ])
             assert.ok(ui.destinations().includes(path), path);
         assert.equal(
+            ui.destinations().includes('/super-admin/access-history'),
+            capabilities.isSuperAdmin,
+        );
+        assert.equal(
             ui.destinations().includes('/administrator/user-accounts'),
             capabilities.canAccessAdministrator,
         );

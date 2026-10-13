@@ -71,6 +71,7 @@ import {
     show as statementOfAccountShow,
 } from '@/routes/statement-of-account';
 import { dashboard as superAdminDashboard } from '@/routes/super-admin';
+import { index as accessHistoryIndex } from '@/routes/super-admin/access-history';
 import { index as rolePermissionsIndex } from '@/routes/super-admin/role-permissions';
 import { edit as editPrivacyPolicy } from '@/routes/super-admin/privacy-policy';
 import { edit as editTermsOfService } from '@/routes/super-admin/terms-of-service';
@@ -146,6 +147,11 @@ const superAdminNavItems = computed((): NavItem[] => {
             title: 'User Accounts',
             href: userAccountsIndex(),
             icon: ShieldCheck,
+        },
+        {
+            title: 'Access history',
+            href: accessHistoryIndex(),
+            icon: BookOpen,
         },
         {
             title: 'Roles & permissions',
