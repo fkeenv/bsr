@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
+import PublicAnnouncementPreviews from '@/components/PublicAnnouncementPreviews.vue';
+import type { AnnouncementPreview } from '@/types/announcement-preview';
 import { ArrowRight } from '@lucide/vue';
 import { dashboard, home, login, register } from '@/routes';
 
-defineProps<{ canRegister: boolean }>();
+defineProps<{
+    canRegister: boolean;
+    announcementPreviews: AnnouncementPreview[];
+}>();
 
 const page = usePage();
 
@@ -261,6 +266,8 @@ const essentials = [
                     </div>
                 </div>
             </section>
+
+            <PublicAnnouncementPreviews :previews="announcementPreviews" />
 
             <section
                 id="joining"

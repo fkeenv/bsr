@@ -19,6 +19,7 @@ export function mount(
     capabilities = null,
     url = '/dashboard',
     adapters = {},
+    realComponents = [],
 ) {
     const page = vue.reactive({
         url,
@@ -106,7 +107,11 @@ export function mount(
                         state: vue.ref('expanded'),
                     }),
                 };
-            if (specifier.startsWith('@/components/ui/')) return primitives;
+            if (
+                specifier.startsWith('@/components/ui/') &&
+                !realComponents.includes(specifier)
+            )
+                return primitives;
             if (specifier === '@/components/data-table/features')
                 return { dataTableFeatures: {} };
             if (specifier === '@tanstack/vue-table')
@@ -121,7 +126,8 @@ export function mount(
                 };
             if (
                 specifier.endsWith('.vue') &&
-                !specifier.endsWith('/NavMain.vue')
+                !specifier.endsWith('/NavMain.vue') &&
+                !realComponents.includes(specifier)
             )
                 return {
                     default: primitive(
@@ -197,5 +203,13 @@ export function mount(
     ];
     const text = (node = tree) =>
         [node.text ?? '', ...(node.children ?? []).map(text)].join(' ');
-    return { page, visits, values, all, text, unmount: () => app.unmount() };
+    return {
+        page,
+        visits,
+        values,
+        all,
+        text,
+        layout: component.layout,
+        unmount: () => app.unmount(),
+    };
 }
