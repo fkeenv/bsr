@@ -203,5 +203,13 @@ export function mount(
     ];
     const text = (node = tree) =>
         [node.text ?? '', ...(node.children ?? []).map(text)].join(' ');
-    return { page, visits, values, all, text, unmount: () => app.unmount() };
+    return {
+        page,
+        visits,
+        values,
+        all,
+        text,
+        layout: component.layout,
+        unmount: () => app.unmount(),
+    };
 }
