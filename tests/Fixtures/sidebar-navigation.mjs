@@ -120,7 +120,7 @@ void test('guests and non-members can reach the feed filtered for public notices
     }
 });
 
-void test('platform roles inherit all permitted workspaces and association settings', (context) => {
+void test('staff navigation preserves permitted workspaces and restricts the User Account directory to Administrators', (context) => {
     for (const capabilities of [
         { ...member, isMembershipHolder: false, canAccessOfficer: true },
         {
@@ -155,12 +155,15 @@ void test('platform roles inherit all permitted workspaces and association setti
         ])
             assert.ok(ui.destinations().includes(path), path);
         assert.equal(
-            ui.destinations().includes('/administrator/officers'),
+            ui.destinations().includes('/administrator/user-accounts'),
             capabilities.canAccessAdministrator,
         );
         assert.equal(
-            ui.destinations().includes('/super-admin/administrators'),
-            capabilities.isSuperAdmin,
+            ui
+                .destinations()
+                .filter((path) => path === '/administrator/user-accounts')
+                .length,
+            capabilities.canAccessAdministrator ? 1 : 0,
         );
         assert.equal(
             ui.destinations().includes('/join-property'),

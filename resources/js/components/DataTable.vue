@@ -2,9 +2,9 @@
 import { router } from '@inertiajs/vue3';
 import type { ColumnDef, RowData } from '@tanstack/vue-table';
 import { FlexRender, useTable } from '@tanstack/vue-table';
-import { useDebounceFn } from '@vueuse/core';
-import { ChevronDown } from '@lucide/vue';
-import { computed, ref, watch } from 'vue';
+import { ChevronDown, Search, SlidersHorizontal } from '@lucide/vue';
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
+import { onClickOutside, useDebounceFn } from '@vueuse/core';
 import {
     dataTableFeatures,
     type DataTableFeatures,
@@ -73,6 +73,28 @@ const props = withDefaults(defineProps<Props>(), {
 
 const search = ref(props.values.search ?? '');
 const data = computed(() => props.data);
+const toolbarId = useId();
+const activeTool = ref<'search' | 'filters' | null>(null);
+const searchOpen = computed(() => activeTool.value === 'search');
+const filtersOpen = computed(() => activeTool.value === 'filters');
+
+function toggleTool(tool: 'search' | 'filters'): void {
+    activeTool.value = activeTool.value === tool ? null : tool;
+}
+const searchRegion = ref<HTMLElement | null>(null);
+let searchVersion = 0;
+onBeforeUnmount(() => {
+    searchVersion++;
+});
+onClickOutside(searchRegion, () => {
+    if (activeTool.value === 'search') activeTool.value = null;
+});
+watch(searchOpen, async (open) => {
+    if (open) {
+        await nextTick();
+        searchRegion.value?.querySelector?.('input')?.focus();
+    }
+});
 
 watch(
     () => props.values.search,
@@ -113,10 +135,10 @@ const searchPlaceholder = computed(() => {
     );
 
     if (labels.length === 0) {
-        return 'Filter…';
+        return 'Search…';
     }
 
-    return `Filter ${labels.join(', ')}…`;
+    return `Search ${labels.join(', ')}…`;
 });
 
 const filterLabel = (key: string): string =>
@@ -128,34 +150,26 @@ const dateRangeLabel = (key: string): string =>
 const dateFromKey = (key: string): string => `${key}_from`;
 const dateToKey = (key: string): string => `${key}_to`;
 
-const hasToolbar = computed(
-    () =>
-        showSearch.value ||
-        props.filters.length > 0 ||
-        props.dateRanges.length > 0,
+const showFilters = computed(
+    () => props.filters.length > 0 || props.dateRanges.length > 0,
 );
-
-const hasActiveFilters = computed(() => {
-    if ((props.values.search ?? '') !== '') {
-        return true;
-    }
-
-    if (props.filters.some((key) => (props.values[key] ?? '') !== '')) {
-        return true;
-    }
-
-    return props.dateRanges.some((key) => {
-        return (
-            (props.values[dateFromKey(key)] ?? '') !== '' ||
-            (props.values[dateToKey(key)] ?? '') !== ''
-        );
-    });
-});
+const hasToolbar = computed(() => showSearch.value || showFilters.value);
+const activeFilterCount = computed(
+    () =>
+        props.filters.filter((key) => Boolean(props.values[key])).length +
+        props.dateRanges.filter(
+            (key) =>
+                props.values[dateFromKey(key)] || props.values[dateToKey(key)],
+        ).length,
+);
+const hasActiveFilters = computed(
+    () => Boolean(props.values.search) || activeFilterCount.value > 0,
+);
 
 function currentQuery(): Record<string, string> {
     const query: Record<string, string> = {};
 
-    if (search.value.trim() !== '') {
+    if (search.value.trim()) {
         query.search = search.value.trim();
     }
 
@@ -191,21 +205,21 @@ function visit(query: Record<string, string>): void {
     });
 }
 
-const visitSearch = useDebounceFn(() => {
+function applySearch(): void {
+    searchVersion++;
     const query = currentQuery();
-
-    if (search.value.trim() === '') {
-        delete query.search;
-    } else {
-        query.search = search.value.trim();
-    }
-
+    if (search.value.trim()) query.search = search.value.trim();
+    else delete query.search;
     visit(query);
+}
+
+const visitSearch = useDebounceFn((version: number) => {
+    if (version === searchVersion) applySearch();
 }, 300);
 
 function onSearchUpdate(value: string | number): void {
     search.value = String(value);
-    visitSearch();
+    visitSearch(++searchVersion);
 }
 
 function filterModelValue(key: string): string {
@@ -213,14 +227,10 @@ function filterModelValue(key: string): string {
 }
 
 function onFilterChange(key: string, value: string): void {
+    searchVersion++;
     const query = currentQuery();
-
-    if (value === ALL_VALUE) {
-        delete query[key];
-    } else {
-        query[key] = value;
-    }
-
+    if (value === ALL_VALUE) delete query[key];
+    else query[key] = value;
     visit(query);
 }
 
@@ -229,26 +239,17 @@ function onDateRangeChange(
     from: string | null,
     to: string | null,
 ): void {
+    searchVersion++;
     const query = currentQuery();
-    const fromKey = dateFromKey(rangeKey);
-    const toKeyName = dateToKey(rangeKey);
-
-    if (from) {
-        query[fromKey] = from;
-    } else {
-        delete query[fromKey];
-    }
-
-    if (to) {
-        query[toKeyName] = to;
-    } else {
-        delete query[toKeyName];
-    }
-
+    if (from) query[dateFromKey(rangeKey)] = from;
+    else delete query[dateFromKey(rangeKey)];
+    if (to) query[dateToKey(rangeKey)] = to;
+    else delete query[dateToKey(rangeKey)];
     visit(query);
 }
 
 function clearFilters(): void {
+    searchVersion++;
     search.value = '';
     visit({});
 }
@@ -256,93 +257,155 @@ function clearFilters(): void {
 
 <template>
     <div>
-        <div
-            v-if="hasToolbar"
-            class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center"
-        >
-            <Input
-                v-if="showSearch"
-                type="search"
-                :model-value="search"
-                :placeholder="searchPlaceholder"
-                class="max-w-sm"
-                @update:model-value="onSearchUpdate"
-            />
-
-            <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
-                <DataTableDateRangeFilter
-                    v-for="rangeKey in dateRanges"
-                    :key="rangeKey"
-                    :label="dateRangeLabel(rangeKey)"
-                    :from="values[dateFromKey(rangeKey)]"
-                    :to="values[dateToKey(rangeKey)]"
-                    @change="
-                        (from, to) => onDateRangeChange(rangeKey, from, to)
-                    "
-                />
-
-                <Select
-                    v-for="filterKey in filters"
-                    :key="filterKey"
-                    :model-value="filterModelValue(filterKey)"
-                    @update:model-value="
-                        (value) =>
-                            onFilterChange(
-                                filterKey,
-                                typeof value === 'string' ? value : ALL_VALUE,
-                            )
-                    "
-                >
-                    <SelectTrigger class="w-[10rem]">
-                        <SelectValue :placeholder="filterLabel(filterKey)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem :value="ALL_VALUE">
-                            All {{ filterLabel(filterKey).toLowerCase() }}
-                        </SelectItem>
-                        <SelectItem
-                            v-for="option in filterOptions[filterKey] ?? []"
-                            :key="option.value"
-                            :value="option.value"
+        <div v-if="hasToolbar" class="flex flex-wrap items-center gap-2 py-4">
+            <div
+                ref="searchRegion"
+                class="flex min-w-0 flex-1 items-start gap-2"
+            >
+                <div class="flex shrink-0 items-center gap-2">
+                    <Button
+                        v-if="showSearch"
+                        type="button"
+                        size="icon"
+                        :variant="values.search ? 'secondary' : 'outline'"
+                        aria-label="Search table"
+                        title="Search"
+                        :aria-expanded="searchOpen"
+                        :aria-controls="`${toolbarId}-search`"
+                        @click="toggleTool('search')"
+                    >
+                        <Search class="size-4" />
+                    </Button>
+                    <Button
+                        v-if="showFilters"
+                        type="button"
+                        class="relative shrink-0"
+                        size="icon"
+                        :variant="activeFilterCount ? 'secondary' : 'outline'"
+                        aria-label="Filter table"
+                        title="Filters"
+                        :aria-expanded="filtersOpen"
+                        :aria-controls="`${toolbarId}-filters`"
+                        @click="toggleTool('filters')"
+                    >
+                        <SlidersHorizontal class="size-4" />
+                        <span
+                            v-if="activeFilterCount"
+                            class="bg-primary text-primary-foreground absolute -top-1 -right-1 min-w-4 rounded-full px-1 text-[10px] leading-4"
+                            >{{ activeFilterCount
+                            }}<span class="sr-only"> active filters</span></span
                         >
-                            {{ option.label }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <Button variant="outline" class="ml-auto">
-                            Columns
-                            <ChevronDown class="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            v-for="column in hideableColumns"
-                            :key="column.id"
-                            class="capitalize"
-                            :checked="column.getIsVisible()"
-                            @update:checked="
-                                (value: boolean) =>
-                                    column.toggleVisibility(!!value)
+                    </Button>
+                </div>
+                <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                    <form
+                        v-if="showSearch && searchOpen"
+                        class="w-64 min-w-0 sm:w-80"
+                        @submit.prevent="applySearch"
+                        @keydown.esc="activeTool = null"
+                    >
+                        <Input
+                            :id="`${toolbarId}-search`"
+                            :model-value="search"
+                            name="search"
+                            type="search"
+                            aria-label="Search records"
+                            :placeholder="searchPlaceholder"
+                            @update:model-value="onSearchUpdate"
+                        />
+                    </form>
+                    <div
+                        v-if="showFilters && filtersOpen"
+                        :id="`${toolbarId}-filters`"
+                        class="contents"
+                    >
+                        <DataTableDateRangeFilter
+                            v-for="rangeKey in dateRanges"
+                            :key="rangeKey"
+                            :label="dateRangeLabel(rangeKey)"
+                            :from="values[dateFromKey(rangeKey)]"
+                            :to="values[dateToKey(rangeKey)]"
+                            @change="
+                                (from, to) =>
+                                    onDateRangeChange(rangeKey, from, to)
+                            "
+                        />
+                        <Select
+                            v-for="filterKey in filters"
+                            :key="filterKey"
+                            :model-value="filterModelValue(filterKey)"
+                            @update:model-value="
+                                (value) =>
+                                    onFilterChange(
+                                        filterKey,
+                                        typeof value === 'string'
+                                            ? value
+                                            : ALL_VALUE,
+                                    )
                             "
                         >
-                            {{ column.id }}
-                        </DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Button
-                    v-if="hasActiveFilters"
-                    variant="ghost"
-                    @click="clearFilters"
-                >
-                    Reset
-                </Button>
+                            <SelectTrigger
+                                class="w-full min-w-0 sm:w-auto sm:min-w-[10rem]"
+                                :aria-label="filterLabel(filterKey)"
+                                ><SelectValue
+                                    :placeholder="filterLabel(filterKey)"
+                            /></SelectTrigger>
+                            <SelectContent
+                                ><SelectItem :value="ALL_VALUE"
+                                    >All
+                                    {{
+                                        filterLabel(filterKey).toLowerCase()
+                                    }}</SelectItem
+                                ><SelectItem
+                                    v-for="option in filterOptions[filterKey] ??
+                                    []"
+                                    :key="option.value"
+                                    :value="option.value"
+                                    >{{ option.label }}</SelectItem
+                                ></SelectContent
+                            >
+                        </Select>
+                    </div>
+                    <span
+                        v-if="values.search && !searchOpen"
+                        class="text-muted-foreground max-w-48 truncate text-sm"
+                        :title="`Search: ${values.search}`"
+                        >Search: {{ values.search }}</span
+                    >
+                </div>
             </div>
+
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <Button variant="outline" class="ml-auto">
+                        Columns
+                        <ChevronDown class="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                        v-for="column in hideableColumns"
+                        :key="column.id"
+                        class="capitalize"
+                        :model-value="column.getIsVisible()"
+                        @update:model-value="
+                            (value: boolean) => column.toggleVisibility(!!value)
+                        "
+                    >
+                        {{ column.id }}
+                    </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+                v-if="hasActiveFilters"
+                variant="ghost"
+                @click="clearFilters"
+            >
+                Reset
+            </Button>
         </div>
 
         <div class="bg-card overflow-hidden rounded-xl border">

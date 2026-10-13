@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
-import { index as officersIndex } from '@/routes/administrator/officers';
+import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
 
 defineOptions({
     layout: {
@@ -28,10 +28,10 @@ defineOptions({
         <ul class="max-w-lg space-y-3 text-sm">
             <li>
                 <Link
-                    :href="officersIndex()"
+                    :href="userAccountsIndex()"
                     class="font-medium underline-offset-4 hover:underline"
                 >
-                    Officers
+                    User Accounts
                 </Link>
             </li>
         </ul>
