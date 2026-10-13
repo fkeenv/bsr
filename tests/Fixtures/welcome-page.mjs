@@ -14,7 +14,7 @@ function setup(context, canRegister, signedIn = false) {
     const Head = vue.defineComponent({ setup: () => () => null });
     const ui = mount(
         'resources/js/pages/Welcome.vue',
-        { canRegister },
+        { canRegister, announcementPreviews: [] },
         null,
         '/',
         { '@inertiajs/vue3': { Link, Head, usePage: () => page } },

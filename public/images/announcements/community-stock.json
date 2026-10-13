@@ -1,0 +1,16 @@
+{
+    "asset": "community-stock.webp",
+    "source": "Unsplash",
+    "photo_id": "K-NHEjG--9E",
+    "source_url": "https://unsplash.com/photos/aerial-view-of-a-neighborhood-K-NHEjG--9E",
+    "photographer": "Pedro Luis Cabrera Acosta",
+    "photographer_url": "https://unsplash.com/@peis",
+    "license": "Unsplash License (standard free photo, not Unsplash+)",
+    "license_url": "https://unsplash.com/license",
+    "verified_on": "2026-10-14",
+    "download_url": "https://images.unsplash.com/photo-1651890382174-88c8c7e97dab?fm=webp&w=960&h=540&q=60&fit=crop",
+    "optimization": "WebP, 960 \u00d7 540 pixels, quality 60, cropped to 16:9",
+    "bytes": 185598,
+    "sha256": "88a86559cde9999cb5baabc9c41d517694728bb93333e1d8410a531a0af003d5",
+    "usage": "Decorative stock fallback only. Depicts Guayabillas, Honduras, not Blessed Sacrament Residences or any Announcement."
+}

@@ -12,6 +12,6 @@ test('homepage reflects whether account registration is enabled', function (bool
         ->component('Welcome')
         ->where('canRegister', $registrationEnabled)
         ->where('auth.user', null)
-        ->missing('announcements')
+        ->missing('announcements')->where('announcementPreviews', [])
     );
 })->with(['registration enabled' => true, 'registration disabled' => false]);
