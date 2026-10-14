@@ -490,3 +490,15 @@ void test('financial links follow independent reading and creation grants', asyn
     ])
         assert.equal(ui.destinations().includes(path), false);
 });
+
+void test('Events discovery is available while management requires its own grant', async (context) => {
+    const ui = setup(context, { ...member, canAccessOfficer: true });
+    assert.ok(ui.destinations().includes('/events'));
+    assert.equal(ui.destinations().includes('/officer/events'), false);
+    ui.page.props.auth.staffPermissions.push('events.manage');
+    await vue.nextTick();
+    assert.ok(ui.destinations().includes('/officer/events'));
+    ui.page.props.auth.staffPermissions = ['events.registrations.read'];
+    await vue.nextTick();
+    assert.equal(ui.destinations().includes('/officer/events'), false);
+});

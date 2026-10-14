@@ -26,7 +26,7 @@ test('the role editor exposes the migrated household grants without changing Ann
         ->assertSessionHasNoErrors()->assertRedirect();
     expect($role->fresh()->permissions->pluck('name')->sort()->values()->all())->toBe(['announcements.read', 'invitations.credentials', 'properties.read']);
     $this->get(route('super-admin.role-permissions.index'))->assertInertia(fn ($page) => $page
-        ->has('permissions', 44)->where('permissions.6.feature', 'Properties'));
+        ->has('permissions', 49)->where('permissions.6.feature', 'Properties'));
 });
 
 test('Property creation works without the listing grant and returns to an accessible workspace', function () {

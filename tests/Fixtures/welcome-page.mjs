@@ -71,6 +71,7 @@ void test('community navigation targets visible sections without exposing restri
     assert.match(ui.text(), /Lapu-Lapu City, Cebu, Philippines/);
     assert.match(ui.text(), /To be announced/);
     assert.ok(links.some((node) => node.props.href === '#contacts'));
+    assert.ok(links.some((node) => node.props.href?.url === '/events'));
     assert.equal(
         links.some((node) => /^mailto:|^tel:/.test(node.props.href ?? '')),
         false,

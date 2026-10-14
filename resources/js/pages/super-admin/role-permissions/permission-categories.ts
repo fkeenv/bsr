@@ -3,6 +3,11 @@ import type { StaffPermission } from '@/types';
 export type PermissionCategory = 'read' | 'write' | 'destructive';
 
 export const permissionCategories = {
+    'events.manage': 'write',
+    'events.registrations.read': 'read',
+    'events.payments.review': 'write',
+    'events.refunds.review': 'write',
+    'events.check-in': 'write',
     'announcements.read': 'read',
     'announcements.create': 'write',
     'announcements.edit': 'write',

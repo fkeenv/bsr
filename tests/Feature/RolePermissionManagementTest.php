@@ -43,7 +43,7 @@ test('the editor lists only editable roles and enforced staff permissions', func
         ->has('roles', 2)
         ->where('roles.0.name', 'administrator')
         ->where('roles.1.name', 'officer')
-        ->has('permissions', 44)
+        ->has('permissions', 49)
         ->where('permissions.0.value', 'announcements.read'));
 });
 

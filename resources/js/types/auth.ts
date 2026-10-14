@@ -70,7 +70,15 @@ export type FinancialPermission =
     | 'bill-settings.read'
     | 'bill-settings.edit';
 
+export type EventPermission =
+    | 'events.manage'
+    | 'events.registrations.read'
+    | 'events.payments.review'
+    | 'events.refunds.review'
+    | 'events.check-in';
+
 export type StaffPermission =
+    | EventPermission
     | AnnouncementPermission
     | HouseholdPermission
     | FinancialPermission;

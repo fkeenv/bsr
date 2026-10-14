@@ -164,3 +164,30 @@ _Avoid_: Arrears, balance due, amount due (when the Property total is meant)
 The Officer list of Properties with Outstanding Balance greater than zero — filtered and sorted
 for collection follow-up, with drill-in to that Property’s Statement of Account.
 _Avoid_: Arrears report, collection report, delinquent list, aging report
+
+## Events
+
+**Event**:
+An association gathering with a venue, schedule in Manila time, registration deadline, audience,
+and optional attendee capacity. It is a Draft until Published, may be Cancelled without losing its
+history, and is either free or has one fixed price per attendee in Philippine pesos.
+_Avoid_: Activity, meeting, campaign (when the Event record is meant)
+
+**Event registration**:
+A signed-in User Account's reservation of one or more named attendees for one Event. It belongs to
+that account and Event; it does not create a Property Membership or a dues obligation.
+_Avoid_: Membership registration, Property registration
+
+**Event ticket**:
+An individual attendee's admission credential for one Event registration. It is independent of
+Property Membership and becomes invalid when its registration or Event is cancelled.
+_Avoid_: Membership card, receipt
+
+**Event payment record**:
+A record of money received for an Event registration, separate from a Payment toward Property dues.
+It and any Event refund never change a Property's Opening Balance, Charges, Prepaid, or Outstanding Balance.
+_Avoid_: Payment (without the Event qualifier), dues Payment
+
+**Event refund**:
+A record of money returned for an Event registration. It belongs to the Event payment history and
+does not reverse or allocate a Property dues Payment.

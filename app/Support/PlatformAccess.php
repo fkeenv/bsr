@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\AnnouncementPermission;
+use App\Enums\EventPermission;
 use App\Enums\FinancialPermission;
 use App\Enums\HouseholdPermission;
 use App\Enums\PlatformRole;
@@ -43,7 +44,7 @@ class PlatformAccess
         return array_values(array_intersect(self::staffPermissions($user), AnnouncementPermission::values()));
     }
 
-    public static function allowsStaff(?User $user, HouseholdPermission|FinancialPermission $permission): bool
+    public static function allowsStaff(?User $user, HouseholdPermission|FinancialPermission|EventPermission $permission): bool
     {
         return in_array($permission->value, self::staffPermissions($user), true);
     }
