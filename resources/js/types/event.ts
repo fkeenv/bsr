@@ -13,4 +13,5 @@ export type AssociationEvent = {
     status: 'draft' | 'published' | 'cancelled';
     capacity: number | null;
     price_centavos: number;
+    payment_instructions: string | null;
 };

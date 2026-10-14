@@ -23,7 +23,7 @@ class CorrectEventAttendeeName
             Event::query()->lockForUpdate()->findOrFail($attendee->registration->event_id);
             $attendee = EventAttendee::query()->lockForUpdate()->findOrFail($attendee->id);
             $this->access->ensureOwner($attendee->registration, $account);
-            if ($attendee->checked_in_at !== null || ! $this->rules->ticketIsValid($attendee)) {
+            if (! $this->rules->canCorrectName($attendee)) {
                 throw ValidationException::withMessages(['name' => 'Names can only be corrected on active tickets before check-in.']);
             }
             $attendee->update(['name' => trim($name)]);

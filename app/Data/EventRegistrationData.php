@@ -17,6 +17,12 @@ class EventRegistrationData extends Data
         public ?string $confirmed_at,
         public ?string $cancelled_at,
         public array $tickets,
+        public string $status,
+        public string $status_label,
+        public int $price_centavos,
+        public int $total_centavos,
+        public ?string $expires_at,
+        public ?string $payment_instructions,
     ) {}
 
     public static function fromModel(EventRegistration $registration, bool $includeTickets = true): self
@@ -36,6 +42,8 @@ class EventRegistrationData extends Data
 
         return new self($registration->id, $registration->user->name, EventData::fromModel($registration->event, false),
             $registration->attendee_count, $registration->confirmed_at?->toIso8601String(),
-            $registration->cancelled_at?->toIso8601String(), $tickets);
+            $registration->cancelled_at?->toIso8601String(), $tickets,
+            (new EventRegistrationRules)->effectiveStatus($registration)->value, (new EventRegistrationRules)->effectiveStatus($registration)->label(),
+            $registration->price_centavos, $registration->total_centavos, $registration->expires_at?->toIso8601String(), $includeTickets ? $registration->payment_instructions : null);
     }
 }

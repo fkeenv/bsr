@@ -24,6 +24,7 @@ class EventData extends Data
         public string $status,
         public ?int $capacity,
         public int $price_centavos,
+        public ?string $payment_instructions,
     ) {}
 
     public static function fromModel(Event $event, bool $includeDescription = true): self
@@ -33,6 +34,6 @@ class EventData extends Data
             $event->image_path !== null ? route('events.image', $event) : null, $event->venue,
             $event->starts_at->toIso8601String(), $event->ends_at->toIso8601String(),
             $event->registration_deadline->toIso8601String(), $event->audience->value, $event->audience->label(),
-            $event->status->value, $event->capacity, $event->price_centavos);
+            $event->status->value, $event->capacity, $event->price_centavos, $includeDescription ? $event->payment_instructions : null);
     }
 }

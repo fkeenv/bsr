@@ -39,6 +39,7 @@ import { dashboard, home, joinProperty } from '@/routes';
 import { edit as propertyProfile } from '@/routes/property-profile';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
+import { index as eventFinancesIndex } from '@/routes/officer/event-finances';
 import { index as myRegistrationsIndex } from '@/routes/event-registrations';
 import { index as staffRegistrationsIndex } from '@/routes/officer/event-registrations';
 import { index as eventsIndex } from '@/routes/events';
@@ -215,6 +216,16 @@ const officerNavItems = computed((): NavItem[] => {
                   {
                       title: 'Event registrations',
                       href: staffRegistrationsIndex(),
+                      icon: CalendarClock,
+                  },
+              ]
+            : []),
+        ...(allowsStaff('events.payments.review') ||
+        allowsStaff('events.refunds.review')
+            ? [
+                  {
+                      title: 'Event payments & refunds',
+                      href: eventFinancesIndex(),
                       icon: CalendarClock,
                   },
               ]

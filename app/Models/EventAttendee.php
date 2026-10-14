@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $event_registration_id
  * @property string $name
- * @property string $ticket_token
+ * @property string|null $ticket_token
  * @property Carbon|null $revoked_at
  * @property Carbon|null $checked_in_at
  * @property int|null $checked_in_by_user_id

@@ -13,7 +13,7 @@ class EventTicketData extends Data
         public string $name,
         public bool $valid,
         public ?string $checked_in_at,
-        public string $ticket_url,
+        public ?string $ticket_url,
         public ?string $qr_url,
     ) {}
 
@@ -23,6 +23,6 @@ class EventTicketData extends Data
         $parameters = ['attendee' => $attendee->ticket_token];
 
         return new self($attendee->id, $attendee->name, $valid, $attendee->checked_in_at?->toIso8601String(),
-            route('event-tickets.show', $parameters), $valid ? route('event-tickets.qr', $parameters) : null);
+            $attendee->ticket_token !== null ? route('event-tickets.show', $parameters) : null, $valid ? route('event-tickets.qr', $parameters) : null);
     }
 }

@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatEventMoney } from '@/lib/eventMoney';
 import { formatEventDate } from '@/lib/eventDates';
 import { home } from '@/routes';
 import { show } from '@/routes/events';
@@ -47,7 +48,11 @@ defineProps<{ events: AssociationEvent[] }>();
                     />
                     <CardContent class="flex flex-1 flex-col gap-4 py-6">
                         <div class="flex flex-wrap gap-2">
-                            <Badge variant="secondary">Free</Badge
+                            <Badge variant="secondary">{{
+                                event.price_centavos > 0
+                                    ? formatEventMoney(event.price_centavos)
+                                    : 'Free'
+                            }}</Badge
                             ><Badge variant="outline">{{
                                 event.audience_label
                             }}</Badge>

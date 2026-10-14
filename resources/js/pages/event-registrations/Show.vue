@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import EventPaymentFields from '@/components/EventPaymentFields.vue';
+import EventFinancialHistory from '@/components/EventFinancialHistory.vue';
+import { Textarea } from '@/components/ui/textarea';
+import { formatEventMoney } from '@/lib/eventMoney';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -19,12 +23,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatEventDate } from '@/lib/eventDates';
 import { update } from '@/routes/event-attendees';
-import { cancel, index, show } from '@/routes/event-registrations';
-import type { EventRegistration } from '@/types/event-registration';
+import {
+    cancel,
+    index,
+    show,
+    payment,
+    requestCancellation,
+} from '@/routes/event-registrations';
+import type {
+    EventRegistration,
+    EventFinancial,
+} from '@/types/event-registration';
 const props = defineProps<{
     registration: EventRegistration;
     isOwner: boolean;
+    financial: EventFinancial | null;
+    submissionKey: string;
 }>();
+const needsCancellationRequest = computed(
+    () =>
+        props.registration.price_centavos > 0 &&
+        ['awaiting-review', 'confirmed'].includes(props.registration.status),
+);
+const hasPendingCancellation = computed(
+    () =>
+        props.financial?.cancellations.some(
+            (request) => request.status === 'pending',
+        ) ?? false,
+);
 const cancellationOpen = ref(false);
 const editingAttendee = ref<number | null>(null);
 setLayoutProps({
@@ -45,11 +71,9 @@ setLayoutProps({
         />
         <div class="space-y-3">
             <Badge variant="outline">{{
-                registration.cancelled_at
-                    ? 'Cancelled'
-                    : registration.event.status === 'cancelled'
-                      ? 'Event cancelled'
-                      : 'Confirmed'
+                registration.event.status === 'cancelled'
+                    ? 'Event cancelled'
+                    : registration.status_label
             }}</Badge>
             <p>
                 {{ registration.attendee_count }} attendees ·
@@ -68,11 +92,61 @@ setLayoutProps({
             >
                 These tickets are invalid.
             </p>
-            <p v-else class="text-muted-foreground text-sm">
+            <p
+                v-else-if="registration.status === 'confirmed'"
+                class="text-muted-foreground text-sm"
+            >
                 Each attendee has an individual QR ticket. You can correct a
                 name before check-in. Additional attendees need a new
                 registration.
             </p>
+        </div>
+        <div v-if="registration.price_centavos > 0" class="max-w-3xl space-y-6">
+            <p class="text-lg font-medium">
+                {{ formatEventMoney(registration.total_centavos) }} total ·
+                {{ formatEventMoney(registration.price_centavos) }} per attendee
+            </p>
+            <section
+                v-if="registration.status === 'pending-payment' && isOwner"
+                class="bg-card space-y-5 rounded-xl border p-5"
+            >
+                <h2 class="font-serif text-2xl">Submit payment details</h2>
+                <p>
+                    Reserved until
+                    {{ formatEventDate(registration.expires_at ?? '') }} ·
+                    Manila time.
+                </p>
+                <p class="whitespace-pre-wrap">
+                    {{ registration.payment_instructions }}
+                </p>
+                <Form
+                    v-bind="payment.form(registration.id)"
+                    class="space-y-5"
+                    v-slot="{ errors, processing }"
+                >
+                    <EventPaymentFields :errors="errors" receipt /><InputError
+                        :message="errors.payment"
+                    />
+                    <Button type="submit" :disabled="processing"
+                        >Submit payment for review</Button
+                    >
+                </Form>
+            </section>
+            <p
+                v-if="registration.status === 'awaiting-review'"
+                class="bg-muted rounded-lg p-4"
+            >
+                Payment is awaiting staff review. Your places remain reserved.
+                Tickets will appear after payment is confirmed.
+            </p>
+            <p
+                v-if="registration.status === 'expired'"
+                class="bg-muted rounded-lg p-4"
+            >
+                The 24-hour payment window expired. Your places have been
+                released. Start a new registration if places remain.
+            </p>
+            <EventFinancialHistory v-if="financial" :financial="financial" />
         </div>
         <div class="grid max-w-5xl gap-5 md:grid-cols-2 xl:grid-cols-3">
             <Card v-for="ticket in registration.tickets" :key="ticket.id"
@@ -85,7 +159,10 @@ setLayoutProps({
                             ? 'Checked in'
                             : ticket.valid
                               ? 'Ready for admission'
-                              : 'Invalid ticket'
+                              : registration.status === 'pending-payment' ||
+                                  registration.status === 'awaiting-review'
+                                ? 'Ticket not issued yet'
+                                : 'Invalid ticket'
                     }}</Badge>
                     <img
                         v-if="ticket.qr_url"
@@ -95,13 +172,22 @@ setLayoutProps({
                         height="256"
                         class="mx-auto aspect-square max-w-full rounded-lg bg-white"
                     />
-                    <Button variant="outline" as-child
+                    <Button v-if="ticket.ticket_url" variant="outline" as-child
                         ><Link :href="ticket.ticket_url"
                             >Open ticket</Link
                         ></Button
                     >
                     <Dialog
-                        v-if="isOwner && ticket.valid && !ticket.checked_in_at"
+                        v-if="
+                            isOwner &&
+                            !ticket.checked_in_at &&
+                            (ticket.valid ||
+                                ([
+                                    'pending-payment',
+                                    'awaiting-review',
+                                ].includes(registration.status) &&
+                                    registration.event.status === 'published'))
+                        "
                         :open="editingAttendee === ticket.id"
                         @update:open="
                             editingAttendee = $event ? ticket.id : null
@@ -116,7 +202,7 @@ setLayoutProps({
                             ><DialogHeader
                                 ><DialogTitle>Correct attendee name</DialogTitle
                                 ><DialogDescription
-                                    >This updates the existing ticket. The
+                                    >This updates the attendee name. The
                                     attendee count cannot
                                     change.</DialogDescription
                                 ></DialogHeader
@@ -157,28 +243,69 @@ setLayoutProps({
             >
         </div>
         <Dialog
-            v-if="isOwner && !registration.cancelled_at"
+            v-if="
+                isOwner &&
+                !registration.cancelled_at &&
+                !hasPendingCancellation &&
+                ['pending-payment', 'awaiting-review', 'confirmed'].includes(
+                    registration.status,
+                )
+            "
             v-model:open="cancellationOpen"
             ><DialogTrigger as-child
-                ><Button variant="destructive"
-                    >Cancel registration</Button
-                ></DialogTrigger
+                ><Button variant="destructive">{{
+                    needsCancellationRequest
+                        ? 'Request cancellation'
+                        : 'Cancel registration'
+                }}</Button></DialogTrigger
             >
             <DialogContent
                 ><DialogHeader
-                    ><DialogTitle>Cancel the whole registration?</DialogTitle
+                    ><DialogTitle>{{
+                        needsCancellationRequest
+                            ? 'Request whole-registration cancellation?'
+                            : 'Cancel the whole registration?'
+                    }}</DialogTitle
                     ><DialogDescription
-                        >All {{ registration.attendee_count }} places will be
-                        released and every ticket will become invalid. This
-                        cannot be undone.</DialogDescription
+                        ><template v-if="needsCancellationRequest"
+                            >Staff will review your request. Places remain
+                            reserved until approval. Refunds are handled
+                            separately.</template
+                        ><template v-else
+                            >All {{ registration.attendee_count }} places will
+                            be released and every ticket will become invalid.
+                            This cannot be undone.</template
+                        ></DialogDescription
                     ></DialogHeader
                 >
                 <Form
-                    v-bind="cancel.form(registration.id)"
+                    v-bind="
+                        needsCancellationRequest
+                            ? requestCancellation.form(registration.id)
+                            : cancel.form(registration.id)
+                    "
                     :options="{ preserveScroll: true }"
                     @success="cancellationOpen = false"
                     v-slot="{ errors, processing }"
-                    ><InputError :message="errors.registration" /><DialogFooter
+                    ><div
+                        v-if="needsCancellationRequest"
+                        class="mb-5 grid gap-2"
+                    >
+                        <input
+                            type="hidden"
+                            name="submission_key"
+                            :value="submissionKey"
+                        />
+                        <Label for="cancellation-reason"
+                            >Reason for cancellation</Label
+                        ><Textarea
+                            id="cancellation-reason"
+                            name="reason"
+                            required
+                            maxlength="10000"
+                        /><InputError :message="errors.reason" />
+                    </div>
+                    <InputError :message="errors.registration" /><DialogFooter
                         ><Button
                             type="button"
                             variant="secondary"
@@ -188,7 +315,11 @@ setLayoutProps({
                             type="submit"
                             :disabled="processing"
                             variant="destructive"
-                            >Cancel registration</Button
+                            >{{
+                                needsCancellationRequest
+                                    ? 'Send cancellation request'
+                                    : 'Cancel registration'
+                            }}</Button
                         ></DialogFooter
                     ></Form
                 >

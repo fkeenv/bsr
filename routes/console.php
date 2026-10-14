@@ -12,3 +12,5 @@ Schedule::command('charges:generate --scheduled')
     ->dailyAt('00:05')
     ->timezone('Asia/Manila')
     ->withoutOverlapping();
+
+Schedule::command('events:expire-reservations')->everyMinute()->withoutOverlapping(10);

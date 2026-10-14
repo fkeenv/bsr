@@ -16,7 +16,7 @@ setLayoutProps({ breadcrumbs: [{ title: 'Events', href: index() }] });
         <div class="flex flex-wrap items-start justify-between gap-4">
             <Heading
                 title="Events"
-                description="Create, publish, and manage free community gatherings."
+                description="Create, publish, and manage community gatherings."
             /><Button as-child><Link :href="create()">New Event</Link></Button>
         </div>
         <div

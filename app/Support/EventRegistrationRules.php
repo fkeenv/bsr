@@ -3,10 +3,13 @@
 namespace App\Support;
 
 use App\Enums\EventAudience;
+use App\Enums\EventRegistrationStatus;
 use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\EventAttendee;
+use App\Models\EventRegistration;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
 class EventRegistrationRules
@@ -27,7 +30,12 @@ class EventRegistrationRules
 
     public function reservedPlaces(Event $event): int
     {
-        return (int) $event->registrations()->whereNull('cancelled_at')->sum('attendee_count');
+        return (int) $event->registrations()->whereNull('cancelled_at')->where(function (Builder $query): void {
+            $query->whereIn('status', [EventRegistrationStatus::Confirmed, EventRegistrationStatus::AwaitingReview])
+                ->orWhere(function (Builder $pending): void {
+                    $pending->where('status', EventRegistrationStatus::PendingPayment)->where('expires_at', '>', now());
+                });
+        })->sum('attendee_count');
     }
 
     public function unavailableReason(Event $event, ?User $user): ?string
@@ -35,8 +43,8 @@ class EventRegistrationRules
         if ($event->status !== EventStatus::Published) {
             return 'This Event is not accepting registrations.';
         }
-        if ($event->price_centavos !== 0) {
-            return 'Paid Event registration is not available yet.';
+        if ($event->price_centavos > 0 && blank($event->payment_instructions)) {
+            return 'Payment instructions are not available for this Event.';
         }
         if ($event->starts_at->lessThanOrEqualTo(now()) || $event->registration_deadline->lessThanOrEqualTo(now())) {
             return 'Registration for this Event has closed.';
@@ -67,9 +75,26 @@ class EventRegistrationRules
 
     public function ticketIsValid(EventAttendee $attendee): bool
     {
-        return $attendee->revoked_at === null && $attendee->registration->confirmed_at !== null
+        return $attendee->ticket_token !== null && $attendee->revoked_at === null
+            && $attendee->registration->status === EventRegistrationStatus::Confirmed && $attendee->registration->confirmed_at !== null
             && $attendee->registration->cancelled_at === null
             && $attendee->registration->event->status === EventStatus::Published;
+    }
+
+    public function canCorrectName(EventAttendee $attendee): bool
+    {
+        return $attendee->checked_in_at === null && $attendee->revoked_at === null
+            && $attendee->registration->event->status === EventStatus::Published
+            && in_array($this->effectiveStatus($attendee->registration), [EventRegistrationStatus::PendingPayment, EventRegistrationStatus::AwaitingReview, EventRegistrationStatus::Confirmed], true);
+    }
+
+    public function effectiveStatus(EventRegistration $registration): EventRegistrationStatus
+    {
+        if ($registration->status === EventRegistrationStatus::PendingPayment && $registration->expires_at?->lessThanOrEqualTo(now())) {
+            return EventRegistrationStatus::Expired;
+        }
+
+        return $registration->status;
     }
 
     /** @param array<string, mixed> $changes */
