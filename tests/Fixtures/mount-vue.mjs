@@ -159,7 +159,7 @@ export function mount(
         return module.exports;
     };
     const renderer = vue.createRenderer({
-        createElement: (type) => ({ type, props: {}, children: [] }),
+        createElement: (type) => ({ type, props: {}, style: {}, children: [] }),
         createText: (text) => ({ text }),
         createComment: () => ({}),
         setText: (node, text) => {
