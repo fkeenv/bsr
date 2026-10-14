@@ -27,8 +27,8 @@ class PublishEvent
             if (blank($event->title) || blank($event->venue) || SanitizeHtml::isBlank($event->description)
                 || ! $event->starts_at->isFuture() || ! $event->ends_at->greaterThan($event->starts_at)
                 || ! $event->registration_deadline->isFuture() || $event->registration_deadline->greaterThan($event->starts_at)
-                || ($event->capacity !== null && $event->capacity < 0) || $event->price_centavos !== 0) {
-                throw ValidationException::withMessages(['event' => 'Provide valid Event details and a future schedule and deadline before publishing a free Event.']);
+                || ($event->capacity !== null && $event->capacity < 0) || ($event->price_centavos < 0 || ($event->price_centavos > 0 && blank($event->payment_instructions)))) {
+                throw ValidationException::withMessages(['event' => 'Provide valid Event details and a future schedule and deadline and payment instructions for a paid Event before publishing.']);
             }
             $event->update(['status' => EventStatus::Published, 'published_at' => now(), 'updated_by_user_id' => $actor->id]);
         });

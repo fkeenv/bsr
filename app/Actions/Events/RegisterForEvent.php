@@ -2,7 +2,9 @@
 
 namespace App\Actions\Events;
 
+use App\Enums\EventRegistrationStatus;
 use App\Mail\EventRegistrationConfirmed;
+use App\Mail\EventRegistrationUpdated;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\User;
@@ -38,12 +40,19 @@ class RegisterForEvent
             $this->rules->ensureCanReserve($event, $account, count($names));
             $registration = $event->registrations()->create([
                 'user_id' => $account->id, 'attendee_count' => count($names),
-                'submission_key' => $data['submission_key'], 'submission_hash' => $hash, 'confirmed_at' => now(),
+                'submission_key' => $data['submission_key'], 'submission_hash' => $hash,
+                'status' => $event->price_centavos > 0 ? EventRegistrationStatus::PendingPayment : EventRegistrationStatus::Confirmed,
+                'price_centavos' => $event->price_centavos, 'total_centavos' => $event->price_centavos * count($names),
+                'payment_instructions' => $event->payment_instructions,
+                'expires_at' => $event->price_centavos > 0 ? now()->addHours(24) : null,
+                'confirmed_at' => $event->price_centavos === 0 ? now() : null,
             ]);
             foreach ($names as $name) {
-                $registration->attendees()->create(['name' => $name, 'ticket_token' => Str::random(64)]);
+                $registration->attendees()->create(['name' => $name, 'ticket_token' => $event->price_centavos === 0 ? Str::random(64) : null]);
             }
-            Mail::to($account)->queue((new EventRegistrationConfirmed($registration))->afterCommit());
+            $mail = $event->price_centavos === 0 ? new EventRegistrationConfirmed($registration)
+                : new EventRegistrationUpdated($registration, 'Your Event places are reserved', 'Submit your external payment details within 24 hours. Tickets are issued after staff confirm payment.');
+            Mail::to($account)->queue($mail->afterCommit());
 
             return $registration;
         }, 5);

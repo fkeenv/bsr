@@ -114,3 +114,37 @@ void test('Event management shows publish and cancellation controls only before 
     assert.equal(cancelled.all('Form').length, 0);
     assert.match(cancelled.text(), /history is retained/);
 });
+
+void test('paid Event discovery displays the fixed PHP ticket price', (context) => {
+    const ui = mount('resources/js/pages/events/Index.vue', {
+        events: [{ ...event, price_centavos: 12550 }],
+    });
+    context.after(ui.unmount);
+    assert.match(ui.text(), /125\.50/);
+    assert.doesNotMatch(ui.text(), /Free/);
+});
+
+void test('paid Event form converts PHP input to centavos without accepting sub-cent amounts', async (context) => {
+    const ui = mount('resources/js/pages/officer/events/EventFormFields.vue', {
+        event: { ...event, price_centavos: 12550 },
+        description: event.description,
+        errors: {},
+    });
+    context.after(ui.unmount);
+    assert.equal(
+        ui.all('input').find((node) => node.props.name === 'price_centavos')
+            .props.value,
+        12550,
+    );
+    assert.equal(ui.all('Textarea')[0].props.required, true);
+    ui.all('Input')
+        .find((node) => node.props.id === 'price')
+        .props['onUpdate:modelValue']('0');
+    await vue.nextTick();
+    assert.equal(
+        ui.all('input').find((node) => node.props.name === 'price_centavos')
+            .props.value,
+        0,
+    );
+    assert.equal(ui.all('Textarea')[0].props.required, false);
+});

@@ -22,7 +22,8 @@ class EventDetails
             'registration_deadline' => ['required', 'date_format:Y-m-d\TH:i', 'before_or_equal:starts_at'],
             'audience' => ['required', Rule::enum(EventAudience::class)],
             'capacity' => ['nullable', 'integer', 'min:0', 'max:2147483647'],
-            'price_centavos' => ['required', 'integer', 'min:0', 'max:0'],
+            'payment_instructions' => ['nullable', 'string', 'max:10000'],
+            'price_centavos' => ['required', 'integer', 'min:0', 'max:2147483647'],
             'image' => ['nullable', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:10240'],
             'remove_image' => ['sometimes', 'boolean'],
         ];
@@ -35,6 +36,10 @@ class EventDetails
     {
         $data = Validator::make($data, self::rules())->validate();
         $data['capacity'] ??= null;
+        $data['payment_instructions'] = isset($data['payment_instructions']) ? trim($data['payment_instructions']) : null;
+        if ((int) $data['price_centavos'] > 0 && blank($data['payment_instructions'])) {
+            throw ValidationException::withMessages(['payment_instructions' => 'Provide instructions for external Event payment.']);
+        }
         $data['title'] = trim($data['title']);
         $data['venue'] = trim($data['venue']);
         $data['description'] = SanitizeHtml::richText($data['description']);

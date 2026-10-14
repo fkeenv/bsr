@@ -14,6 +14,7 @@ const event = {
     audience_label: 'Public',
     capacity: 10,
     status: 'published',
+    price_centavos: 0,
 };
 const ticket = {
     id: 8,
@@ -31,6 +32,12 @@ const registration = {
     confirmed_at: '2026-10-14T00:00:00Z',
     cancelled_at: null,
     tickets: [ticket],
+    status: 'confirmed',
+    status_label: 'Confirmed',
+    price_centavos: 0,
+    total_centavos: 0,
+    expires_at: null,
+    payment_instructions: null,
 };
 const Form = vue.defineComponent({
     inheritAttrs: false,
@@ -102,7 +109,12 @@ void test('unavailable registration shows the reason and guests receive a sign i
 void test('registration owners see correction and whole cancellation forms but staff readers do not', (context) => {
     const owner = mount(
         'resources/js/pages/event-registrations/Show.vue',
-        { registration, isOwner: true },
+        {
+            registration,
+            isOwner: true,
+            financial: null,
+            submissionKey: 'unused',
+        },
         null,
         '/',
         { '@inertiajs/vue3': { Form } },
@@ -125,6 +137,8 @@ void test('registration owners see correction and whole cancellation forms but s
     const staff = mount('resources/js/pages/event-registrations/Show.vue', {
         registration,
         isOwner: false,
+        financial: null,
+        submissionKey: 'unused',
     });
     context.after(staff.unmount);
     assert.equal(staff.all('Form').length, 0);
@@ -134,6 +148,8 @@ void test('registration owners see correction and whole cancellation forms but s
 void test('cancelled tickets hide QR images and correction controls', (context) => {
     const ui = mount('resources/js/pages/event-registrations/Show.vue', {
         isOwner: true,
+        financial: null,
+        submissionKey: 'unused',
         registration: {
             ...registration,
             cancelled_at: '2026-10-14T01:00:00Z',
@@ -151,6 +167,8 @@ void test('checked in attendee names are locked while the registration can still
         'resources/js/pages/event-registrations/Show.vue',
         {
             isOwner: true,
+            financial: null,
+            submissionKey: 'unused',
             registration: {
                 ...registration,
                 tickets: [{ ...ticket, checked_in_at: '2027-01-20T08:00:00Z' }],
@@ -190,4 +208,306 @@ void test('the individual ticket prints its QR and links back to the private reg
         .find((node) => ui.text(node).trim() === 'Print ticket')
         .props.onClick();
     assert.equal(print.mock.callCount(), 1);
+});
+
+void test('paid registration shows its reservation instructions and payment form without premature tickets', (context) => {
+    const ui = mount(
+        'resources/js/pages/event-registrations/Show.vue',
+        {
+            isOwner: true,
+            submissionKey: 'request-key',
+            financial: { payment: null, cancellations: [] },
+            registration: {
+                ...registration,
+                status: 'pending-payment',
+                status_label: 'Awaiting payment',
+                price_centavos: 12550,
+                total_centavos: 25100,
+                expires_at: '2026-10-15T00:00:00Z',
+                payment_instructions: 'Pay at the office.',
+                tickets: [
+                    { ...ticket, valid: false, ticket_url: null, qr_url: null },
+                ],
+            },
+        },
+        null,
+        '/',
+        { '@inertiajs/vue3': { Form } },
+    );
+    context.after(ui.unmount);
+    assert.match(ui.text(), /251\.00/);
+    assert.match(ui.text(), /Pay at the office/);
+    assert.match(ui.text(), /Ticket not issued yet/);
+    assert.equal(ui.all('img').length, 0);
+    assert.ok(
+        ui
+            .all('Form')
+            .some(
+                (node) =>
+                    node.props.action === '/event-registrations/3/payment',
+            ),
+    );
+    assert.ok(Object.hasOwn(ui.all('EventPaymentFields')[0].props, 'receipt'));
+    assert.ok(!ui.all('Link').some((node) => node.props.href === null));
+});
+
+void test('submitted paid registrations request cancellation while expired ones hide all mutation controls', (context) => {
+    const submitted = mount(
+        'resources/js/pages/event-registrations/Show.vue',
+        {
+            isOwner: true,
+            submissionKey: 'cancellation-key',
+            financial: { payment: null, cancellations: [] },
+            registration: {
+                ...registration,
+                status: 'awaiting-review',
+                status_label: 'Awaiting review',
+                price_centavos: 10000,
+                total_centavos: 10000,
+                tickets: [],
+            },
+        },
+        null,
+        '/',
+        { '@inertiajs/vue3': { Form } },
+    );
+    context.after(submitted.unmount);
+    assert.match(submitted.text(), /places remain reserved/i);
+    assert.equal(submitted.all('Form').length, 1);
+    assert.equal(
+        submitted.all('Form')[0].props.action,
+        '/event-registrations/3/cancellation-requests',
+    );
+    assert.equal(submitted.all('input')[0].props.value, 'cancellation-key');
+    const expired = mount('resources/js/pages/event-registrations/Show.vue', {
+        isOwner: true,
+        financial: null,
+        submissionKey: 'unused',
+        registration: {
+            ...registration,
+            status: 'expired',
+            status_label: 'Expired',
+            price_centavos: 10000,
+            total_centavos: 10000,
+            tickets: [],
+        },
+    });
+    context.after(expired.unmount);
+    assert.equal(expired.all('Form').length, 0);
+    assert.match(expired.text(), /places have been released/i);
+});
+
+void test('pending cancellation hides the repeat request while exposing history to the owner', (context) => {
+    const ui = mount('resources/js/pages/event-registrations/Show.vue', {
+        isOwner: true,
+        submissionKey: 'unused',
+        financial: {
+            payment: null,
+            cancellations: [
+                { id: 4, status: 'pending', reason: 'Cannot attend' },
+            ],
+        },
+        registration: {
+            ...registration,
+            status: 'awaiting-review',
+            price_centavos: 10000,
+            total_centavos: 10000,
+            tickets: [],
+        },
+    });
+    context.after(ui.unmount);
+    assert.equal(ui.all('Form').length, 0);
+    assert.equal(ui.all('EventFinancialHistory').length, 1);
+});
+
+const financial = {
+    payment: {
+        id: 6,
+        status: 'submitted',
+        amount_centavos: 10000,
+        refunded_centavos: 0,
+        refunds: [],
+    },
+    cancellations: [{ id: 4, status: 'pending', reason: 'Cannot attend' }],
+};
+void test('the staff accordion separates payment and refund permissions and uses explicit decision values', (context) => {
+    for (const [payments, refunds] of [
+        [true, false],
+        [false, true],
+        [true, true],
+    ]) {
+        const ui = mount(
+            'resources/js/pages/officer/event-finances/Index.vue',
+            {
+                registrations: [
+                    {
+                        registration: {
+                            ...registration,
+                            status: 'awaiting-review',
+                            price_centavos: 10000,
+                            total_centavos: 10000,
+                        },
+                        financial,
+                        submission_key: 'refund-key',
+                    },
+                ],
+                canReviewPayments: payments,
+                canReviewRefunds: refunds,
+            },
+            null,
+            '/',
+            { '@inertiajs/vue3': { Form } },
+        );
+        context.after(ui.unmount);
+        assert.equal(ui.all('Accordion').length, 1);
+        assert.equal(
+            ui
+                .all('Form')
+                .some(
+                    (node) =>
+                        node.props.action ===
+                        '/officer/event-payments/6/review',
+                ),
+            payments,
+        );
+        assert.equal(
+            ui
+                .all('Form')
+                .some(
+                    (node) =>
+                        node.props.action ===
+                        '/officer/event-cancellations/4/resolve',
+                ),
+            refunds,
+        );
+        const decisions = ui
+            .all('Button')
+            .filter((node) => node.props.name === 'decision')
+            .map((node) => node.props.value);
+        assert.deepEqual(decisions, [
+            ...(payments ? ['confirmed', 'rejected'] : []),
+            ...(refunds ? ['approved', 'declined'] : []),
+        ]);
+    }
+});
+
+void test('refund controls appear only after a confirmed paid registration is cancelled and money remains refundable', (context) => {
+    const payment = { ...financial.payment, status: 'confirmed' };
+    for (const [cancelled, refunded, allowed] of [
+        [false, 0, false],
+        [true, 0, true],
+        [true, 10000, false],
+    ]) {
+        const ui = mount(
+            'resources/js/pages/officer/event-finances/Index.vue',
+            {
+                registrations: [
+                    {
+                        registration: {
+                            ...registration,
+                            status: cancelled ? 'cancelled' : 'confirmed',
+                            cancelled_at: cancelled
+                                ? '2026-10-14T00:00:00Z'
+                                : null,
+                            price_centavos: 10000,
+                            total_centavos: 10000,
+                        },
+                        financial: {
+                            payment: {
+                                ...payment,
+                                refunded_centavos: refunded,
+                            },
+                            cancellations: [],
+                        },
+                        submission_key: 'refund-key',
+                    },
+                ],
+                canReviewPayments: false,
+                canReviewRefunds: true,
+            },
+        );
+        context.after(ui.unmount);
+        assert.equal(ui.all('EventRefundForm').length, allowed ? 1 : 0);
+        if (allowed)
+            assert.equal(ui.all('EventRefundForm')[0].props.remaining, 10000);
+    }
+});
+
+void test('refund amounts convert exact PHP decimals and keep a stable submission key', async (context) => {
+    const ui = mount(
+        'resources/js/components/EventRefundForm.vue',
+        { paymentId: 6, remaining: 25100, submissionKey: 'refund-key' },
+        null,
+        '/',
+        { '@inertiajs/vue3': { Form } },
+    );
+    context.after(ui.unmount);
+    const input = ui
+        .all('Input')
+        .find((node) => node.props.id === 'refund-amount-6');
+    input.props['onUpdate:modelValue']('125.50');
+    await vue.nextTick();
+    assert.equal(
+        ui.all('input').find((node) => node.props.name === 'amount_centavos')
+            .props.value,
+        12550,
+    );
+    input.props['onUpdate:modelValue']('0.001');
+    await vue.nextTick();
+    assert.equal(
+        ui.all('input').find((node) => node.props.name === 'amount_centavos')
+            .props.value,
+        '',
+    );
+    assert.equal(
+        ui.all('input').find((node) => node.props.name === 'submission_key')
+            .props.value,
+        'refund-key',
+    );
+});
+
+void test('financial history distinguishes cancellation approval from actual refunds and links private receipts', (context) => {
+    const ui = mount('resources/js/components/EventFinancialHistory.vue', {
+        financial: {
+            payment: {
+                ...financial.payment,
+                status: 'confirmed',
+                method: 'gcash',
+                reference: 'GCash123',
+                submitted_at: '2026-10-14T00:00:00Z',
+                receipt_url: '/event-payments/6/receipt',
+                reviewed_at: '2026-10-14T01:00:00Z',
+                reviewed_by_user_id: 1,
+                refunded_centavos: 5000,
+                refunds: [
+                    {
+                        id: 9,
+                        amount_centavos: 5000,
+                        method: 'cash',
+                        reference: 'Cash987',
+                        reason: 'Partial refund',
+                        refunded_at: '2026-10-14T02:00:00Z',
+                        recorded_at: '2026-10-14T02:00:00Z',
+                        recorded_by_user_id: 1,
+                    },
+                ],
+            },
+            cancellations: [
+                {
+                    id: 4,
+                    status: 'approved',
+                    reason: 'Cannot attend',
+                    requested_at: '2026-10-14T00:00:00Z',
+                    resolved_at: '2026-10-14T01:00:00Z',
+                    resolved_by_user_id: 1,
+                    resolution_reason: 'Approved',
+                },
+            ],
+        },
+    });
+    context.after(ui.unmount);
+    assert.match(ui.text(), /Money returned is recorded separately/);
+    assert.match(ui.text(), /Partial refund/);
+    assert.match(ui.text(), /50\.00/);
+    assert.equal(ui.all('a')[0].props.href, '/event-payments/6/receipt');
 });

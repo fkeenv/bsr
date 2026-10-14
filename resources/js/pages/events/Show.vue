@@ -9,6 +9,7 @@ import { store as registerForEvent } from '@/routes/events/registrations';
 import RichTextContent from '@/components/RichTextContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatEventMoney } from '@/lib/eventMoney';
 import { formatEventDate } from '@/lib/eventDates';
 import { index } from '@/routes/events';
 import type { AssociationEvent } from '@/types/event';
@@ -31,7 +32,12 @@ const attendees = ref([page.props.auth.user?.name ?? '']);
             <article class="space-y-8">
                 <header class="space-y-5">
                     <div class="flex gap-2">
-                        <Badge>Free Event</Badge
+                        <Badge>{{
+                            event.price_centavos > 0
+                                ? formatEventMoney(event.price_centavos) +
+                                  ' per attendee'
+                                : 'Free Event'
+                        }}</Badge
                         ><Badge variant="outline">{{
                             event.audience_label
                         }}</Badge>
@@ -156,6 +162,28 @@ const attendees = ref([page.props.auth.user?.name ?? '']);
                         <InputError :message="errors.attendees" /><InputError
                             :message="errors.submission_key"
                         />
+                        <div
+                            v-if="event.price_centavos > 0"
+                            class="bg-muted space-y-3 rounded-lg p-4"
+                        >
+                            <p class="font-medium">
+                                {{ attendees.length }} attendees ·
+                                {{
+                                    formatEventMoney(
+                                        event.price_centavos * attendees.length,
+                                    )
+                                }}
+                                total
+                            </p>
+                            <p class="text-sm">
+                                Places are reserved for 24 hours. Submit payment
+                                details within that window. Staff must confirm
+                                payment before tickets are issued.
+                            </p>
+                            <p class="text-sm whitespace-pre-wrap">
+                                {{ event.payment_instructions }}
+                            </p>
+                        </div>
                         <div class="flex flex-wrap gap-3">
                             <Button
                                 type="button"
@@ -163,9 +191,11 @@ const attendees = ref([page.props.auth.user?.name ?? '']);
                                 :disabled="processing"
                                 @click="attendees.push('')"
                                 >Add attendee</Button
-                            ><Button type="submit" :disabled="processing"
-                                >Confirm free registration</Button
-                            >
+                            ><Button type="submit" :disabled="processing">{{
+                                event.price_centavos > 0
+                                    ? 'Reserve places for 24 hours'
+                                    : 'Confirm free registration'
+                            }}</Button>
                         </div>
                     </Form>
                 </section>

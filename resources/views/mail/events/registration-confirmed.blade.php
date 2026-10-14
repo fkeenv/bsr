@@ -1,7 +1,7 @@
 <x-mail::message>
 # Your registration is confirmed
 
-Your free registration for **{{ $registration->event->title }}** was confirmed for {{ $registration->attendee_count }} attendees.
+Your registration for **{{ $registration->event->title }}** was confirmed for {{ $registration->attendee_count }} attendees.
 
 @foreach ($registration->attendees as $attendee)
 - {{ $attendee->name }}

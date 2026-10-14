@@ -23,13 +23,14 @@ use Illuminate\Support\Carbon;
  * @property EventAudience $audience
  * @property EventStatus $status
  * @property int|null $capacity
+ * @property string|null $payment_instructions
  * @property int $price_centavos
  * @property Carbon|null $published_at
  * @property Carbon|null $cancelled_at
  * @property int $created_by_user_id
  * @property int|null $updated_by_user_id
  */
-#[Fillable(['title', 'description', 'image_path', 'venue', 'starts_at', 'ends_at', 'registration_deadline', 'audience', 'status', 'capacity', 'price_centavos', 'published_at', 'cancelled_at', 'created_by_user_id', 'updated_by_user_id'])]
+#[Fillable(['title', 'description', 'image_path', 'venue', 'starts_at', 'ends_at', 'registration_deadline', 'audience', 'status', 'capacity', 'price_centavos', 'payment_instructions', 'published_at', 'cancelled_at', 'created_by_user_id', 'updated_by_user_id'])]
 class Event extends Model
 {
     /** @use HasFactory<EventFactory> */

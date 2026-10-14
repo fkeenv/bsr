@@ -24,11 +24,9 @@ defineProps<{ registrations: EventRegistration[] }>();
                                 : 'secondary'
                         "
                         >{{
-                            registration.cancelled_at
-                                ? 'Cancelled'
-                                : registration.event.status === 'cancelled'
-                                  ? 'Event cancelled'
-                                  : 'Confirmed'
+                            registration.event.status === 'cancelled'
+                                ? 'Event cancelled'
+                                : registration.status_label
                         }}</Badge
                     >
                     <h2 class="font-serif text-2xl">

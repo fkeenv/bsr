@@ -8,6 +8,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventAttendeeController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventFinancialController;
 use App\Http\Controllers\EventRegistrationController;
 use App\Http\Controllers\EventTicketController;
 use App\Http\Controllers\LegalDocumentController;
@@ -71,6 +72,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('event-tickets/{attendee:ticket_token}', [EventTicketController::class, 'show'])->name('event-tickets.show');
     Route::get('event-tickets/{attendee:ticket_token}/qr', [EventTicketController::class, 'qr'])->name('event-tickets.qr');
     Route::get('officer/event-registrations', [OfficerEventRegistrationController::class, 'index'])->middleware(EnsureStaffPermission::class.':events.registrations.read')->name('officer.event-registrations.index');
+
+    Route::post('event-registrations/{registration}/payment', [EventFinancialController::class, 'submit'])->name('event-registrations.payment');
+    Route::post('event-registrations/{registration}/cancellation-requests', [EventFinancialController::class, 'requestCancellation'])->name('event-registrations.request-cancellation');
+    Route::get('event-payments/{payment}/receipt', [EventFinancialController::class, 'receipt'])->name('event-payments.receipt');
+    Route::get('officer/event-finances', [App\Http\Controllers\Officer\EventFinancialController::class, 'index'])->middleware(EnsureStaffPermission::class.':events.payments.review,events.refunds.review')->name('officer.event-finances.index');
+    Route::post('officer/event-payments/{payment}/review', [App\Http\Controllers\Officer\EventFinancialController::class, 'review'])->middleware(EnsureStaffPermission::class.':events.payments.review')->name('officer.event-payments.review');
+    Route::post('officer/event-cancellations/{cancellation}/resolve', [App\Http\Controllers\Officer\EventFinancialController::class, 'resolve'])->middleware(EnsureStaffPermission::class.':events.refunds.review')->name('officer.event-cancellations.resolve');
+    Route::post('officer/event-payments/{payment}/refunds', [App\Http\Controllers\Officer\EventFinancialController::class, 'refund'])->middleware(EnsureStaffPermission::class.':events.refunds.review')->name('officer.event-payments.refund');
 
     Route::post('events/{event}/registrations', [EventRegistrationController::class, 'store'])->name('events.registrations.store');
     Route::get('event-registrations', [EventRegistrationController::class, 'index'])->name('event-registrations.index');

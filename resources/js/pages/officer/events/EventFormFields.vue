@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { eventCentavos } from '@/lib/eventMoney';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -18,6 +20,7 @@ const props = defineProps<{
     description: string;
     errors: Record<string, string>;
 }>();
+const price = ref(String((props.event?.price_centavos ?? 0) / 100));
 const emit = defineEmits<{ 'update:description': [value: string] }>();
 const descriptionModel = computed({
     get: () => props.description,
@@ -132,10 +135,42 @@ const dateFields = [
             </p>
             <InputError :message="errors.image" />
         </div>
-        <input type="hidden" name="price_centavos" value="0" />
+        <div class="grid gap-2">
+            <Label for="price">Price per attendee (PHP)</Label>
+            <Input
+                id="price"
+                v-model="price"
+                type="number"
+                min="0"
+                max="21474836.47"
+                step="0.01"
+                required
+            />
+            <input
+                type="hidden"
+                name="price_centavos"
+                :value="eventCentavos(price)"
+            />
+            <InputError :message="errors.price_centavos" />
+        </div>
+        <div class="grid gap-2">
+            <Label for="payment_instructions"
+                >External payment instructions</Label
+            >
+            <Textarea
+                id="payment_instructions"
+                name="payment_instructions"
+                :default-value="event?.payment_instructions ?? ''"
+                :required="Number(price) > 0"
+                maxlength="10000"
+                placeholder="Where and how to pay, including account details or office hours."
+            />
+            <InputError :message="errors.payment_instructions" />
+        </div>
         <p class="text-muted-foreground text-sm">
-            This Event is free. Paid registration will be available separately.
-            Price and audience are locked after the first registration.
+            Enter 0 for a free Event. Paid places are reserved for 24 hours
+            while attendees submit payment details. Price and audience are
+            locked after the first registration.
         </p>
         <InputError :message="errors.price_centavos" />
     </div>

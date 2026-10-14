@@ -101,10 +101,10 @@ test('invalid free Event details cannot be saved', function (string $field, mixe
 })->with([
     ['title', ''], ['description', '<p></p>'], ['venue', ''], ['starts_at', 'not a date'],
     ['ends_at', '2027-01-20T15:00'], ['registration_deadline', '2027-01-21T12:00'],
-    ['audience', 'hidden'], ['capacity', -1], ['capacity', 1.5], ['price_centavos', -1], ['price_centavos', 100],
+    ['audience', 'hidden'], ['capacity', -1], ['capacity', 1.5], ['price_centavos', -1], ['price_centavos', 2147483648],
 ]);
 
-test('publishing revalidates chronology deadline and free price of stored drafts', function (array $invalid) {
+test('publishing revalidates chronology deadline and payment instructions of stored drafts', function (array $invalid) {
     $this->actingAs(User::factory()->superAdmin()->create());
     $event = Event::factory()->create($invalid);
     $this->post(route('officer.events.publish', $event))->assertSessionHasErrors('event');
