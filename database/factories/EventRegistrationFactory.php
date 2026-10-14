@@ -13,6 +13,6 @@ class EventRegistrationFactory extends Factory
     /** @return array<string, mixed> */
     public function definition(): array
     {
-        return ['event_id' => Event::factory()->published(), 'user_id' => User::factory(), 'attendee_count' => 1];
+        return ['event_id' => Event::factory()->published(), 'user_id' => User::factory(), 'attendee_count' => 1, 'confirmed_at' => now(), 'submission_key' => fake()->uuid(), 'submission_hash' => hash('sha256', 'factory')];
     }
 }

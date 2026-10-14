@@ -39,6 +39,8 @@ import { dashboard, home, joinProperty } from '@/routes';
 import { edit as propertyProfile } from '@/routes/property-profile';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
+import { index as myRegistrationsIndex } from '@/routes/event-registrations';
+import { index as staffRegistrationsIndex } from '@/routes/officer/event-registrations';
 import { index as eventsIndex } from '@/routes/events';
 import { index as manageEventsIndex } from '@/routes/officer/events';
 import { index as announcementsIndex } from '@/routes/announcements';
@@ -109,6 +111,11 @@ const platformNavItems = computed((): NavItem[] => {
     }
 
     const items: NavItem[] = [
+        {
+            title: 'My registrations',
+            href: myRegistrationsIndex(),
+            icon: CalendarClock,
+        },
         { title: 'Events', href: eventsIndex(), icon: CalendarClock },
         {
             title: 'Dashboard',
@@ -203,6 +210,15 @@ const officerNavItems = computed((): NavItem[] => {
                     },
                 ]
               : []),
+        ...(allowsStaff('events.registrations.read')
+            ? [
+                  {
+                      title: 'Event registrations',
+                      href: staffRegistrationsIndex(),
+                      icon: CalendarClock,
+                  },
+              ]
+            : []),
         ...(allowsStaff('events.manage')
             ? [
                   {
@@ -411,6 +427,11 @@ const membershipNavItems = computed((): NavItem[] => {
     }
 
     const items: NavItem[] = [
+        {
+            title: 'My registrations',
+            href: myRegistrationsIndex(),
+            icon: CalendarClock,
+        },
         { title: 'Events', href: eventsIndex(), icon: CalendarClock },
         {
             title: 'Membership',

@@ -6,7 +6,10 @@ use App\Http\Controllers\Administrator\UserAccountController;
 use App\Http\Controllers\AnnouncementAttachmentController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EventAttendeeController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventRegistrationController;
+use App\Http\Controllers\EventTicketController;
 use App\Http\Controllers\LegalDocumentController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\Officer\AnnouncementAttachmentController as OfficerAnnouncementAttachmentController;
@@ -16,6 +19,7 @@ use App\Http\Controllers\Officer\ChargeController;
 use App\Http\Controllers\Officer\ChargeGenerationController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
 use App\Http\Controllers\Officer\EventController as OfficerEventController;
+use App\Http\Controllers\Officer\EventRegistrationController as OfficerEventRegistrationController;
 use App\Http\Controllers\Officer\FeeTypeController;
 use App\Http\Controllers\Officer\LevySettingsController;
 use App\Http\Controllers\Officer\MembershipController as OfficerMembershipController;
@@ -63,6 +67,16 @@ Route::get('events/{event}', [EventController::class, 'show'])->name('events.sho
 Route::get('events/{event}/image', [EventController::class, 'image'])->name('events.image');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::put('event-attendees/{attendee}', [EventAttendeeController::class, 'update'])->name('event-attendees.update');
+    Route::get('event-tickets/{attendee:ticket_token}', [EventTicketController::class, 'show'])->name('event-tickets.show');
+    Route::get('event-tickets/{attendee:ticket_token}/qr', [EventTicketController::class, 'qr'])->name('event-tickets.qr');
+    Route::get('officer/event-registrations', [OfficerEventRegistrationController::class, 'index'])->middleware(EnsureStaffPermission::class.':events.registrations.read')->name('officer.event-registrations.index');
+
+    Route::post('events/{event}/registrations', [EventRegistrationController::class, 'store'])->name('events.registrations.store');
+    Route::get('event-registrations', [EventRegistrationController::class, 'index'])->name('event-registrations.index');
+    Route::get('event-registrations/{registration}', [EventRegistrationController::class, 'show'])->name('event-registrations.show');
+    Route::post('event-registrations/{registration}/cancel', [EventRegistrationController::class, 'cancel'])->name('event-registrations.cancel');
+
     Route::prefix('officer/events')->name('officer.events.')->middleware(EnsureStaffPermission::class.':events.manage')->group(function () {
         Route::get('/', [OfficerEventController::class, 'index'])->name('index');
         Route::get('create', [OfficerEventController::class, 'create'])->name('create');

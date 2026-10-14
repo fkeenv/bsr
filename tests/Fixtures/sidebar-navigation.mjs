@@ -502,3 +502,25 @@ void test('Events discovery is available while management requires its own grant
     await vue.nextTick();
     assert.equal(ui.destinations().includes('/officer/events'), false);
 });
+
+void test('My registrations stays available without Memberships and staff rosters need a reading grant', async (context) => {
+    const ui = setup(context, {
+        ...member,
+        isMembershipHolder: false,
+        canAccessOfficer: true,
+    });
+    assert.ok(ui.destinations().includes('/event-registrations'));
+    assert.equal(
+        ui.destinations().includes('/officer/event-registrations'),
+        false,
+    );
+    ui.page.props.auth.staffPermissions = ['events.manage'];
+    await vue.nextTick();
+    assert.equal(
+        ui.destinations().includes('/officer/event-registrations'),
+        false,
+    );
+    ui.page.props.auth.staffPermissions = ['events.registrations.read'];
+    await vue.nextTick();
+    assert.ok(ui.destinations().includes('/officer/event-registrations'));
+});
