@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import InputError from '@/components/InputError.vue';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { login } from '@/routes';
+import { store as registerForEvent } from '@/routes/events/registrations';
 import RichTextContent from '@/components/RichTextContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +13,13 @@ import { formatEventDate } from '@/lib/eventDates';
 import { index } from '@/routes/events';
 import type { AssociationEvent } from '@/types/event';
 defineOptions({ layout: [] });
-defineProps<{ event: AssociationEvent }>();
+defineProps<{
+    event: AssociationEvent;
+    registrationAvailability: string | null;
+    submissionKey: string | null;
+}>();
+const page = usePage();
+const attendees = ref([page.props.auth.user?.name ?? '']);
 </script>
 <template>
     <div class="bg-background text-foreground min-h-screen">
@@ -78,6 +90,85 @@ defineProps<{ event: AssociationEvent }>();
                     :html="event.description"
                     class="text-base leading-8 break-words"
                 />
+                <section
+                    class="border-border space-y-6 border-t pt-8"
+                    aria-labelledby="register-heading"
+                >
+                    <h2 id="register-heading" class="font-serif text-2xl">
+                        Register for this Event
+                    </h2>
+                    <template v-if="registrationAvailability">
+                        <p class="text-muted-foreground">
+                            {{ registrationAvailability }}
+                        </p>
+                        <Button v-if="!page.props.auth.user" as-child
+                            ><Link :href="login()"
+                                >Sign in to register</Link
+                            ></Button
+                        >
+                    </template>
+                    <Form
+                        v-else
+                        v-bind="registerForEvent.form(event.id)"
+                        class="space-y-5"
+                        v-slot="{ errors, processing }"
+                    >
+                        <input
+                            type="hidden"
+                            name="submission_key"
+                            :value="submissionKey"
+                        />
+                        <p class="text-muted-foreground text-sm">
+                            Add everyone attending, including yourself if you
+                            will attend. Family members and guests do not need
+                            their own accounts.
+                        </p>
+                        <div
+                            v-for="(_, index) in attendees"
+                            :key="index"
+                            class="grid gap-2"
+                        >
+                            <Label :for="`attendee-${index}`"
+                                >Attendee {{ index + 1 }} name</Label
+                            >
+                            <div class="flex items-start gap-2">
+                                <Input
+                                    :id="`attendee-${index}`"
+                                    v-model="attendees[index]"
+                                    :name="`attendees[${index}][name]`"
+                                    required
+                                    maxlength="255"
+                                    :disabled="processing"
+                                /><Button
+                                    type="button"
+                                    variant="ghost"
+                                    :disabled="
+                                        processing || attendees.length === 1
+                                    "
+                                    @click="attendees.splice(index, 1)"
+                                    >Remove</Button
+                                >
+                            </div>
+                            <InputError
+                                :message="errors[`attendees.${index}.name`]"
+                            />
+                        </div>
+                        <InputError :message="errors.attendees" /><InputError
+                            :message="errors.submission_key"
+                        />
+                        <div class="flex flex-wrap gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                :disabled="processing"
+                                @click="attendees.push('')"
+                                >Add attendee</Button
+                            ><Button type="submit" :disabled="processing"
+                                >Confirm free registration</Button
+                            >
+                        </div>
+                    </Form>
+                </section>
             </article>
         </main>
     </div>

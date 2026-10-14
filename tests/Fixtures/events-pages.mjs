@@ -38,7 +38,11 @@ void test('Event discovery links to details and renders an empty state without l
 });
 
 void test('Event details display Manila dates, authorized image URLs, and sanitized body', (context) => {
-    const ui = mount('resources/js/pages/events/Show.vue', { event });
+    const ui = mount('resources/js/pages/events/Show.vue', {
+        event,
+        registrationAvailability: 'Sign in to register for this Event.',
+        submissionKey: null,
+    });
     context.after(ui.unmount);
     assert.deepEqual(ui.layout, []);
     assert.match(ui.text(), /4:00/);
