@@ -202,7 +202,7 @@ test('future and protected permission names are ungranted while Super Admin alwa
     $this->actingAs($actor)->put(route('super-admin.role-permissions.update', $role), ['grants' => ['administrators.appoint']])->assertSessionHasErrors('grants.0');
     Role::findByName('super-admin', 'web')->syncPermissions([]);
     $this->get(route('officer.payments.index'))->assertOk();
-    $this->get(route('super-admin.role-permissions.index'))->assertInertia(fn ($page) => $page->has('auth.staffPermissions', 44));
+    $this->get(route('super-admin.role-permissions.index'))->assertInertia(fn ($page) => $page->has('auth.staffPermissions', 49));
 });
 
 test('privileged Announcement reading follows custom grants and immediately falls back to Membership scope on revocation', function () {

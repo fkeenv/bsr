@@ -39,6 +39,8 @@ import { dashboard, home, joinProperty } from '@/routes';
 import { edit as propertyProfile } from '@/routes/property-profile';
 import { dashboard as administratorDashboard } from '@/routes/administrator';
 import { index as userAccountsIndex } from '@/routes/administrator/user-accounts';
+import { index as eventsIndex } from '@/routes/events';
+import { index as manageEventsIndex } from '@/routes/officer/events';
 import { index as announcementsIndex } from '@/routes/announcements';
 import { dashboard as officerDashboard } from '@/routes/officer';
 import {
@@ -97,6 +99,7 @@ const homeHref = computed(() => {
 const platformNavItems = computed((): NavItem[] => {
     if (!capabilities.value) {
         return [
+            { title: 'Events', href: eventsIndex(), icon: CalendarClock },
             {
                 title: 'Announcements',
                 href: announcementsIndex(),
@@ -106,6 +109,7 @@ const platformNavItems = computed((): NavItem[] => {
     }
 
     const items: NavItem[] = [
+        { title: 'Events', href: eventsIndex(), icon: CalendarClock },
         {
             title: 'Dashboard',
             href: dashboard(),
@@ -199,6 +203,15 @@ const officerNavItems = computed((): NavItem[] => {
                     },
                 ]
               : []),
+        ...(allowsStaff('events.manage')
+            ? [
+                  {
+                      title: 'Events',
+                      href: manageEventsIndex(),
+                      icon: CalendarClock,
+                  },
+              ]
+            : []),
         ...(allowsStaff('unpaid.read')
             ? [
                   {
@@ -398,6 +411,7 @@ const membershipNavItems = computed((): NavItem[] => {
     }
 
     const items: NavItem[] = [
+        { title: 'Events', href: eventsIndex(), icon: CalendarClock },
         {
             title: 'Membership',
             href: dashboard(),

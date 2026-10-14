@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import PublicAnnouncementPreviews from '@/components/PublicAnnouncementPreviews.vue';
 import type { AnnouncementPreview } from '@/types/announcement-preview';
 import { ArrowRight } from '@lucide/vue';
+import { index as eventsIndex } from '@/routes/events';
 import { dashboard, home, login, register } from '@/routes';
 
 defineProps<{
@@ -84,6 +85,9 @@ const essentials = [
                     <a href="#joining" class="landing-text-link">
                         How it works
                     </a>
+                    <Link :href="eventsIndex()" class="landing-text-link"
+                        >Events</Link
+                    >
                     <a href="#contacts" class="landing-text-link"> Contacts </a>
                     <Link
                         v-if="page.props.auth.user"

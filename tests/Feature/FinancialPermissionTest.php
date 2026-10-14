@@ -155,7 +155,7 @@ test('financial grants are role-specific audited and revoked on the next request
     $administrator->givePermissionTo('payments.read');
     $this->get(route('officer.payments.index'))->assertForbidden();
     $this->actingAs($actor)->get(route('officer.payments.index'))->assertOk();
-    $this->get(route('super-admin.role-permissions.index'))->assertOk()->assertInertia(fn ($page) => $page->has('permissions', 44));
+    $this->get(route('super-admin.role-permissions.index'))->assertOk()->assertInertia(fn ($page) => $page->has('permissions', 49));
 });
 
 test('Charge editors can edit without listing but cannot rewrite frozen financial history', function (bool $frozen) {
