@@ -259,7 +259,7 @@ test('external refunds preserve the payment require cancelled confirmed registra
     $this->post(route('officer.event-payments.refund', $payment), [...$payload, 'amount_centavos' => 5000])->assertSessionHasErrors('refund');
     $this->post(route('officer.event-payments.refund', $payment), eventRefundPayload(15101))->assertSessionHasErrors('amount_centavos');
     $this->post(route('officer.event-payments.refund', $payment), eventRefundPayload(15100))->assertSessionHasNoErrors();
-    expect(EventRefundRecord::count())->toBe(2)->and(EventRefundRecord::sum('amount_centavos'))->toBe(25100);
+    expect(EventRefundRecord::count())->toBe(2)->and((int) EventRefundRecord::sum('amount_centavos'))->toBe(25100);
     expect($payment->fresh()->amount_centavos)->toBe(25100)->and($payment->fresh()->status)->toBe('confirmed');
     expect(EventRefundRecord::query()->first()->recorded_by_user_id)->toBe($reviewer->id);
     Mail::assertQueued(EventRegistrationUpdated::class, fn ($mail) => $mail->headline === 'An Event refund was recorded' && $mail->afterCommit);
