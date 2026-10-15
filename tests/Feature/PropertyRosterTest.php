@@ -68,7 +68,7 @@ test('duplicate Block Lot is rejected', function () {
 
 test('roster lists Properties and filters by Block', function () {
     $user = User::factory()->officer()->create();
-    Property::factory()->create(['block' => '1', 'lot' => '1']);
+    $user->memberships()->sole()->property->update(['block' => '1', 'lot' => '1']);
     Property::factory()->create(['block' => '1', 'lot' => '2']);
     Property::factory()->create(['block' => '2', 'lot' => '1']);
 

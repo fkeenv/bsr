@@ -19,6 +19,7 @@ use App\Http\Controllers\Officer\BillSettingsController;
 use App\Http\Controllers\Officer\ChargeController;
 use App\Http\Controllers\Officer\ChargeGenerationController;
 use App\Http\Controllers\Officer\DashboardController as OfficerDashboardController;
+use App\Http\Controllers\Officer\EventCheckInController;
 use App\Http\Controllers\Officer\EventController as OfficerEventController;
 use App\Http\Controllers\Officer\EventRegistrationController as OfficerEventRegistrationController;
 use App\Http\Controllers\Officer\FeeTypeController;
@@ -80,6 +81,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('officer/event-payments/{payment}/review', [App\Http\Controllers\Officer\EventFinancialController::class, 'review'])->middleware(EnsureStaffPermission::class.':events.payments.review')->name('officer.event-payments.review');
     Route::post('officer/event-cancellations/{cancellation}/resolve', [App\Http\Controllers\Officer\EventFinancialController::class, 'resolve'])->middleware(EnsureStaffPermission::class.':events.refunds.review')->name('officer.event-cancellations.resolve');
     Route::post('officer/event-payments/{payment}/refunds', [App\Http\Controllers\Officer\EventFinancialController::class, 'refund'])->middleware(EnsureStaffPermission::class.':events.refunds.review')->name('officer.event-payments.refund');
+
+    Route::prefix('officer/event-check-in')->name('officer.event-check-in.')->middleware(EnsureStaffPermission::class.':events.check-in')->group(function () {
+        Route::get('/', [EventCheckInController::class, 'index'])->name('index');
+        Route::get('{event}', [EventCheckInController::class, 'show'])->name('show');
+        Route::post('{event}', [EventCheckInController::class, 'store'])->name('store');
+    });
 
     Route::post('events/{event}/registrations', [EventRegistrationController::class, 'store'])->name('events.registrations.store');
     Route::get('event-registrations', [EventRegistrationController::class, 'index'])->name('event-registrations.index');
