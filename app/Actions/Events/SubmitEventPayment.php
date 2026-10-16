@@ -4,7 +4,6 @@ namespace App\Actions\Events;
 
 use App\Enums\EventPaymentMethod;
 use App\Enums\EventRegistrationStatus;
-use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\EventPaymentRecord;
 use App\Models\EventRegistration;
@@ -50,7 +49,7 @@ class SubmitEventPayment
 
                     return null;
                 }
-                if ($event->status !== EventStatus::Published || $registration->status !== EventRegistrationStatus::PendingPayment || $registration->price_centavos <= 0) {
+                if (! $event->status->isPublished() || $registration->status !== EventRegistrationStatus::PendingPayment || $registration->price_centavos <= 0) {
                     throw ValidationException::withMessages(['payment' => 'This registration is not awaiting payment.']);
                 }
                 if ($path === null && ($data['receipt'] ?? null) instanceof UploadedFile) {

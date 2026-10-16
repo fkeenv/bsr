@@ -48,6 +48,11 @@ defineProps<{ events: AssociationEvent[] }>();
                     />
                     <CardContent class="flex flex-1 flex-col gap-4 py-6">
                         <div class="flex flex-wrap gap-2">
+                            <Badge
+                                v-if="event.status === 'rescheduled'"
+                                variant="outline"
+                                >Rescheduled</Badge
+                            >
                             <Badge variant="secondary">{{
                                 event.price_centavos > 0
                                     ? formatEventMoney(event.price_centavos)

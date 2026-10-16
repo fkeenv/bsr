@@ -100,6 +100,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{event}/edit', [OfficerEventController::class, 'edit'])->name('edit');
         Route::put('{event}', [OfficerEventController::class, 'update'])->name('update');
         Route::post('{event}/publish', [OfficerEventController::class, 'publish'])->name('publish');
+        Route::post('{event}/reschedule', [OfficerEventController::class, 'reschedule'])->name('reschedule');
         Route::post('{event}/cancel', [OfficerEventController::class, 'cancel'])->name('cancel');
     });
 

@@ -148,3 +148,64 @@ void test('paid Event form converts PHP input to centavos without accepting sub-
     );
     assert.equal(ui.all('Textarea')[0].props.required, false);
 });
+
+void test('rescheduled Events show a clear notice with the new schedule', (context) => {
+    const ui = mount('resources/js/components/EventScheduleNotice.vue', {
+        event: { ...event, status: 'rescheduled' },
+    });
+    context.after(ui.unmount);
+    assert.match(ui.text(), /Rescheduled/);
+    assert.match(ui.text(), /January 20, 2027/);
+    assert.match(ui.text(), /original expiry/);
+});
+
+void test('published and rescheduled Event management offers a dedicated schedule form and retained history', (context) => {
+    const Form = vue.defineComponent({
+        inheritAttrs: false,
+        setup:
+            (_, { attrs, slots }) =>
+            () =>
+                vue.h(
+                    'Form',
+                    attrs,
+                    slots.default?.({ errors: {}, processing: false }),
+                ),
+    });
+    const ui = mount(
+        'resources/js/pages/officer/events/Edit.vue',
+        {
+            event: { ...event, status: 'rescheduled' },
+            scheduleChanges: [
+                {
+                    id: 1,
+                    changed_by_user_id: 12,
+                    changed_at: '2026-10-16T00:00:00Z',
+                    old_starts_at: '2027-01-19T08:00:00Z',
+                    old_ends_at: '2027-01-19T10:00:00Z',
+                    old_registration_deadline: '2027-01-18T04:00:00Z',
+                    new_starts_at: event.starts_at,
+                    new_ends_at: event.ends_at,
+                    new_registration_deadline: event.registration_deadline,
+                },
+            ],
+        },
+        null,
+        '/',
+        { '@inertiajs/vue3': { Form } },
+    );
+    context.after(ui.unmount);
+    assert.match(ui.text(), /Reschedule Event/);
+    assert.match(ui.text(), /Schedule history/);
+    assert.match(ui.text(), /January 19, 2027/);
+    assert.match(ui.text(), /Staff account #12/);
+    const form = ui
+        .all('Form')
+        .find((node) => node.props.action === '/officer/events/7/reschedule');
+    assert.ok(form);
+    assert.equal(
+        ui.all('Input').find((node) => node.props.name === 'starts_at').props[
+            'default-value'
+        ],
+        '2027-01-20T16:00',
+    );
+});

@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Enums\EventAudience;
 use App\Enums\EventRegistrationStatus;
-use App\Enums\EventStatus;
 use App\Models\Event;
 use App\Models\EventAttendee;
 use App\Models\EventRegistration;
@@ -40,7 +39,7 @@ class EventRegistrationRules
 
     public function unavailableReason(Event $event, ?User $user): ?string
     {
-        if ($event->status !== EventStatus::Published) {
+        if (! $event->status->isPublished()) {
             return 'This Event is not accepting registrations.';
         }
         if ($event->price_centavos > 0 && blank($event->payment_instructions)) {
@@ -78,13 +77,13 @@ class EventRegistrationRules
         return $attendee->ticket_token !== null && $attendee->revoked_at === null
             && $attendee->registration->status === EventRegistrationStatus::Confirmed && $attendee->registration->confirmed_at !== null
             && $attendee->registration->cancelled_at === null
-            && $attendee->registration->event->status === EventStatus::Published;
+            && $attendee->registration->event->status->isPublished();
     }
 
     public function canCorrectName(EventAttendee $attendee): bool
     {
         return $attendee->checked_in_at === null && $attendee->revoked_at === null
-            && $attendee->registration->event->status === EventStatus::Published
+            && $attendee->registration->event->status->isPublished()
             && in_array($this->effectiveStatus($attendee->registration), [EventRegistrationStatus::PendingPayment, EventRegistrationStatus::AwaitingReview, EventRegistrationStatus::Confirmed], true);
     }
 

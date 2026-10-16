@@ -24,7 +24,7 @@ enum EventPermission: string
     public function description(): string
     {
         return match ($this) {
-            self::Manage => 'Create, edit, publish, and cancel association Events.',
+            self::Manage => 'Create, edit, publish, reschedule, and cancel association Events.',
             self::RegistrationsRead => 'View registration and attendee records, independently of Event management.',
             self::PaymentsReview => 'Review Event payment records, separately from Property dues.',
             self::RefundsReview => 'Review Event refund records, separately from Property dues.',

@@ -511,3 +511,65 @@ void test('financial history distinguishes cancellation approval from actual ref
     assert.match(ui.text(), /50\.00/);
     assert.equal(ui.all('a')[0].props.href, '/event-payments/6/receipt');
 });
+
+void test('rescheduled paid registrations explain full refunds and keep cancellation available', (context) => {
+    const ui = mount(
+        'resources/js/pages/event-registrations/Show.vue',
+        {
+            registration: {
+                ...registration,
+                price_centavos: 10000,
+                total_centavos: 10000,
+                event: { ...event, status: 'rescheduled' },
+            },
+            isOwner: true,
+            submissionKey: 'refund-request',
+            financial: {
+                payment: null,
+                cancellations: [],
+                full_refund_eligible: true,
+            },
+        },
+        null,
+        '/',
+        { '@inertiajs/vue3': { Form } },
+    );
+    context.after(ui.unmount);
+    assert.match(
+        ui.text(),
+        /whole-registration cancellation and a full refund/,
+    );
+    assert.ok(ui.all('EventScheduleNotice').length);
+    assert.ok(
+        ui
+            .all('Form')
+            .some(
+                (node) =>
+                    node.props.action ===
+                    '/event-registrations/3/cancellation-requests',
+            ),
+    );
+});
+
+void test('refund history separates the amount owed from recorded money returned', (context) => {
+    const ui = mount('resources/js/components/EventFinancialHistory.vue', {
+        financial: {
+            full_refund_eligible: false,
+            cancellations: [],
+            payment: {
+                status: 'confirmed',
+                amount_centavos: 10000,
+                method: 'cash',
+                reference: 'Receipt 1',
+                submitted_at: '2026-10-16T00:00:00Z',
+                refunded_centavos: 0,
+                refund_due_centavos: 10000,
+                refunds: [],
+            },
+        },
+    });
+    context.after(ui.unmount);
+    assert.match(ui.text(), /Refund required:.*100\.00/);
+    assert.match(ui.text(), /not been recorded as returned/);
+    assert.doesNotMatch(ui.text(), /Refunds recorded:/);
+});

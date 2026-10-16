@@ -13,7 +13,7 @@ class EventAccess
     /** @return Builder<Event> */
     public function visibleQuery(?User $user): Builder
     {
-        return Event::query()->where('status', EventStatus::Published)
+        return Event::query()->whereIn('status', EventStatus::publishedStates())
             ->when(! $user?->hasLiveMembership(), fn (Builder $query) => $query->where('audience', EventAudience::Public));
     }
 

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Officer;
 use App\Actions\Events\CancelEvent;
 use App\Actions\Events\ListEvents;
 use App\Actions\Events\PublishEvent;
+use App\Actions\Events\RescheduleEvent;
 use App\Actions\Events\SaveEvent;
 use App\Data\EventData;
+use App\Data\EventScheduleChangeData;
+use App\Http\Requests\Officer\RescheduleEventRequest;
 use App\Http\Requests\Officer\SaveEventRequest;
 use App\Models\Event;
 use Illuminate\Http\RedirectResponse;
@@ -35,7 +38,8 @@ class EventController
 
     public function edit(Event $event): Response
     {
-        return Inertia::render('officer/events/Edit', ['event' => EventData::fromModel($event)]);
+        return Inertia::render('officer/events/Edit', ['event' => EventData::fromModel($event),
+            'scheduleChanges' => $event->scheduleChanges()->orderByDesc('id')->get()->map(fn ($change): EventScheduleChangeData => EventScheduleChangeData::fromModel($change))->all()]);
     }
 
     public function update(SaveEventRequest $request, Event $event, SaveEvent $save): RedirectResponse
@@ -50,6 +54,13 @@ class EventController
         $publish->handle($request->user(), $event);
 
         return back()->with('success', 'Event published.');
+    }
+
+    public function reschedule(RescheduleEventRequest $request, Event $event, RescheduleEvent $reschedule): RedirectResponse
+    {
+        $reschedule->handle($request->user(), $event, $request->validated());
+
+        return back()->with('success', 'Event rescheduled. Existing registrants have been notified.');
     }
 
     public function cancel(Request $request, Event $event, CancelEvent $cancel): RedirectResponse

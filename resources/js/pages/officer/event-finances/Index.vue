@@ -114,11 +114,7 @@ setLayoutProps({
                                 type="submit"
                                 name="decision"
                                 value="confirmed"
-                                :disabled="
-                                    processing ||
-                                    item.registration.event.status ===
-                                        'cancelled'
-                                "
+                                :disabled="processing"
                                 >Confirm payment</Button
                             ><Button
                                 type="submit"

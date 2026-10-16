@@ -42,6 +42,12 @@ class Event extends Model
         return ['audience' => EventAudience::class, 'status' => EventStatus::class, 'starts_at' => 'datetime', 'ends_at' => 'datetime', 'registration_deadline' => 'datetime', 'published_at' => 'datetime', 'cancelled_at' => 'datetime', 'capacity' => 'integer', 'price_centavos' => 'integer'];
     }
 
+    /** @return HasMany<EventScheduleChange, $this> */
+    public function scheduleChanges(): HasMany
+    {
+        return $this->hasMany(EventScheduleChange::class);
+    }
+
     /** @return HasMany<EventRegistration, $this> */
     public function registrations(): HasMany
     {

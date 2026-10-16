@@ -16,7 +16,7 @@ class ListCheckInEvents
     {
         abort_unless(PlatformAccess::allowsStaff($actor, EventPermission::CheckIn), 403);
 
-        return array_values(Event::query()->where('status', EventStatus::Published)->orderByDesc('starts_at')->orderByDesc('id')->get()
+        return array_values(Event::query()->whereIn('status', EventStatus::publishedStates())->orderByDesc('starts_at')->orderByDesc('id')->get()
             ->map(fn (Event $event): EventData => EventData::fromModel($event, false))->all());
     }
 }
