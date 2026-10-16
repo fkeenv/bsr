@@ -21,7 +21,7 @@ class PublishEvent
             if ($event->status === EventStatus::Cancelled) {
                 throw ValidationException::withMessages(['event' => 'Cancelled Events cannot be published.']);
             }
-            if ($event->status === EventStatus::Published) {
+            if ($event->status->isPublished()) {
                 return;
             }
             if (blank($event->title) || blank($event->venue) || SanitizeHtml::isBlank($event->description)

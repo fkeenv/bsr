@@ -6,7 +6,6 @@ use App\Actions\Events\CheckInEventAttendee;
 use App\Actions\Events\FindEventAttendees;
 use App\Actions\Events\ListCheckInEvents;
 use App\Data\EventData;
-use App\Enums\EventStatus;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +21,7 @@ class EventCheckInController
 
     public function show(Request $request, Event $event, FindEventAttendees $find): Response
     {
-        abort_unless($event->status === EventStatus::Published, 404);
+        abort_unless($event->status->isPublished(), 404);
         $data = $request->validate(['search' => ['nullable', 'string', 'max:255'], 'page' => ['nullable', 'integer', 'min:1']]);
         $response = Inertia::render('officer/event-check-in/Show', ['event' => EventData::fromModel($event, false),
             'attendees' => $find->handle($request->user(), $event, $data['search'] ?? '', (int) ($data['page'] ?? 1)), 'search' => $data['search'] ?? ''])->toResponse($request);

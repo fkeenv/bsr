@@ -45,6 +45,15 @@ defineProps<{ financial: EventFinancial }>();
             >
                 {{ financial.payment.review_reason }}
             </p>
+            <p
+                v-if="financial.payment.refund_due_centavos > 0"
+                class="bg-muted rounded-lg p-4 font-medium"
+            >
+                Refund required:
+                {{ formatEventMoney(financial.payment.refund_due_centavos) }}.
+                This amount has not been recorded as returned. Staff must record
+                the external refund separately.
+            </p>
             <p v-if="financial.payment.refunds.length" class="font-medium">
                 Refunds recorded:
                 {{ formatEventMoney(financial.payment.refunded_centavos) }}

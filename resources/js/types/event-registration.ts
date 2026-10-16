@@ -51,6 +51,7 @@ export type EventCancellation = {
     resolution_reason: string | null;
 };
 export type EventFinancial = {
+    full_refund_eligible: boolean;
     payment: {
         id: number;
         amount_centavos: number;
@@ -62,6 +63,7 @@ export type EventFinancial = {
         reviewed_at: string | null;
         reviewed_by_user_id: number | null;
         review_reason: string | null;
+        refund_due_centavos: number;
         refunded_centavos: number;
         refunds: EventRefund[];
     } | null;

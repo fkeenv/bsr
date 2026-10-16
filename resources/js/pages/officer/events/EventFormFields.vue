@@ -83,8 +83,9 @@ const dateFields = [
                     type="datetime-local"
                     :default-value="eventDateInput(event?.[field.name])"
                     :readonly="
-                        event?.status === 'published' &&
-                        field.name !== 'registration_deadline'
+                        ['published', 'rescheduled'].includes(
+                            event?.status ?? '',
+                        ) && field.name !== 'registration_deadline'
                     "
                     required
                 /><InputError :message="errors[field.name]" />

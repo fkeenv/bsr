@@ -29,6 +29,11 @@ defineProps<{ registrations: EventRegistration[] }>();
                                 : registration.status_label
                         }}</Badge
                     >
+                    <Badge
+                        v-if="registration.event.status === 'rescheduled'"
+                        variant="outline"
+                        >Rescheduled</Badge
+                    >
                     <h2 class="font-serif text-2xl">
                         {{ registration.event.title }}
                     </h2>

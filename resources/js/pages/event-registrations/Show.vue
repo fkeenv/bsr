@@ -5,6 +5,7 @@ import EventPaymentFields from '@/components/EventPaymentFields.vue';
 import EventFinancialHistory from '@/components/EventFinancialHistory.vue';
 import { Textarea } from '@/components/ui/textarea';
 import { formatEventMoney } from '@/lib/eventMoney';
+import EventScheduleNotice from '@/components/EventScheduleNotice.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +70,7 @@ setLayoutProps({
             :title="registration.event.title"
             description="Registration details and individual attendee tickets."
         />
+        <EventScheduleNotice :event="registration.event" />
         <div class="space-y-3">
             <Badge variant="outline">{{
                 registration.event.status === 'cancelled'
@@ -146,6 +148,14 @@ setLayoutProps({
                 The 24-hour payment window expired. Your places have been
                 released. Start a new registration if places remain.
             </p>
+            <p
+                v-if="financial?.full_refund_eligible"
+                class="bg-muted rounded-lg p-4"
+            >
+                This Event was rescheduled. You may request whole-registration
+                cancellation and a full refund. Staff approval cancels your
+                tickets; money returned is recorded separately.
+            </p>
             <EventFinancialHistory v-if="financial" :financial="financial" />
         </div>
         <div class="grid max-w-5xl gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -186,7 +196,9 @@ setLayoutProps({
                                     'pending-payment',
                                     'awaiting-review',
                                 ].includes(registration.status) &&
-                                    registration.event.status === 'published'))
+                                    ['published', 'rescheduled'].includes(
+                                        registration.event.status,
+                                    )))
                         "
                         :open="editingAttendee === ticket.id"
                         @update:open="

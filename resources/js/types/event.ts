@@ -10,8 +10,20 @@ export type AssociationEvent = {
     registration_deadline: string;
     audience: 'public' | 'members-only';
     audience_label: string;
-    status: 'draft' | 'published' | 'cancelled';
+    status: 'draft' | 'published' | 'rescheduled' | 'cancelled';
     capacity: number | null;
     price_centavos: number;
     payment_instructions: string | null;
+};
+
+export type EventScheduleChange = {
+    id: number;
+    changed_by_user_id: number;
+    changed_at: string;
+    old_starts_at: string;
+    old_ends_at: string;
+    old_registration_deadline: string;
+    new_starts_at: string;
+    new_ends_at: string;
+    new_registration_deadline: string;
 };

@@ -10,6 +10,7 @@ import RichTextContent from '@/components/RichTextContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatEventMoney } from '@/lib/eventMoney';
+import EventScheduleNotice from '@/components/EventScheduleNotice.vue';
 import { formatEventDate } from '@/lib/eventDates';
 import { index } from '@/routes/events';
 import type { AssociationEvent } from '@/types/event';
@@ -30,6 +31,7 @@ const attendees = ref([page.props.auth.user?.name ?? '']);
                 ><Link :href="index()">Back to Events</Link></Button
             >
             <article class="space-y-8">
+                <EventScheduleNotice :event="event" />
                 <header class="space-y-5">
                     <div class="flex gap-2">
                         <Badge>{{

@@ -36,9 +36,9 @@ class SaveEvent
                         throw ValidationException::withMessages(['event' => 'Cancelled Events cannot be edited.']);
                     }
                     $this->registrations->ensureCanChange($saved, $data);
-                    if ($saved->status === EventStatus::Published &&
+                    if ($saved->status->isPublished() &&
                         (! $saved->starts_at->equalTo($data['starts_at']) || ! $saved->ends_at->equalTo($data['ends_at']))) {
-                        throw ValidationException::withMessages(['starts_at' => 'Published schedules are locked. Rescheduling will be available separately.']);
+                        throw ValidationException::withMessages(['starts_at' => 'Use Reschedule Event to change a published schedule and notify registrants.']);
                     }
                 } else {
                     $saved->status = EventStatus::Draft;
