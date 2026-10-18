@@ -91,6 +91,29 @@ function setup(
     };
 }
 
+void test('one current destination agrees with the selected workspace even when links repeat', async (context) => {
+    for (const collapsed of [false, true]) {
+        const ui = setup(context, member, '/dashboard', false, collapsed);
+        const activeLinks = () =>
+            ui
+                .all('Link')
+                .filter((node) => node.props['aria-current'] === 'page');
+        assert.equal(activeLinks().length, 1);
+        assert.equal(activeLinks()[0].props.href.url, '/dashboard');
+        ui.page.url = '/properties/4/statement-of-account?year=2026';
+        await vue.nextTick();
+        assert.equal(activeLinks().length, 1);
+        assert.equal(activeLinks()[0].props.href.url, '/statement-of-account');
+        ui.page.url = '/dashboard-unrelated';
+        await vue.nextTick();
+        assert.equal(
+            activeLinks().length,
+            0,
+            'parent matches must stop at a path segment',
+        );
+    }
+});
+
 void test('members keep statement and listed announcements without privileged links', async (context) => {
     const ui = setup(context, member);
     assert.ok(ui.destinations().includes('/statement-of-account'));

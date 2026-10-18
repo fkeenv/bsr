@@ -471,8 +471,10 @@ const essentials = [
         color: var(--landing-button-text);
     }
 
-    .landing-primary-link:hover {
-        background: var(--landing-button-hover);
+    @media (hover: hover) {
+        .landing-primary-link:hover {
+            background: var(--landing-button-hover);
+        }
     }
 }
 </style>

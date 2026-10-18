@@ -23,16 +23,14 @@ import {
     SidebarMenuSubItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { toUrl } from '@/lib/utils';
 import type { NavItem, NavSection } from '@/types';
 
 const props = defineProps<{
     section: NavSection;
     isActive: boolean;
+    activeItem?: NavItem;
 }>();
 
-const { isCurrentUrl, currentUrl } = useCurrentUrl();
 const { isMobile, state } = useSidebar();
 const showAccordion = computed(
     () => isMobile.value || state.value === 'expanded',
@@ -58,24 +56,8 @@ const itemGroups = computed(() => {
     }));
 });
 
-const activeItem = computed(() => {
-    const exactMatch = props.section.items.find((item) =>
-        isCurrentUrl(item.href),
-    );
-    if (exactMatch) {
-        return exactMatch;
-    }
-
-    return props.section.items
-        .filter((item) => {
-            const path = toUrl(item.href);
-            return currentUrl.value.startsWith(`${path}/`);
-        })
-        .sort((a, b) => toUrl(b.href).length - toUrl(a.href).length)[0];
-});
-
 function isActiveItem(item: NavItem): boolean {
-    return activeItem.value === item;
+    return props.isActive && props.activeItem === item;
 }
 </script>
 

@@ -126,7 +126,11 @@ export function mount(
                 };
             if (
                 specifier.endsWith('.vue') &&
-                !specifier.endsWith('/NavMain.vue') &&
+                ![
+                    'NavMain.vue',
+                    'ContentImage.vue',
+                    'EventTicketStatus.vue',
+                ].some((name) => specifier.endsWith(`/${name}`)) &&
                 !realComponents.includes(specifier)
             )
                 return {

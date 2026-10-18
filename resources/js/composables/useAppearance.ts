@@ -11,23 +11,21 @@ export type UseAppearanceReturn = {
 };
 
 export function updateTheme(value: Appearance): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
         return;
     }
 
-    if (value === 'system') {
-        const mediaQueryList = window.matchMedia(
-            '(prefers-color-scheme: dark)',
-        );
-        const systemTheme = mediaQueryList.matches ? 'dark' : 'light';
-
-        document.documentElement.classList.toggle(
-            'dark',
-            systemTheme === 'dark',
-        );
-    } else {
-        document.documentElement.classList.toggle('dark', value === 'dark');
+    const dark = value === 'system' ? prefersDark() : value === 'dark';
+    if (document.documentElement.classList.contains('dark') === dark) {
+        return;
     }
+
+    const override = document.createElement('style');
+    override.textContent = '*,*::before,*::after{transition:none !important}';
+    document.head.appendChild(override);
+    document.documentElement.classList.toggle('dark', dark);
+    void document.body.offsetHeight;
+    requestAnimationFrame(() => requestAnimationFrame(() => override.remove()));
 }
 
 const setCookie = (name: string, value: string, days = 365) => {

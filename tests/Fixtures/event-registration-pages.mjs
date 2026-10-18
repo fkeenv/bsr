@@ -39,6 +39,87 @@ const registration = {
     expires_at: null,
     payment_instructions: null,
 };
+
+void test('cancelled Events explain invalid admission without erasing previous check-in on either ticket surface', (context) => {
+    const cancelledEvent = { ...event, status: 'cancelled' };
+    const checkedIn = {
+        ...ticket,
+        valid: false,
+        qr_url: null,
+        checked_in_at: '2027-01-20T08:00:00Z',
+    };
+    for (const { file, props } of [
+        {
+            file: 'event-registrations',
+            props: {
+                registration: {
+                    ...registration,
+                    event: cancelledEvent,
+                    tickets: [checkedIn],
+                },
+                isOwner: false,
+                financial: null,
+                submissionKey: 'unused',
+            },
+        },
+        {
+            file: 'event-tickets',
+            props: {
+                event: cancelledEvent,
+                ticket: checkedIn,
+                registrationId: 3,
+            },
+        },
+    ]) {
+        const ui = mount(`resources/js/pages/${file}/Show.vue`, props);
+        context.after(ui.unmount);
+        assert.match(ui.text(), /Event cancelled/);
+        assert.match(ui.text(), /Not valid for admission/);
+        assert.match(ui.text(), /Previously checked in/);
+        assert.equal(ui.all('img').length, 0);
+        assert.equal(
+            ui
+                .all('Button')
+                .some((button) => /Print ticket/.test(ui.text(button))),
+            false,
+        );
+    }
+});
+
+void test('ticket presentation preserves reservation states and uses server admission validity', (context) => {
+    for (const example of [
+        {
+            status: 'pending-payment',
+            valid: false,
+            label: 'Ticket not issued yet',
+        },
+        {
+            status: 'awaiting-review',
+            valid: false,
+            label: 'Ticket not issued yet',
+        },
+        { status: 'expired', valid: false, label: 'Invalid ticket' },
+        { status: 'rejected', valid: false, label: 'Invalid ticket' },
+        { status: 'cancelled', valid: false, label: 'Registration cancelled' },
+        { status: 'confirmed', valid: false, label: 'Invalid ticket' },
+        { status: 'confirmed', valid: true, label: 'Ready for admission' },
+    ]) {
+        const ui = mount('resources/js/components/EventTicketStatus.vue', {
+            ticket: { ...ticket, valid: example.valid },
+            event: { ...event, status: 'rescheduled' },
+            registrationStatus: example.status,
+        });
+        context.after(ui.unmount);
+        assert.equal(ui.text(ui.all('Badge')[0]).trim(), example.label);
+        assert.equal(
+            ui.text().includes('Not valid for admission'),
+            !example.valid &&
+                !['pending-payment', 'awaiting-review'].includes(
+                    example.status,
+                ),
+        );
+    }
+});
 const Form = vue.defineComponent({
     inheritAttrs: false,
     setup:

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mount } from './mount-vue.mjs';
+import * as vue from 'vue';
 
 const announcement = {
     id: 31,
@@ -138,4 +139,43 @@ void test('articles without images or optional metadata keep a clean text layout
     assert.equal(ui.all('Badge').length, 0);
     assert.equal(ui.all('section').length, 0);
     assert.equal(ui.all('RichTextContent')[0].props.html, announcement.body);
+});
+
+void test('failed article images retain access to the uploaded files and recover when their source changes', async (context) => {
+    const ui = mount('resources/js/pages/announcements/Show.vue', {
+        isPublicVisitor: true,
+        announcement: {
+            ...announcement,
+            attachments: [
+                {
+                    id: 2,
+                    is_image: true,
+                    url: '/announcements/attachments/2',
+                    original_filename: 'Gathering.jpg',
+                },
+                {
+                    id: 3,
+                    is_image: true,
+                    url: '/announcements/attachments/3',
+                    original_filename: 'Schedule.jpg',
+                },
+            ],
+        },
+    });
+    context.after(ui.unmount);
+    for (const image of ui.all('img')) {
+        image.props.onError({
+            currentTarget: { getAttribute: () => image.props.src },
+        });
+    }
+    await vue.nextTick();
+    assert.equal(ui.all('img').length, 0);
+    assert.deepEqual(
+        ui.all('a').map((link) => link.props.href),
+        ['/announcements/attachments/2', '/announcements/attachments/3'],
+    );
+    assert.match(ui.text(), /Open Gathering.jpg/);
+    ui.values.announcement.attachments[0].url = '/announcements/attachments/4';
+    await vue.nextTick();
+    assert.equal(ui.all('img')[0].props.src, '/announcements/attachments/4');
 });

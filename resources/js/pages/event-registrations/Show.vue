@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import EventTicketStatus from '@/components/EventTicketStatus.vue';
+import { presentEventRegistration } from '@/lib/eventPresentation';
 import EventPaymentFields from '@/components/EventPaymentFields.vue';
 import EventFinancialHistory from '@/components/EventFinancialHistory.vue';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,6 +43,9 @@ const props = defineProps<{
     financial: EventFinancial | null;
     submissionKey: string;
 }>();
+const presentation = computed(() =>
+    presentEventRegistration(props.registration),
+);
 const needsCancellationRequest = computed(
     () =>
         props.registration.price_centavos > 0 &&
@@ -72,10 +77,8 @@ setLayoutProps({
         />
         <EventScheduleNotice :event="registration.event" />
         <div class="space-y-3">
-            <Badge variant="outline">{{
-                registration.event.status === 'cancelled'
-                    ? 'Event cancelled'
-                    : registration.status_label
+            <Badge :variant="presentation.variant">{{
+                presentation.label
             }}</Badge>
             <p>
                 {{ registration.attendee_count }} attendees ·
@@ -86,21 +89,14 @@ setLayoutProps({
                 time · {{ registration.event.venue }}
             </p>
             <p
-                v-if="
-                    registration.cancelled_at ||
-                    registration.event.status === 'cancelled'
+                v-if="presentation.description"
+                :class="
+                    presentation.cancelled
+                        ? 'text-destructive'
+                        : 'text-muted-foreground text-sm'
                 "
-                class="text-destructive"
             >
-                These tickets are invalid.
-            </p>
-            <p
-                v-else-if="registration.status === 'confirmed'"
-                class="text-muted-foreground text-sm"
-            >
-                Each attendee has an individual QR ticket. You can correct a
-                name before check-in. Additional attendees need a new
-                registration.
+                {{ presentation.description }}
             </p>
         </div>
         <div v-if="registration.price_centavos > 0" class="max-w-3xl space-y-6">
@@ -109,7 +105,11 @@ setLayoutProps({
                 {{ formatEventMoney(registration.price_centavos) }} per attendee
             </p>
             <section
-                v-if="registration.status === 'pending-payment' && isOwner"
+                v-if="
+                    !presentation.cancelled &&
+                    registration.status === 'pending-payment' &&
+                    isOwner
+                "
                 class="bg-card space-y-5 rounded-xl border p-5"
             >
                 <h2 class="font-serif text-2xl">Submit payment details</h2>
@@ -135,20 +135,6 @@ setLayoutProps({
                 </Form>
             </section>
             <p
-                v-if="registration.status === 'awaiting-review'"
-                class="bg-muted rounded-lg p-4"
-            >
-                Payment is awaiting staff review. Your places remain reserved.
-                Tickets will appear after payment is confirmed.
-            </p>
-            <p
-                v-if="registration.status === 'expired'"
-                class="bg-muted rounded-lg p-4"
-            >
-                The 24-hour payment window expired. Your places have been
-                released. Start a new registration if places remain.
-            </p>
-            <p
                 v-if="financial?.full_refund_eligible"
                 class="bg-muted rounded-lg p-4"
             >
@@ -164,16 +150,11 @@ setLayoutProps({
                     <h2 class="font-serif text-2xl break-words">
                         {{ ticket.name }}
                     </h2>
-                    <Badge variant="outline">{{
-                        ticket.checked_in_at
-                            ? 'Checked in'
-                            : ticket.valid
-                              ? 'Ready for admission'
-                              : registration.status === 'pending-payment' ||
-                                  registration.status === 'awaiting-review'
-                                ? 'Ticket not issued yet'
-                                : 'Invalid ticket'
-                    }}</Badge>
+                    <EventTicketStatus
+                        :ticket="ticket"
+                        :event="registration.event"
+                        :registration-status="registration.status"
+                    />
                     <img
                         v-if="ticket.qr_url"
                         :src="ticket.qr_url"

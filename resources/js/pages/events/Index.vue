@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { CalendarDays } from '@lucide/vue';
+import ContentImage from '@/components/ContentImage.vue';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatEventMoney } from '@/lib/eventMoney';
@@ -39,13 +41,17 @@ defineProps<{ events: AssociationEvent[] }>();
                     :key="event.id"
                     class="overflow-hidden py-0"
                 >
-                    <img
-                        v-if="event.image_url"
-                        :src="event.image_url"
-                        alt=""
-                        loading="lazy"
-                        class="bg-muted aspect-video w-full object-cover"
-                    />
+                    <ContentImage :src="event.image_url" alt="">
+                        <template #fallback>
+                            <div
+                                data-slot="event-image-placeholder"
+                                aria-hidden="true"
+                                class="bg-muted text-muted-foreground grid aspect-video w-full place-items-center"
+                            >
+                                <CalendarDays class="size-10 opacity-40" />
+                            </div>
+                        </template>
+                    </ContentImage>
                     <CardContent class="flex flex-1 flex-col gap-4 py-6">
                         <div class="flex flex-wrap gap-2">
                             <Badge

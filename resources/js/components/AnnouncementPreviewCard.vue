@@ -1,37 +1,23 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import ContentImage from '@/components/ContentImage.vue';
 import { Card, CardContent } from '@/components/ui/card';
 import { show } from '@/routes/announcements';
 import type { AnnouncementPreview } from '@/types/announcement-preview';
 const props = defineProps<{ preview: AnnouncementPreview }>();
-const failedImage = ref(false);
 const stockImage = '/images/announcements/community-stock.webp';
-const imageSrc = computed(() =>
-    !failedImage.value && props.preview.image_url
-        ? props.preview.image_url
-        : stockImage,
-);
-watch(
-    () => props.preview.image_url,
-    () => {
-        failedImage.value = false;
-    },
-);
 </script>
 <template>
     <Card class="h-full overflow-hidden py-0">
-        <img
-            :src="imageSrc"
+        <ContentImage
+            :src="props.preview.image_url"
+            :fallback-src="stockImage"
             alt=""
-            width="960"
-            height="540"
-            loading="lazy"
-            decoding="async"
-            draggable="false"
-            class="bg-muted aspect-video w-full object-cover"
-            @error="failedImage = true"
-        />
+        >
+            <template #fallback
+                ><div aria-hidden="true" class="bg-muted aspect-video w-full"
+            /></template>
+        </ContentImage>
         <CardContent class="flex flex-1 flex-col gap-3 pb-6">
             <time
                 :datetime="preview.published_at"

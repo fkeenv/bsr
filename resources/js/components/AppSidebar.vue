@@ -32,6 +32,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { resolveNavigationSelection } from '@/lib/navigationSelection';
 import { useStaffPermissions } from '@/composables/useStaffPermissions';
 import { useAnnouncementPermissions } from '@/composables/useAnnouncementPermissions';
 import { useNavigationSection } from '@/composables/useNavigationSection';
@@ -86,7 +87,7 @@ import type { NavItem, NavSection } from '@/types';
 const page = usePage();
 const { allows } = useAnnouncementPermissions();
 const { allows: allowsStaff } = useStaffPermissions();
-const { currentUrl, isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
+const { currentUrl } = useCurrentUrl();
 const capabilities = computed(() => page.props.auth.capabilities);
 const announcementsPageListed = computed(
     () => page.props.announcementsPageListed !== false,
@@ -313,6 +314,7 @@ const officerNavItems = computed((): NavItem[] => {
                       title: 'Properties',
                       group: 'people' as const,
                       href: propertiesIndex(),
+                      activeRoutePatterns: [propertyProfile.definition.url],
                       icon: ClipboardList,
                   },
               ]
@@ -457,6 +459,9 @@ const membershipNavItems = computed((): NavItem[] => {
         {
             title: 'Membership',
             href: dashboard(),
+            activeRoutePatterns: !capabilities.value?.canAccessOfficer
+                ? [propertyProfile.definition.url]
+                : [],
             icon: Users,
         },
     ];
@@ -472,6 +477,7 @@ const membershipNavItems = computed((): NavItem[] => {
     items.push({
         title: 'Statement of Account',
         href: statementOfAccountIndex(),
+        activeRoutePatterns: [statementOfAccountShow.definition.url],
         icon: Receipt,
     });
 
@@ -520,56 +526,16 @@ const navSections = computed<NavSection[]>(() => {
     ].filter((section) => section.items.length > 0);
 });
 
-function matchesRoutePattern(
-    routePattern: string,
-    currentPath: string,
-): boolean {
-    const routeSegments = routePattern.split('/');
-    const currentSegments = currentPath.split('/');
-
-    return (
-        routeSegments.length === currentSegments.length &&
-        routeSegments.every(
-            (segment, index) =>
-                (segment.startsWith('{') && segment.endsWith('}')) ||
-                segment === currentSegments[index],
-        )
-    );
-}
-
-const activeSectionId = computed<string | undefined>(() => {
-    const sectionsInPriorityOrder = [...navSections.value].reverse();
-    const exactMatch = sectionsInPriorityOrder.find((section) =>
-        section.items.some((item) => isCurrentUrl(item.href)),
-    );
-
-    if (exactMatch) {
-        return exactMatch.id;
-    }
-
-    const routePatternMatch = sectionsInPriorityOrder.find((section) =>
-        section.activeRoutePatterns?.some((routePattern) =>
-            matchesRoutePattern(routePattern, currentUrl.value),
-        ),
-    );
-
-    if (routePatternMatch) {
-        return routePatternMatch.id;
-    }
-
-    return (
-        sectionsInPriorityOrder.find((section) =>
-            section.items.some((item) => isCurrentOrParentUrl(item.href)),
-        )?.id ?? navSections.value[0]?.id
-    );
-});
+const navigationSelection = computed(() =>
+    resolveNavigationSelection(navSections.value, currentUrl.value),
+);
 
 const { openNavigationSection: openSection } = useNavigationSection();
 
 watch(
     [currentUrl, navSections],
     () => {
-        openSection.value = activeSectionId.value;
+        openSection.value = navigationSelection.value.sectionId;
     },
     { immediate: true },
 );
@@ -634,7 +600,10 @@ onUnmounted(() => {
                         v-for="section in navSections"
                         :key="section.id"
                         :section="section"
-                        :is-active="activeSectionId === section.id"
+                        :is-active="
+                            navigationSelection.sectionId === section.id
+                        "
+                        :active-item="navigationSelection.item"
                     />
                 </Accordion>
             </SidebarGroup>

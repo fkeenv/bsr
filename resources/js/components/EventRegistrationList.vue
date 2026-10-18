@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatEventDate } from '@/lib/eventDates';
+import { presentEventRegistration } from '@/lib/eventPresentation';
 import { show } from '@/routes/event-registrations';
 import type { EventRegistration } from '@/types/event-registration';
 defineProps<{ registrations: EventRegistration[] }>();
@@ -18,15 +19,10 @@ defineProps<{ registrations: EventRegistration[] }>();
                 ><CardContent class="space-y-4">
                     <Badge
                         :variant="
-                            registration.cancelled_at ||
-                            registration.event.status === 'cancelled'
-                                ? 'outline'
-                                : 'secondary'
+                            presentEventRegistration(registration).variant
                         "
                         >{{
-                            registration.event.status === 'cancelled'
-                                ? 'Event cancelled'
-                                : registration.status_label
+                            presentEventRegistration(registration).label
                         }}</Badge
                     >
                     <Badge
