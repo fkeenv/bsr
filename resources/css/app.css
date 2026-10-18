@@ -180,6 +180,86 @@
 }
 
 @layer components {
+    .ui-collapse {
+        grid-template-rows: 1fr;
+    }
+
+    .ui-fade-enter-active,
+    .ui-surface-enter-active,
+    .ui-sheet-enter-active,
+    .ui-collapse-enter-active,
+    .ui-fade-leave-active,
+    .ui-surface-leave-active,
+    .ui-sheet-leave-active,
+    .ui-collapse-leave-active {
+        transition-property: opacity;
+        transition-duration: 200ms;
+        transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .ui-fade-leave-active,
+    .ui-surface-leave-active,
+    .ui-sheet-leave-active,
+    .ui-collapse-leave-active {
+        transition-duration: 150ms;
+        pointer-events: none;
+    }
+
+    .ui-fade-enter-from,
+    .ui-fade-leave-to,
+    .ui-surface-enter-from,
+    .ui-surface-leave-to,
+    .ui-sheet-enter-from,
+    .ui-sheet-leave-to,
+    .ui-collapse-enter-from,
+    .ui-collapse-leave-to {
+        opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .ui-surface-enter-active,
+        .ui-surface-leave-active,
+        .ui-sheet-enter-active,
+        .ui-sheet-leave-active {
+            transition-property: opacity, transform;
+        }
+
+        .ui-surface-enter-from,
+        .ui-surface-leave-to {
+            transform: scale(0.98);
+        }
+
+        .ui-sheet-enter-from[data-side='left'],
+        .ui-sheet-leave-to[data-side='left'] {
+            transform: translateX(-100%);
+        }
+
+        .ui-sheet-enter-from[data-side='right'],
+        .ui-sheet-leave-to[data-side='right'] {
+            transform: translateX(100%);
+        }
+
+        .ui-sheet-enter-from[data-side='top'],
+        .ui-sheet-leave-to[data-side='top'] {
+            transform: translateY(-100%);
+        }
+
+        .ui-sheet-enter-from[data-side='bottom'],
+        .ui-sheet-leave-to[data-side='bottom'] {
+            transform: translateY(100%);
+        }
+
+        .ui-collapse-enter-active,
+        .ui-collapse-leave-active {
+            transition-property: opacity, grid-template-rows;
+        }
+
+        .ui-collapse-enter-from,
+        .ui-collapse-leave-to {
+            grid-template-rows: 0fr;
+        }
+    }
+
     .prose-legal {
         :where(p) {
             @apply mb-4 last:mb-0;

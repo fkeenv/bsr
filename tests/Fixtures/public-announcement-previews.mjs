@@ -28,10 +28,22 @@ void test('cards link to the existing article and recover failed images decorati
     );
     assert.equal(ui.all('img')[0].props.src, preview.image_url);
 
-    ui.all('img')[0].props.onError();
+    ui.all('img')[0].props.onError({
+        currentTarget: { getAttribute: () => preview.image_url },
+    });
     await vue.nextTick();
     assert.equal(ui.all('img')[0].props.src, fallback);
     assert.equal(ui.all('img')[0].props.alt, '');
+
+    ui.all('img')[0].props.onError({
+        currentTarget: { getAttribute: () => fallback },
+    });
+    await vue.nextTick();
+    assert.equal(
+        ui.all('img').length,
+        0,
+        'a failed stock fallback must not retry forever',
+    );
 
     ui.values.preview.image_url = '/announcements/attachments/18';
     await vue.nextTick();

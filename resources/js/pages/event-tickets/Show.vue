@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Badge } from '@/components/ui/badge';
+import EventTicketStatus from '@/components/EventTicketStatus.vue';
 import { Button } from '@/components/ui/button';
 import EventScheduleNotice from '@/components/EventScheduleNotice.vue';
 import { formatEventDate } from '@/lib/eventDates';
@@ -37,13 +37,7 @@ function printTicket(): void {
             </p>
             <EventScheduleNotice :event="event" />
             <h2 class="text-xl font-medium break-words">{{ ticket.name }}</h2>
-            <Badge variant="outline">{{
-                ticket.checked_in_at
-                    ? 'Checked in'
-                    : ticket.valid
-                      ? 'Ready for admission'
-                      : 'Invalid ticket'
-            }}</Badge>
+            <EventTicketStatus :ticket="ticket" :event="event" />
             <img
                 v-if="ticket.qr_url"
                 :src="ticket.qr_url"

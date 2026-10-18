@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ContentImage from '@/components/ContentImage.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,11 +50,12 @@ const attendees = ref([page.props.auth.user?.name ?? '']);
                     >
                         {{ event.title }}
                     </h1>
-                    <img
-                        v-if="event.image_url"
+                    <ContentImage
                         :src="event.image_url"
                         alt=""
-                        class="bg-muted max-h-[70vh] w-full rounded-xl border object-contain"
+                        fit="contain"
+                        loading="eager"
+                        class="rounded-xl"
                     />
                 </header>
                 <dl

@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
+import ContentImage from '@/components/ContentImage.vue';
 import RichTextContent from '@/components/RichTextContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -107,17 +108,25 @@ function goBack(): void {
                     </time>
                 </header>
 
-                <figure
+                <ContentImage
                     v-if="coverImage"
-                    class="bg-muted overflow-hidden rounded-xl border"
+                    :src="coverImage.url"
+                    :alt="coverImage.original_filename"
+                    as="figure"
+                    fit="contain"
+                    loading="eager"
+                    class="rounded-xl"
                 >
-                    <img
-                        :src="coverImage.url"
-                        :alt="coverImage.original_filename"
-                        class="max-h-[70vh] w-full object-contain"
-                        decoding="async"
-                    />
-                </figure>
+                    <template #fallback>
+                        <a
+                            :href="coverImage.url"
+                            class="text-primary focus-visible:outline-ring rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >Open {{ coverImage.original_filename }}</a
+                        >
+                    </template>
+                </ContentImage>
 
                 <RichTextContent
                     :html="announcement.body"
@@ -140,14 +149,24 @@ function goBack(): void {
                             v-for="attachment in attachments"
                             :key="attachment.id"
                         >
-                            <img
+                            <ContentImage
                                 v-if="attachment.is_image"
                                 :src="attachment.url"
                                 :alt="attachment.original_filename"
-                                class="max-h-[70vh] max-w-full rounded-lg border object-contain"
-                                loading="lazy"
-                                decoding="async"
-                            />
+                                fit="contain"
+                                class="rounded-lg"
+                            >
+                                <template #fallback>
+                                    <a
+                                        :href="attachment.url"
+                                        class="text-primary focus-visible:outline-ring rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        >Open
+                                        {{ attachment.original_filename }}</a
+                                    >
+                                </template>
+                            </ContentImage>
                             <a
                                 v-else
                                 :href="attachment.url"

@@ -12,6 +12,7 @@ export type NavItem = {
     icon?: LucideIcon;
     isActive?: boolean;
     group?: 'collection' | 'people' | 'settings';
+    activeRoutePatterns?: string[];
 };
 
 export type NavSection = {

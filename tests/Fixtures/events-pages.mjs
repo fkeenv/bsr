@@ -20,6 +20,53 @@ const event = {
     price_centavos: 0,
 };
 
+void test('Event images recover to a neutral card placeholder and omit failed detail imagery', async (context) => {
+    const cards = mount('resources/js/pages/events/Index.vue', {
+        events: [{ ...event, image_url: null }],
+    });
+    context.after(cards.unmount);
+    assert.ok(
+        cards
+            .all('div')
+            .some(
+                (node) => node.props['data-slot'] === 'event-image-placeholder',
+            ),
+    );
+    cards.values.events[0].image_url = '/events/7/image';
+    await vue.nextTick();
+    assert.equal(cards.all('img')[0].props.src, '/events/7/image');
+    cards.all('img')[0].props.onError({
+        currentTarget: { getAttribute: () => '/events/7/image' },
+    });
+    await vue.nextTick();
+    assert.equal(cards.all('img').length, 0);
+    assert.ok(
+        cards
+            .all('div')
+            .some(
+                (node) => node.props['data-slot'] === 'event-image-placeholder',
+            ),
+    );
+    const details = mount('resources/js/pages/events/Show.vue', {
+        event,
+        registrationAvailability: 'Closed',
+        submissionKey: null,
+    });
+    context.after(details.unmount);
+    details.all('img')[0].props.onError({
+        currentTarget: { getAttribute: () => '/events/7/image' },
+    });
+    await vue.nextTick();
+    assert.equal(details.all('img').length, 0);
+    assert.equal(
+        details
+            .all('div')
+            .filter((node) => node.props['data-slot'] === 'content-image')
+            .length,
+        0,
+    );
+});
+
 void test('Event discovery links to details and renders an empty state without leaking staff controls', (context) => {
     const ui = mount('resources/js/pages/events/Index.vue', {
         events: [event],
