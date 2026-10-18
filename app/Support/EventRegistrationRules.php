@@ -99,7 +99,7 @@ class EventRegistrationRules
     /** @param array<string, mixed> $changes */
     public function ensureCanChange(Event $event, array $changes): void
     {
-        if ($event->registrations()->exists()) {
+        if ($this->registrationFieldsLocked($event)) {
             if ($changes['audience'] !== $event->audience->value) {
                 throw ValidationException::withMessages(['audience' => 'Audience is locked after the first registration.']);
             }
@@ -110,5 +110,10 @@ class EventRegistrationRules
         if ($changes['capacity'] !== null && (int) $changes['capacity'] < $this->reservedPlaces($event)) {
             throw ValidationException::withMessages(['capacity' => 'Capacity cannot be lower than the reserved places.']);
         }
+    }
+
+    public function registrationFieldsLocked(Event $event): bool
+    {
+        return $event->registrations()->exists();
     }
 }

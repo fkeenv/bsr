@@ -27,3 +27,8 @@ export type EventScheduleChange = {
     new_ends_at: string;
     new_registration_deadline: string;
 };
+
+export type EventManagement = {
+    registration_fields_locked: boolean;
+    reserved_places: number;
+};

@@ -135,6 +135,33 @@ test('registration rules lock audience even after cancellation and reject capaci
     expect(fn () => app(EventRegistrationRules::class)->ensureCanChange($event->fresh(), [...$data, 'audience' => 'public', 'price_centavos' => 100]))->toThrow(ValidationException::class, 'Price is locked');
 });
 
+test('staff editors receive registration locks and current reserved capacity without exposing them publicly', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $event = Event::factory()->published()->create();
+    EventRegistration::factory()->create(['event_id' => $event->id, 'attendee_count' => 4]);
+    EventRegistration::factory()->create(['event_id' => $event->id, 'attendee_count' => 8, 'cancelled_at' => now()]);
+    EventRegistration::factory()->create(['event_id' => $event->id, 'attendee_count' => 10, 'status' => 'pending-payment', 'expires_at' => now()->subMinute()]);
+
+    $this->get(route('officer.events.edit', $event))->assertInertia(fn (Assert $page) => $page
+        ->where('management.registration_fields_locked', true)
+        ->where('management.reserved_places', 4));
+    $this->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
+        ->missing('management')->missing('event.registration_fields_locked')->missing('event.reserved_places'));
+});
+
+test('Event editing unlocks registration fields only when there have never been registrations', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $event = Event::factory()->create();
+
+    $this->get(route('officer.events.edit', $event))->assertInertia(fn (Assert $page) => $page
+        ->where('management.registration_fields_locked', false)->where('management.reserved_places', 0));
+
+    EventRegistration::factory()->create(['event_id' => $event->id, 'cancelled_at' => now()]);
+
+    $this->get(route('officer.events.edit', $event))->assertInertia(fn (Assert $page) => $page
+        ->where('management.registration_fields_locked', true)->where('management.reserved_places', 0));
+});
+
 test('cancelled Events retain history and cannot be published or edited again', function () {
     $this->actingAs(User::factory()->superAdmin()->create());
     $event = Event::factory()->published()->create();
