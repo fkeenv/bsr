@@ -31,7 +31,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
 <template>
   <SelectPortal>
-    <Transition name="ui-surface">
+    <Transition name="ui-fade">
       <SelectContent
         data-slot="select-content"
         v-bind="{ ...$attrs, ...forwarded }"

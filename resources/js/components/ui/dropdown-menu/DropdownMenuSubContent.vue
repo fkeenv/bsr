@@ -18,7 +18,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
 
 <template>
-  <Transition name="ui-surface">
+  <Transition name="ui-fade">
     <DropdownMenuSubContent
       data-slot="dropdown-menu-sub-content"
       v-bind="forwarded"

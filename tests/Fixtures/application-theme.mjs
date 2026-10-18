@@ -4,12 +4,62 @@ import { test } from 'node:test';
 import postcss from 'postcss';
 import { parse } from '@vue/compiler-sfc';
 import * as vue from 'vue';
+import { useForwardPropsEmits } from 'reka-ui';
 import { mount } from './mount-vue.mjs';
 
 const root = new URL('../../', import.meta.url);
 const css = postcss.parse(
     readFileSync(new URL('resources/css/app.css', root), 'utf8'),
 );
+
+void test('floating surfaces never animate the transform used to position them', (context) => {
+    const primitive = (name) =>
+        vue.defineComponent({
+            inheritAttrs: false,
+            setup:
+                (_, { attrs, slots }) =>
+                () =>
+                    vue.h(name, attrs, slots.default?.()),
+        });
+    const reka = new Proxy(
+        { useForwardPropsEmits },
+        { get: (target, name) => target[name] ?? primitive(name) },
+    );
+    for (const file of [
+        'dropdown-menu/DropdownMenuContent',
+        'dropdown-menu/DropdownMenuSubContent',
+        'popover/PopoverContent',
+        'select/SelectContent',
+    ]) {
+        const ui = mount(
+            `resources/js/components/ui/${file}.vue`,
+            {},
+            null,
+            '/',
+            {
+                vue: { ...vue, Transition: primitive('Transition') },
+                'reka-ui': reka,
+            },
+        );
+        context.after(ui.unmount);
+        const name = ui.all('Transition')[0].props.name;
+        for (const phase of ['enter', 'leave']) {
+            let properties;
+            css.walkRules((rule) => {
+                if (!rule.selectors.includes(`.${name}-${phase}-active`))
+                    return;
+                rule.walkDecls('transition-property', (declaration) => {
+                    properties = declaration.value;
+                });
+            });
+            assert.equal(
+                properties,
+                'opacity',
+                `${file} must stay anchored during ${phase}`,
+            );
+        }
+    }
+});
 
 void test('landing call-to-action hover is limited to hover-capable devices', () => {
     const { descriptor } = parse(

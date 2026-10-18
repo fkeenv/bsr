@@ -30,7 +30,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
 <template>
   <PopoverPortal>
-    <Transition name="ui-surface">
+    <Transition name="ui-fade">
       <PopoverContent
         data-slot="popover-content"
         v-bind="{ ...$attrs, ...forwarded }"
