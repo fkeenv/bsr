@@ -8,10 +8,12 @@ use App\Actions\Events\PublishEvent;
 use App\Actions\Events\RescheduleEvent;
 use App\Actions\Events\SaveEvent;
 use App\Data\EventData;
+use App\Data\EventManagementData;
 use App\Data\EventScheduleChangeData;
 use App\Http\Requests\Officer\RescheduleEventRequest;
 use App\Http\Requests\Officer\SaveEventRequest;
 use App\Models\Event;
+use App\Support\EventRegistrationRules;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,9 +38,10 @@ class EventController
         return to_route('officer.events.edit', $event)->with('success', 'Event draft saved.');
     }
 
-    public function edit(Event $event): Response
+    public function edit(Event $event, EventRegistrationRules $registrations): Response
     {
         return Inertia::render('officer/events/Edit', ['event' => EventData::fromModel($event),
+            'management' => EventManagementData::fromModel($event, $registrations),
             'scheduleChanges' => $event->scheduleChanges()->orderByDesc('id')->get()->map(fn ($change): EventScheduleChangeData => EventScheduleChangeData::fromModel($change))->all()]);
     }
 
