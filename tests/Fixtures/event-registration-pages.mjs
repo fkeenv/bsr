@@ -411,27 +411,66 @@ const financial = {
     },
     cancellations: [{ id: 4, status: 'pending', reason: 'Cannot attend' }],
 };
-void test('the staff accordion separates payment and refund permissions and uses explicit decision values', (context) => {
+void test('the finance queue exposes work counts and preserves search and Event filters through pagination', (context) => {
+    const ui = mount('resources/js/pages/officer/event-finances/Index.vue', {
+        registrations: [],
+        canReviewPayments: true,
+        canReviewRefunds: false,
+        pagination: { current_page: 2, last_page: 3, total: 60 },
+        workOptions: [
+            { value: 'attention', label: 'Needs attention', count: 60 },
+            { value: 'payment-review', label: 'Payment review', count: 60 },
+            { value: 'all', label: 'All registrations', count: 80 },
+        ],
+        table: {
+            searchables: ['event', 'account', 'reference', 'registration'],
+            filters: ['event'],
+            filterOptions: {
+                event: [{ value: '7', label: 'Community afternoon' }],
+            },
+            values: { work: 'attention', search: 'Maria', event: '7' },
+        },
+    });
+    context.after(ui.unmount);
+    assert.match(ui.text(), /Needs attention.*60/);
+    assert.match(ui.text(), /All registrations.*80/);
+    assert.equal(
+        ui.all('DataTable')[0].props.action,
+        '/officer/event-finances?work=attention',
+    );
+    assert.deepEqual(ui.all('DataTable')[0].props.values, {
+        work: 'attention',
+        search: 'Maria',
+        event: '7',
+    });
+    const next = ui.all('Link').find((node) => ui.text(node).includes('Next'));
+    assert.match(next.props.href.url, /page=3/);
+    assert.match(next.props.href.url, /search=Maria/);
+    assert.match(next.props.href.url, /event=7/);
+    assert.match(next.props.href.url, /work=attention/);
+    assert.equal(ui.all('Form').length, 0);
+});
+void test('the staff Manage dialog separates payment and refund permissions and closes after a decision', async (context) => {
     for (const [payments, refunds] of [
         [true, false],
         [false, true],
         [true, true],
     ]) {
         const ui = mount(
-            'resources/js/pages/officer/event-finances/Index.vue',
+            'resources/js/pages/officer/event-finances/EventFinanceRowActions.vue',
             {
-                registrations: [
-                    {
-                        registration: {
-                            ...registration,
-                            status: 'awaiting-review',
-                            price_centavos: 10000,
-                            total_centavos: 10000,
-                        },
-                        financial,
-                        submission_key: 'refund-key',
+                item: {
+                    id: registration.id,
+                    work: ['payment-review', 'cancellation-review'],
+                    registration: {
+                        ...registration,
+                        status: 'awaiting-review',
+                        price_centavos: 10000,
+                        total_centavos: 10000,
                     },
-                ],
+                    financial,
+                    submission_key: 'refund-key',
+                },
                 canReviewPayments: payments,
                 canReviewRefunds: refunds,
             },
@@ -440,7 +479,10 @@ void test('the staff accordion separates payment and refund permissions and uses
             { '@inertiajs/vue3': { Form } },
         );
         context.after(ui.unmount);
-        assert.equal(ui.all('Accordion').length, 1);
+        assert.equal(ui.all('Dialog').length, 1);
+        ui.all('Dialog')[0].props['onUpdate:open'](true);
+        await vue.nextTick();
+        assert.equal(ui.all('Dialog')[0].props.open, true);
         assert.equal(
             ui
                 .all('Form')
@@ -469,40 +511,85 @@ void test('the staff accordion separates payment and refund permissions and uses
             ...(payments ? ['confirmed', 'rejected'] : []),
             ...(refunds ? ['approved', 'declined'] : []),
         ]);
+        ui.all('Form')[0].props.onSuccess();
+        await vue.nextTick();
+        assert.equal(ui.all('Dialog')[0].props.open, false);
+        assert.equal(ui.all('Form')[0].props.options.preserveScroll, true);
     }
+});
+
+void test('recording an external refund closes Manage through the shared refund form', async (context) => {
+    const ui = mount(
+        'resources/js/pages/officer/event-finances/EventFinanceRowActions.vue',
+        {
+            item: {
+                id: 3,
+                registration: {
+                    ...registration,
+                    status: 'cancelled',
+                    cancelled_at: '2026-10-14T00:00:00Z',
+                },
+                financial: {
+                    payment: {
+                        ...financial.payment,
+                        status: 'confirmed',
+                        refund_due_centavos: 6000,
+                        refunded_centavos: 4000,
+                    },
+                    cancellations: [],
+                },
+                work: ['refund-due'],
+                submission_key: 'stable-refund-key',
+            },
+            canReviewPayments: false,
+            canReviewRefunds: true,
+        },
+        null,
+        '/',
+        { '@inertiajs/vue3': { Form } },
+        ['@/components/EventRefundForm.vue'],
+    );
+    context.after(ui.unmount);
+    ui.all('Dialog')[0].props['onUpdate:open'](true);
+    await vue.nextTick();
+    assert.equal(ui.all('Dialog')[0].props.open, true);
+    assert.match(ui.text(), /Refund still due.*60\.00/);
+    assert.match(ui.text(), /Refunds recorded.*40\.00/);
+    ui.all('Form')[0].props.onSuccess();
+    await vue.nextTick();
+    assert.equal(ui.all('Dialog')[0].props.open, false);
 });
 
 void test('refund controls appear only after a confirmed paid registration is cancelled and money remains refundable', (context) => {
     const payment = { ...financial.payment, status: 'confirmed' };
-    for (const [cancelled, refunded, allowed] of [
-        [false, 0, false],
-        [true, 0, true],
-        [true, 10000, false],
+    for (const [cancelled, refunded, due, allowed] of [
+        [false, 0, 0, false],
+        [true, 0, 10000, true],
+        [true, 10000, 0, false],
     ]) {
         const ui = mount(
-            'resources/js/pages/officer/event-finances/Index.vue',
+            'resources/js/pages/officer/event-finances/EventFinanceRowActions.vue',
             {
-                registrations: [
-                    {
-                        registration: {
-                            ...registration,
-                            status: cancelled ? 'cancelled' : 'confirmed',
-                            cancelled_at: cancelled
-                                ? '2026-10-14T00:00:00Z'
-                                : null,
-                            price_centavos: 10000,
-                            total_centavos: 10000,
-                        },
-                        financial: {
-                            payment: {
-                                ...payment,
-                                refunded_centavos: refunded,
-                            },
-                            cancellations: [],
-                        },
-                        submission_key: 'refund-key',
+                item: {
+                    id: registration.id,
+                    work: due > 0 ? ['refund-due'] : [],
+                    registration: {
+                        ...registration,
+                        status: cancelled ? 'cancelled' : 'confirmed',
+                        cancelled_at: cancelled ? '2026-10-14T00:00:00Z' : null,
+                        price_centavos: 10000,
+                        total_centavos: 10000,
                     },
-                ],
+                    financial: {
+                        payment: {
+                            ...payment,
+                            refunded_centavos: refunded,
+                            refund_due_centavos: due,
+                        },
+                        cancellations: [],
+                    },
+                    submission_key: 'refund-key',
+                },
                 canReviewPayments: false,
                 canReviewRefunds: true,
             },
