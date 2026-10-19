@@ -11,7 +11,7 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
-    group?: 'collection' | 'people' | 'settings';
+    tabs?: NavItem[];
     activeRoutePatterns?: string[];
 };
 

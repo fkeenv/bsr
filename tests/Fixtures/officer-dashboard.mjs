@@ -209,6 +209,10 @@ void test('orientation is secondary, preserves completion links, and opens for H
     assert.equal(ui.all('details')[0].props.open, false);
     const checklist = ui.all('OnboardingChecklist')[0].props.items;
     assert.equal(checklist.length, 6);
+    assert.match(
+        checklist.find((item) => item.key === 'officer-payments').description,
+        /Dues & collection/,
+    );
     for (const item of checklist) {
         assert.equal(item.link.href.url, '/onboarding/officer/steps');
         assert.equal(item.link.href.method, 'post');

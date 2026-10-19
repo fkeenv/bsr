@@ -123,7 +123,7 @@ const checklistCopy: Record<
     'officer-payments': {
         title: 'Check Payments and Unpaid',
         description:
-            'Declarations waiting for you. Unpaid sits beside it in the menu.',
+            'Review declarations and the Unpaid roster in Dues & collection.',
     },
     'officer-charges': {
         title: 'See the Charges',

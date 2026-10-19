@@ -24,18 +24,22 @@ function matchesPattern(pattern: string, path: string): boolean {
 export function resolveNavigationSelection(
     sections: NavSection[],
     currentUrl: string,
-): { sectionId: string | undefined; item: NavItem | undefined } {
+): { sectionId: string | undefined; item: NavItem | undefined; tab?: NavItem } {
     const path = pathname(currentUrl);
     const candidates = [...sections].reverse().flatMap((section) =>
-        section.items.map((item) => ({
-            section,
-            item,
-            path: pathname(toUrl(item.href)),
-        })),
+        section.items.flatMap((item) =>
+            (item.tabs ?? [item]).map((destination) => ({
+                section,
+                item,
+                destination,
+                tab: item.tabs ? destination : undefined,
+                path: pathname(toUrl(destination.href)),
+            })),
+        ),
     );
     const exact = candidates.find((candidate) => candidate.path === path);
     const patterned = candidates.find((candidate) =>
-        candidate.item.activeRoutePatterns?.some((pattern) =>
+        candidate.destination.activeRoutePatterns?.some((pattern) =>
             matchesPattern(pattern, path),
         ),
     );
@@ -54,7 +58,11 @@ export function resolveNavigationSelection(
         .sort((a, b) => b.path.length - a.path.length)[0];
     const match = exact ?? patterned;
     if (match) {
-        return { sectionId: match.section.id, item: match.item };
+        return {
+            sectionId: match.section.id,
+            item: match.item,
+            tab: match.tab,
+        };
     }
     if (sectionPattern) {
         return { sectionId: sectionPattern.id, item: undefined };
@@ -62,5 +70,6 @@ export function resolveNavigationSelection(
     return {
         sectionId: parent?.section.id ?? sections[0]?.id,
         item: parent?.item,
+        tab: parent?.tab,
     };
 }
