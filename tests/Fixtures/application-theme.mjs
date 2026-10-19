@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import postcss from 'postcss';
 import { parse } from '@vue/compiler-sfc';
 import * as vue from 'vue';
-import { useForwardPropsEmits } from 'reka-ui';
+import { useForwardProps, useForwardPropsEmits } from 'reka-ui';
+import { compile } from 'tailwindcss';
 import { mount } from './mount-vue.mjs';
 
 const root = new URL('../../', import.meta.url);
@@ -22,7 +23,13 @@ void test('floating surfaces never animate the transform used to position them',
                     vue.h(name, attrs, slots.default?.()),
         });
     const reka = new Proxy(
-        { useForwardPropsEmits },
+        {
+            useForwardPropsEmits,
+            injectComboboxRootContext: () => ({
+                open: vue.ref(false),
+                triggerElement: vue.ref(null),
+            }),
+        },
         { get: (target, name) => target[name] ?? primitive(name) },
     );
     for (const file of [
@@ -30,6 +37,8 @@ void test('floating surfaces never animate the transform used to position them',
         'dropdown-menu/DropdownMenuSubContent',
         'popover/PopoverContent',
         'select/SelectContent',
+        'tooltip/TooltipContent',
+        'combobox/ComboboxList',
     ]) {
         const ui = mount(
             `resources/js/components/ui/${file}.vue`,
@@ -59,6 +68,92 @@ void test('floating surfaces never animate the transform used to position them',
             );
         }
     }
+});
+
+void test('the closing Property popup restores its trigger only when focus was inside and has nowhere else to go', (context) => {
+    const primitive = (name) =>
+        vue.defineComponent({
+            inheritAttrs: false,
+            setup:
+                (_, { attrs, slots }) =>
+                () =>
+                    vue.h(name, attrs, slots.default?.()),
+        });
+    const focus = context.mock.fn();
+    const root = { open: vue.ref(false), triggerElement: vue.ref({ focus }) };
+    const reka = new Proxy(
+        { useForwardPropsEmits, injectComboboxRootContext: () => root },
+        { get: (target, name) => target[name] ?? primitive(name) },
+    );
+    const ui = mount(
+        'resources/js/components/ui/combobox/ComboboxList.vue',
+        {},
+        null,
+        '/',
+        {
+            vue: { ...vue, Transition: primitive('Transition') },
+            'reka-ui': reka,
+        },
+    );
+    context.after(ui.unmount);
+    const transition = ui.all('Transition')[0];
+    const input = {};
+    const outside = {};
+    const document = { body: {}, activeElement: input };
+    const popup = {
+        ownerDocument: document,
+        contains: (element) => element === input,
+    };
+    transition.props.onBeforeLeave(popup);
+    document.activeElement = document.body;
+    transition.props.onAfterLeave(popup);
+    assert.equal(focus.mock.callCount(), 1);
+    document.activeElement = input;
+    transition.props.onBeforeLeave(popup);
+    document.activeElement = outside;
+    transition.props.onAfterLeave(popup);
+    assert.equal(focus.mock.callCount(), 1);
+    document.activeElement = input;
+    transition.props.onBeforeLeave(popup);
+    root.open.value = true;
+    document.activeElement = document.body;
+    transition.props.onAfterLeave(popup);
+    assert.equal(focus.mock.callCount(), 1);
+    root.open.value = false;
+    transition.props.onBeforeLeave(popup);
+    transition.props.onAfterLeave(popup);
+    assert.equal(focus.mock.callCount(), 1);
+});
+
+void test('scrolling a long Property list stays inside its viewport', async (context) => {
+    const ui = mount(
+        'resources/js/components/ui/combobox/ComboboxViewport.vue',
+        {},
+        null,
+        '/',
+        {
+            'reka-ui': {
+                useForwardProps,
+                ComboboxViewport: vue.defineComponent({
+                    inheritAttrs: false,
+                    setup:
+                        (_, { attrs }) =>
+                        () =>
+                            vue.h('ComboboxViewport', attrs),
+                }),
+            },
+        },
+    );
+    context.after(ui.unmount);
+    const compiler = await compile('@tailwind utilities;');
+    const styles = postcss.parse(
+        compiler.build(ui.all('ComboboxViewport')[0].props.class.split(/\s+/)),
+    );
+    const values = [];
+    styles.walkDecls('overscroll-behavior', (declaration) =>
+        values.push(declaration.value),
+    );
+    assert.deepEqual(values, ['contain']);
 });
 
 void test('landing call-to-action hover is limited to hover-capable devices', () => {
