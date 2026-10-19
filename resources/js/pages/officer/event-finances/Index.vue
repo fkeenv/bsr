@@ -1,36 +1,22 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
-import EventFinancialHistory from '@/components/EventFinancialHistory.vue';
-import EventRefundForm from '@/components/EventRefundForm.vue';
+import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import DataTable from '@/components/DataTable.vue';
 import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { formatEventMoney } from '@/lib/eventMoney';
 import { index } from '@/routes/officer/event-finances';
-import { resolve } from '@/routes/officer/event-cancellations';
-import { review } from '@/routes/officer/event-payments';
-import type {
-    EventFinancial,
-    EventRegistration,
-} from '@/types/event-registration';
-defineProps<{
-    registrations: {
-        registration: EventRegistration;
-        financial: EventFinancial;
-        submission_key: string;
-    }[];
-    canReviewPayments: boolean;
-    canReviewRefunds: boolean;
-}>();
+import type { EventFinancePage } from '@/types/event-finance';
+import { eventFinanceColumns } from './columns';
+
+const props = defineProps<EventFinancePage>();
+const columns = computed(() =>
+    eventFinanceColumns(props.canReviewPayments, props.canReviewRefunds),
+);
+const currentWork = computed(() => props.table.values.work ?? 'attention');
+function pageLink(page: number) {
+    return index({ query: { ...props.table.values, page } });
+}
 setLayoutProps({
     breadcrumbs: [{ title: 'Event payments & refunds', href: index() }],
 });
@@ -40,156 +26,88 @@ setLayoutProps({
         <Head title="Event payments & refunds" />
         <Heading
             title="Event payments & refunds"
-            description="Review external Event payments and whole-registration cancellations. These records are separate from property dues."
+            description="See what needs a decision, record money already returned, or review previous activity. Event finances are separate from Property dues."
         />
-        <p
-            v-if="!registrations.length"
-            class="text-muted-foreground rounded-xl border p-6"
-        >
-            No paid Event registrations yet.
-        </p>
-        <Accordion
-            v-else
-            type="multiple"
-            class="bg-card rounded-xl border px-5"
-        >
-            <AccordionItem
-                v-for="item in registrations"
-                :key="item.registration.id"
-                :value="String(item.registration.id)"
+        <nav aria-label="Event financial work" class="flex flex-wrap gap-2">
+            <Button
+                v-for="option in workOptions"
+                :key="option.value"
+                as-child
+                :variant="currentWork === option.value ? 'default' : 'outline'"
+                size="sm"
             >
-                <AccordionTrigger class="items-center text-left">
-                    <div class="space-y-2">
-                        <p class="font-medium">
-                            {{ item.registration.event.title }} ·
-                            {{ item.registration.account_name }}
-                        </p>
-                        <p class="text-muted-foreground text-sm">
-                            Registration #{{ item.registration.id }} ·
-                            {{ item.registration.attendee_count }} attendees ·
-                            {{
-                                formatEventMoney(
-                                    item.registration.total_centavos,
-                                )
-                            }}
-                        </p>
-                        <Badge variant="outline">{{
-                            item.registration.status_label
-                        }}</Badge>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent class="space-y-6">
-                    <EventFinancialHistory :financial="item.financial" />
-                    <Form
-                        v-if="
-                            canReviewPayments &&
-                            item.financial.payment?.status === 'submitted' &&
-                            ['awaiting-review', 'cancelled'].includes(
-                                item.registration.status,
-                            )
-                        "
-                        v-bind="review.form(item.financial.payment.id)"
-                        :options="{ preserveScroll: true }"
-                        class="max-w-xl space-y-4"
-                        v-slot="{ errors, processing }"
-                    >
-                        <h3 class="font-medium">Review payment</h3>
-                        <p class="text-muted-foreground text-sm">
-                            Confirmation issues tickets for active
-                            registrations. Cancelled registrations stay
-                            cancelled. Rejection cancels the registration and
-                            releases all places.
-                        </p>
-                        <Label :for="`review-reason-${item.registration.id}`"
-                            >Reason (required when rejecting)</Label
-                        ><Textarea
-                            :id="`review-reason-${item.registration.id}`"
-                            name="reason"
-                            maxlength="10000"
-                        /><InputError :message="errors.reason" /><InputError
-                            :message="errors.payment"
-                        /><InputError :message="errors.decision" />
-                        <div class="flex flex-wrap gap-3">
-                            <Button
-                                type="submit"
-                                name="decision"
-                                value="confirmed"
-                                :disabled="processing"
-                                >Confirm payment</Button
-                            ><Button
-                                type="submit"
-                                name="decision"
-                                value="rejected"
-                                variant="destructive"
-                                :disabled="processing"
-                                >Reject payment</Button
-                            >
-                        </div>
-                    </Form>
-                    <template v-if="canReviewRefunds">
-                        <Form
-                            v-for="request in item.financial.cancellations.filter(
-                                (request) => request.status === 'pending',
-                            )"
-                            :key="request.id"
-                            v-bind="resolve.form(request.id)"
-                            :options="{ preserveScroll: true }"
-                            class="max-w-xl space-y-4"
-                            v-slot="{ errors, processing }"
-                        >
-                            <h3 class="font-medium">
-                                Review cancellation request
-                            </h3>
-                            <p class="text-muted-foreground text-sm">
-                                Approval cancels every attendee ticket. It does
-                                not record a refund.
-                            </p>
-                            <Label :for="`resolution-reason-${request.id}`"
-                                >Decision reason</Label
-                            ><Textarea
-                                :id="`resolution-reason-${request.id}`"
-                                name="reason"
-                                required
-                                maxlength="10000"
-                            /><InputError :message="errors.reason" /><InputError
-                                :message="errors.cancellation"
-                            /><InputError :message="errors.decision" />
-                            <div class="flex flex-wrap gap-3">
-                                <Button
-                                    type="submit"
-                                    name="decision"
-                                    value="approved"
-                                    :disabled="processing"
-                                    >Approve cancellation</Button
-                                ><Button
-                                    type="submit"
-                                    name="decision"
-                                    value="declined"
-                                    variant="outline"
-                                    :disabled="processing"
-                                    >Decline cancellation</Button
-                                >
-                            </div>
-                        </Form>
-                        <EventRefundForm
-                            v-if="
-                                item.registration.cancelled_at &&
-                                item.financial.payment?.status ===
-                                    'confirmed' &&
-                                item.financial.payment.amount_centavos >
-                                    item.financial.payment.refunded_centavos
-                            "
-                            :payment-id="item.financial.payment.id"
-                            :remaining="
-                                item.financial.payment.amount_centavos -
-                                item.financial.payment.refunded_centavos
-                            "
-                            :submission-key="item.submission_key"
-                            class="max-w-xl"
-                        />
-                    </template>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
+                <Link
+                    :href="
+                        index({
+                            query: { ...table.values, work: option.value },
+                        })
+                    "
+                    :aria-current="
+                        currentWork === option.value ? 'page' : undefined
+                    "
+                    preserve-scroll
+                >
+                    {{ option.label }}
+                    <Badge variant="secondary" class="ml-1 tabular-nums">{{
+                        option.count
+                    }}</Badge>
+                </Link>
+            </Button>
+        </nav>
+        <p class="text-muted-foreground text-sm">
+            A registration can need more than one decision. Approving
+            cancellation does not mean money has been refunded. Choose All
+            registrations to review completed history.
+        </p>
+        <DataTable
+            :columns="columns"
+            :data="registrations"
+            :action="index.url({ query: { work: currentWork } })"
+            :searchables="table.searchables"
+            :filters="table.filters"
+            :filter-options="table.filterOptions"
+            :values="table.values"
+            :searchable-labels="{
+                event: 'Event',
+                account: 'name or email',
+                reference: 'payment reference',
+                registration: 'registration number',
+            }"
+            :filter-labels="{ event: 'Events' }"
+            empty-text="No registrations match this view. Adjust the search or filters, or choose All registrations to see history."
+        />
+        <nav
+            aria-label="Event finance pages"
+            class="flex flex-wrap items-center justify-between gap-3"
+        >
+            <p class="text-muted-foreground text-sm">
+                {{ pagination.total }} registrations · Page
+                {{ pagination.current_page }} of {{ pagination.last_page }}
+            </p>
+            <div class="flex gap-2">
+                <Button
+                    v-if="pagination.current_page > 1"
+                    variant="outline"
+                    as-child
+                    ><Link
+                        :href="pageLink(pagination.current_page - 1)"
+                        preserve-scroll
+                        >Previous</Link
+                    ></Button
+                >
+                <Button v-else variant="outline" disabled>Previous</Button>
+                <Button
+                    v-if="pagination.current_page < pagination.last_page"
+                    variant="outline"
+                    as-child
+                    ><Link
+                        :href="pageLink(pagination.current_page + 1)"
+                        preserve-scroll
+                        >Next</Link
+                    ></Button
+                >
+                <Button v-else variant="outline" disabled>Next</Button>
+            </div>
+        </nav>
     </div>
 </template>

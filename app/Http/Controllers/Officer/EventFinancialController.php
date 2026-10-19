@@ -6,10 +6,8 @@ use App\Actions\Events\ListEventFinances;
 use App\Actions\Events\RecordEventRefund;
 use App\Actions\Events\ResolveEventCancellation;
 use App\Actions\Events\ReviewEventPayment;
-use App\Enums\EventPermission;
 use App\Models\EventCancellationRequest;
 use App\Models\EventPaymentRecord;
-use App\Support\PlatformAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,11 +17,7 @@ class EventFinancialController
 {
     public function index(Request $request, ListEventFinances $finances): Response
     {
-        return Inertia::render('officer/event-finances/Index', [
-            'registrations' => $finances->handle($request->user()),
-            'canReviewPayments' => PlatformAccess::allowsStaff($request->user(), EventPermission::PaymentsReview),
-            'canReviewRefunds' => PlatformAccess::allowsStaff($request->user(), EventPermission::RefundsReview),
-        ]);
+        return Inertia::render('officer/event-finances/Index', $finances->handle($request->user(), $request->only(['work', 'search', 'event', 'page'])));
     }
 
     public function review(Request $request, EventPaymentRecord $payment, ReviewEventPayment $review): RedirectResponse

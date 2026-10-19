@@ -11,12 +11,14 @@ import { eventDateInput } from '@/lib/eventDates';
 import { eventCentavos, formatEventMoney } from '@/lib/eventMoney';
 import { refund } from '@/routes/officer/event-payments';
 defineProps<{ paymentId: number; remaining: number; submissionKey: string }>();
+const emit = defineEmits<{ success: [] }>();
 const amount = ref('');
 </script>
 <template>
     <Form
         v-bind="refund.form(paymentId)"
         :options="{ preserveScroll: true }"
+        @success="emit('success')"
         class="space-y-4"
         v-slot="{ errors, processing }"
     >
