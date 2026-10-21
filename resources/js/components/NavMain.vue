@@ -14,7 +14,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -35,27 +34,6 @@ const { isMobile, state } = useSidebar();
 const showAccordion = computed(
     () => isMobile.value || state.value === 'expanded',
 );
-const groupLabels = {
-    collection: 'Payments & collection',
-    people: 'Properties & people',
-    settings: 'Association settings',
-};
-
-const itemGroups = computed(() => {
-    const groups = new Map<NavItem['group'], NavItem[]>();
-    for (const item of props.section.items) {
-        const id = item.group;
-        const items = groups.get(id) ?? [];
-        items.push(item);
-        groups.set(id, items);
-    }
-    return Array.from(groups, ([id, items]) => ({
-        id,
-        title: id ? groupLabels[id] : '',
-        items,
-    }));
-});
-
 function isActiveItem(item: NavItem): boolean {
     return props.isActive && props.activeItem === item;
 }
@@ -83,32 +61,27 @@ function isActiveItem(item: NavItem): boolean {
                 </span>
             </AccordionTrigger>
             <AccordionContent class="pb-2">
-                <div v-for="group in itemGroups" :key="group.id ?? 'main'">
-                    <SidebarGroupLabel v-if="group.title">{{
-                        group.title
-                    }}</SidebarGroupLabel>
-                    <SidebarMenuSub class="border-sidebar-border/40">
-                        <SidebarMenuSubItem
-                            v-for="item in group.items"
-                            :key="item.title"
+                <SidebarMenuSub class="border-sidebar-border/40">
+                    <SidebarMenuSubItem
+                        v-for="item in section.items"
+                        :key="item.title"
+                    >
+                        <SidebarMenuSubButton
+                            as-child
+                            :is-active="isActiveItem(item)"
                         >
-                            <SidebarMenuSubButton
-                                as-child
-                                :is-active="isActiveItem(item)"
+                            <Link
+                                :href="item.href"
+                                :aria-current="
+                                    isActiveItem(item) ? 'page' : undefined
+                                "
+                                :title="item.title"
                             >
-                                <Link
-                                    :href="item.href"
-                                    :aria-current="
-                                        isActiveItem(item) ? 'page' : undefined
-                                    "
-                                    :title="item.title"
-                                >
-                                    <span>{{ item.title }}</span>
-                                </Link>
-                            </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                </div>
+                                <span>{{ item.title }}</span>
+                            </Link>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
             </AccordionContent>
         </template>
         <SidebarMenuItem v-else>

@@ -34,6 +34,7 @@ function setup(
               'announcements.attachments',
           ]
         : [],
+    file = 'resources/js/components/AppSidebar.vue',
 ) {
     const page = vue.reactive({
         url,
@@ -62,25 +63,19 @@ function setup(
         },
         { get: (target, name) => target[name] ?? primitive(name) },
     );
-    const ui = mount(
-        'resources/js/components/AppSidebar.vue',
-        {},
-        capabilities,
-        url,
-        {
-            '@inertiajs/vue3': {
-                usePage: () => page,
-                Link: primitive('Link'),
-                router: {
-                    on: (event, handler) => {
-                        handlers.set(event, handler);
-                        return () => handlers.delete(event);
-                    },
+    const ui = mount(file, {}, capabilities, url, {
+        '@inertiajs/vue3': {
+            usePage: () => page,
+            Link: primitive('Link'),
+            router: {
+                on: (event, handler) => {
+                    handlers.set(event, handler);
+                    return () => handlers.delete(event);
                 },
             },
-            '@/components/ui/sidebar': sidebar,
         },
-    );
+        '@/components/ui/sidebar': sidebar,
+    });
     context.after(ui.unmount);
     return {
         ...ui,
@@ -112,6 +107,304 @@ void test('one current destination agrees with the selected workspace even when 
             'parent matches must stop at a path segment',
         );
     }
+});
+
+void test('Event tabs keep the current route selected and expose only independently permitted work', async (context) => {
+    const ui = setup(
+        context,
+        { ...member, canAccessOfficer: true },
+        '/officer/event-finances?work=refunds&page=2',
+        false,
+        false,
+        [],
+        'resources/js/components/ModuleWorkspace.vue',
+    );
+    ui.page.props.auth.staffPermissions = [
+        'events.manage',
+        'events.registrations.read',
+        'events.payments.review',
+        'events.refunds.review',
+        'events.check-in',
+    ];
+    await vue.nextTick();
+
+    assert.deepEqual(
+        ui.all('Link').map((node) => ui.text(node).trim()),
+        ['Listing', 'Registrations', 'Payments & refunds', 'Check-in'],
+    );
+    const selected = () =>
+        ui.all('Link').filter((node) => node.props['aria-current'] === 'page');
+    assert.deepEqual(
+        selected().map((node) => node.props.href.url),
+        ['/officer/event-finances'],
+    );
+    assert.equal(ui.all('Tabs')[0].props['activation-mode'], 'manual');
+    assert.equal(
+        ui.all('TabsContent')[0].props.value,
+        '/officer/event-finances',
+    );
+    const strip = ui.all('div').find((node) => node.props.onFocusin);
+    strip.scrollLeft = 0;
+    strip.getBoundingClientRect = () => ({ left: 0, right: 390 });
+    const scrollPage = context.mock.fn();
+    const target = {
+        getBoundingClientRect: () => ({ left: 337, right: 415 }),
+        scrollIntoView: scrollPage,
+    };
+    strip.props.onFocusin({ target });
+    assert.equal(strip.scrollLeft, 25);
+    assert.equal(scrollPage.mock.callCount(), 0);
+    target.getBoundingClientRect = () => ({ left: -20, right: 40 });
+    strip.props.onFocusin({ target });
+    assert.equal(strip.scrollLeft, 5);
+    target.getBoundingClientRect = () => ({ left: 30, right: 80 });
+    strip.props.onFocusin({ target });
+    assert.equal(strip.scrollLeft, 5);
+
+    ui.page.url = '/officer/event-check-in/12';
+    await vue.nextTick();
+    assert.deepEqual(
+        selected().map((node) => node.props.href.url),
+        ['/officer/event-check-in'],
+    );
+
+    ui.page.props.auth.staffPermissions = ['events.check-in'];
+    await vue.nextTick();
+    assert.equal(ui.all('TabsList').length, 0);
+    assert.equal(ui.all('Link').length, 0);
+});
+
+void test('Officer navigation groups related work into six destinations', async (context) => {
+    const ui = setup(context, { ...member, canAccessOfficer: true });
+    ui.page.props.auth.staffPermissions.push(
+        'events.manage',
+        'events.registrations.read',
+        'events.payments.review',
+        'events.refunds.review',
+        'events.check-in',
+    );
+    await vue.nextTick();
+
+    const officer = ui
+        .all('AccordionItem')
+        .find((node) => node.props['data-tour'] === 'nav-officer');
+    assert.deepEqual(
+        ui.all('Link', officer).map((node) => ui.text(node).trim()),
+        [
+            'Officer',
+            'Announcements',
+            'Events',
+            'Properties & people',
+            'Dues & collection',
+            'Association settings',
+        ],
+    );
+});
+
+void test('Super Admin navigation separates access work from documents without duplicate overviews', (context) => {
+    const capabilities = {
+        ...member,
+        isSuperAdmin: true,
+        canAccessAdministrator: true,
+    };
+    const ui = setup(context, capabilities, '/administrator/user-accounts/8');
+    const section = ui
+        .all('AccordionItem')
+        .find((node) => node.props['data-tour'] === 'nav-super-admin');
+    assert.deepEqual(
+        ui.all('Link', section).map((node) => ui.text(node).trim()),
+        ['Super Admin', 'Association documents'],
+    );
+    assert.equal(ui.destinations().includes('/super-admin'), false);
+    assert.equal(ui.destinations().includes('/administrator'), false);
+    const current = ui
+        .all('Link')
+        .filter((node) => node.props['aria-current'] === 'page');
+    assert.deepEqual(
+        current.map((node) => node.props.href.url),
+        ['/administrator/user-accounts'],
+    );
+});
+
+void test('module tabs preserve sparse grants and select nested and cross-prefix pages', async (context) => {
+    for (const [url, grants, labels, active] of [
+        [
+            '/officer/properties/import',
+            ['properties.read', 'memberships.read', 'invitations.read'],
+            ['Properties', 'Memberships', 'Invitations'],
+            '/officer/properties',
+        ],
+        [
+            '/properties/4/profile',
+            ['properties.read', 'memberships.read'],
+            ['Properties', 'Memberships'],
+            '/officer/properties',
+        ],
+        [
+            '/officer/property-invitations/create',
+            ['properties.create', 'invitations.create'],
+            ['New Property', 'New Invitation'],
+            '/officer/property-invitations/create',
+        ],
+        [
+            '/officer/properties/import',
+            ['properties.create', 'properties.import', 'invitations.create'],
+            ['New Property', 'New Invitation'],
+            '/officer/properties/create',
+        ],
+        [
+            '/officer/charges/generate',
+            ['payments.create', 'charges.generate', 'suspends.create'],
+            ['Record Payment', 'Charges', 'New Suspend'],
+            '/officer/charges/generate',
+        ],
+        [
+            '/officer/charges/5/edit',
+            [
+                'unpaid.read',
+                'payments.read',
+                'charges.read',
+                'charges.generate',
+                'suspends.read',
+            ],
+            ['Unpaid', 'Payments', 'Charges', 'Suspends'],
+            '/officer/charges',
+        ],
+        [
+            '/officer/levy-settings',
+            ['fee-types.create', 'levy-settings.edit', 'bill-settings.read'],
+            ['New Fee Type', 'Levy day', 'Printed Bill'],
+            '/officer/levy-settings',
+        ],
+    ]) {
+        const ui = setup(
+            context,
+            { ...member, canAccessOfficer: true },
+            url,
+            false,
+            false,
+            [],
+            'resources/js/components/ModuleWorkspace.vue',
+        );
+        ui.page.props.auth.staffPermissions = grants;
+        await vue.nextTick();
+
+        assert.deepEqual(
+            ui.all('Link').map((node) => ui.text(node).trim()),
+            labels,
+            url,
+        );
+        assert.deepEqual(
+            ui
+                .all('Link')
+                .filter((node) => node.props['aria-current'] === 'page')
+                .map((node) => node.props.href.url),
+            [active],
+            url,
+        );
+    }
+});
+
+void test('protected account and document tabs follow Super Admin authority', (context) => {
+    for (const [url, labels, active] of [
+        [
+            '/administrator/user-accounts/8',
+            ['User Accounts', 'Roles & permissions', 'Access history'],
+            '/administrator/user-accounts',
+        ],
+        [
+            '/super-admin/role-permissions',
+            ['User Accounts', 'Roles & permissions', 'Access history'],
+            '/super-admin/role-permissions',
+        ],
+        [
+            '/super-admin/privacy-policy',
+            ['Terms of Service', 'Privacy Policy'],
+            '/super-admin/privacy-policy',
+        ],
+    ]) {
+        const ui = setup(
+            context,
+            { ...member, isSuperAdmin: true, canAccessAdministrator: true },
+            url,
+            false,
+            false,
+            [],
+            'resources/js/components/ModuleWorkspace.vue',
+        );
+        assert.deepEqual(
+            ui.all('Link').map((node) => ui.text(node).trim()),
+            labels,
+        );
+        assert.deepEqual(
+            ui
+                .all('Link')
+                .filter((node) => node.props['aria-current'] === 'page')
+                .map((node) => node.props.href.url),
+            [active],
+        );
+    }
+    const administrator = setup(
+        context,
+        { ...member, canAccessAdministrator: true },
+        '/administrator/user-accounts/8',
+        false,
+        false,
+        [],
+        'resources/js/components/ModuleWorkspace.vue',
+    );
+    assert.equal(administrator.all('TabsList').length, 0);
+    assert.equal(administrator.all('Link').length, 0);
+});
+
+void test('each Event grant opens its own permitted destination and no empty module is shown', async (context) => {
+    const ui = setup(
+        context,
+        { ...member, canAccessOfficer: true },
+        '/officer',
+    );
+    for (const [grant, path] of [
+        ['events.manage', '/officer/events'],
+        ['events.registrations.read', '/officer/event-registrations'],
+        ['events.payments.review', '/officer/event-finances'],
+        ['events.refunds.review', '/officer/event-finances'],
+        ['events.check-in', '/officer/event-check-in'],
+    ]) {
+        ui.page.props.auth.staffPermissions = [grant];
+        await vue.nextTick();
+        const officer = ui
+            .all('AccordionItem')
+            .find((node) => node.props['data-tour'] === 'nav-officer');
+        const events = ui
+            .all('Link', officer)
+            .filter((node) => ui.text(node).trim() === 'Events');
+        assert.deepEqual(
+            events.map((node) => node.props.href.url),
+            [path],
+            grant,
+        );
+    }
+    ui.page.props.auth.staffPermissions = [];
+    await vue.nextTick();
+    assert.equal(ui.destinations().includes('/officer/event-check-in'), false);
+});
+
+void test('the application shell places permitted module tabs above its page', (context) => {
+    const ui = mount(
+        'resources/js/layouts/app/AppSidebarLayout.vue',
+        {},
+        { ...member, canAccessOfficer: true },
+        '/officer/payments',
+        {},
+        ['@/components/ModuleWorkspace.vue'],
+    );
+    context.after(ui.unmount);
+
+    assert.deepEqual(
+        ui.all('Link').map((node) => ui.text(node).trim()),
+        ['Unpaid', 'Payments', 'Charges', 'Suspends'],
+    );
+    assert.equal(ui.all('TabsContent')[0].props.value, '/officer/payments');
 });
 
 void test('members keep statement and listed announcements without privileged links', async (context) => {
@@ -165,20 +458,12 @@ void test('staff navigation preserves permitted workspaces and restricts the Use
             '/officer',
             '/officer/announcements',
             '/officer/unpaid',
-            '/officer/memberships',
-            '/officer/property-invitations',
-            '/officer/payments',
             '/officer/properties',
             '/officer/fee-types',
-            '/officer/suspends',
-            '/officer/charges',
-            '/officer/charges/generate',
-            '/officer/levy-settings',
-            '/officer/bill-settings',
         ])
             assert.ok(ui.destinations().includes(path), path);
         assert.equal(
-            ui.destinations().includes('/super-admin/access-history'),
+            ui.destinations().includes('/super-admin/terms-of-service'),
             capabilities.isSuperAdmin,
         );
         assert.equal(
@@ -202,8 +487,9 @@ void test('staff navigation preserves permitted workspaces and restricts the Use
             assert.ok(
                 ui.destinations().includes('/super-admin/terms-of-service'),
             );
-            assert.ok(
+            assert.equal(
                 ui.destinations().includes('/super-admin/privacy-policy'),
+                false,
             );
         }
         assert.equal(ui.all('NavFooter').length, 0);
@@ -241,7 +527,7 @@ void test('statement detail routes reveal the member section while settings high
     const active = officer
         .all('Link')
         .find((node) => node.props['aria-current'] === 'page');
-    assert.equal(active.props.href.url, '/officer/levy-settings');
+    assert.equal(active.props.href.url, '/officer/fee-types');
     const activeSections = officer
         .all('AccordionTrigger')
         .filter((node) => node.props['data-active'] === true);
@@ -360,7 +646,7 @@ void test('property profiles reveal the relevant workspace and detail pages high
         .all('Link')
         .filter((node) => node.props['aria-current'] === 'page');
     assert.equal(active.length, 1);
-    assert.equal(active[0].props.href.url, '/officer/charges');
+    assert.equal(active[0].props.href.url, '/officer/unpaid');
 });
 
 void test('collapsed navigation keeps role destinations and the selected link reachable', (context) => {
@@ -375,14 +661,14 @@ void test('collapsed navigation keeps role destinations and the selected link re
     assert.ok(ui.all('DropdownMenuTrigger').length > 0);
     for (const path of [
         '/officer/announcements',
-        '/officer/levy-settings',
-        '/officer/charges',
+        '/officer/fee-types',
+        '/officer/unpaid',
     ])
         assert.ok(ui.destinations().includes(path));
     assert.equal(
         ui.all('Link').find((node) => node.props['aria-current'] === 'page')
             .props.href.url,
-        '/officer/charges',
+        '/officer/unpaid',
     );
 });
 
@@ -407,7 +693,7 @@ void test('role sections can close and reopen while visits select the current wo
     assert.equal(
         ui.all('Link').find((node) => node.props['aria-current'] === 'page')
             .props.href.url,
-        '/officer/charges',
+        '/officer/unpaid',
     );
 });
 
@@ -432,7 +718,7 @@ void test('Announcement navigation follows grants while legacy destinations rema
         false,
     );
     assert.ok(ui.destinations().includes('/officer/properties'));
-    assert.ok(ui.destinations().includes('/officer/payments'));
+    assert.ok(ui.destinations().includes('/officer/unpaid'));
     assert.equal(
         ui.destinations().includes('/super-admin/role-permissions'),
         false,
@@ -443,7 +729,7 @@ void test('Announcement navigation follows grants while legacy destinations rema
         canAccessOfficer: true,
     });
     assert.ok(
-        superAdmin.destinations().includes('/super-admin/role-permissions'),
+        superAdmin.destinations().includes('/administrator/user-accounts'),
     );
 });
 
@@ -465,7 +751,6 @@ void test('household list links follow current grants and creation-only users ha
     }
     for (const path of [
         '/officer/properties/create',
-        '/officer/property-invitations/create',
         '/officer/suspends/create',
     ]) {
         assert.ok(ui.destinations().includes(path));
@@ -491,8 +776,6 @@ void test('financial links follow independent reading and creation grants', asyn
     for (const path of [
         '/officer/payments/create',
         '/officer/fee-types/create',
-        '/officer/charges/generate',
-        '/officer/levy-settings',
     ])
         assert.ok(ui.destinations().includes(path));
     for (const path of [
@@ -508,8 +791,6 @@ void test('financial links follow independent reading and creation grants', asyn
     for (const path of [
         '/officer/payments/create',
         '/officer/fee-types/create',
-        '/officer/charges/generate',
-        '/officer/levy-settings',
     ])
         assert.equal(ui.destinations().includes(path), false);
 });
